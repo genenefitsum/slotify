@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 Slotify
 
 **Slotify** is a multi-vendor booking marketplace built with **React** and **Node.js** that allows customers to discover, compare, and book service providers seamlessly.
@@ -110,9 +109,3 @@ slotify/
 
 ---
 
-## 📌 Current Status
-
-🚧 **In active development**.
-
-This project is being built as a portfolio-grade SaaS application focusing on clean backend architecture, real-world business logic, and scalable system design.
-=======
