@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+🚀 Slotify
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Slotify is a multi-vendor booking marketplace built with React and Node.js that allows customers to discover, compare, and book service providers seamlessly. Vendors can manage services, availability, and bookings through a dedicated dashboard, while admins oversee the entire platform.
 
-Currently, two official plugins are available:
+Slotify is designed with scalability, clean architecture, and real-world SaaS principles in mind.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+⸻
 
-## React Compiler
+🌍 Vision
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Slotify aims to simplify appointment scheduling in Ethiopia by providing a centralized marketplace where customers can book trusted professionals efficiently while vendors manage their business digitally.
 
-## Expanding the ESLint configuration
+⸻
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+🧠 Core Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+👤 Authentication & Authorization
+	•	JWT-based authentication
+	•	Role-based access control (Customer, Vendor, Admin)
+	•	Secure password hashing
+	•	Protected routes
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+🔎 Marketplace
+	•	Vendor listing page
+	•	Search & filter functionality
+	•	Vendor profile pages
+	•	Service display
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+📅 Booking System
+	•	Dynamic time slot generation
+	•	Conflict prevention (no double bookings)
+	•	Booking status management (Pending, Confirmed, Cancelled, Completed)
+	•	Booking history
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+🧑‍💼 Vendor Dashboard
+	•	Add / edit / delete services
+	•	Manage availability schedule
+	•	View and manage bookings
+	•	Basic earnings overview
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+🛠 Admin Dashboard
+	•	Manage vendors and users
+	•	Approve or suspend vendors
+	•	Monitor bookings
+	•	Platform analytics overview
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+⸻
+
+🏗 Tech Stack
+
+Frontend
+	•	React
+	•	Tailwind CSS
+	•	Axios
+	•	React Router
+
+Backend
+	•	Node.js
+	•	Express.js
+	•	MongoDB (Mongoose)
+	•	JWT Authentication
+	•	Bcrypt
