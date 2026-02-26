@@ -65,17 +65,22 @@ Slotify aims to simplify appointment scheduling in Ethiopia by providing a centr
 
 ---
 
-## 📁 Proposed Architecture
+## 📁 Project Structure
 
 ```bash
 slotify/
 │
-├── client/        # React frontend
-├── server/        # Express backend
-├── models/        # Database schemas
-├── routes/        # API routes
-├── controllers/   # Business logic
-├── middleware/    # Auth & validation
+├── frontend/      # React + Vite frontend app
+│   ├── src/
+│   ├── public/
+│   └── package.json
+│
+├── backend/       # Node.js + Express backend API
+│   ├── src/
+│   │   └── server.js
+│   └── package.json
+│
+└── README.md
 ```
 
 ---
