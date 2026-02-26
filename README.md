@@ -1,73 +1,116 @@
-# React + TypeScript + Vite
+# 🚀 Slotify
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Slotify** is a multi-vendor booking marketplace built with **React** and **Node.js** that allows customers to discover, compare, and book service providers seamlessly.
 
-Currently, two official plugins are available:
+Vendors can manage services, availability, and bookings through a dedicated dashboard, while admins oversee the entire platform.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Slotify is designed with **scalability**, **clean architecture**, and **real-world SaaS principles** in mind.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🌍 Vision
 
-## Expanding the ESLint configuration
+Slotify aims to simplify appointment scheduling in Ethiopia by providing a centralized marketplace where customers can book trusted professionals efficiently while vendors manage their business digitally.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🧠 Core Features
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 👤 Authentication & Authorization
+- JWT-based authentication
+- Role-based access control (**Customer**, **Vendor**, **Admin**)
+- Secure password hashing
+- Protected routes
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 🔎 Marketplace
+- Vendor listing page
+- Search & filter functionality
+- Vendor profile pages
+- Service display
+
+### 📅 Booking System
+- Dynamic time slot generation
+- Conflict prevention (no double bookings)
+- Booking status management (**Pending**, **Confirmed**, **Cancelled**, **Completed**)
+- Booking history
+
+### 🧑‍💼 Vendor Dashboard
+- Add / edit / delete services
+- Manage availability schedule
+- View and manage bookings
+- Basic earnings overview
+
+### 🛠 Admin Dashboard
+- Manage vendors and users
+- Approve or suspend vendors
+- Monitor bookings
+- Platform analytics overview
+
+---
+
+## 🏗 Tech Stack
+
+### Frontend
+- React
+- Tailwind CSS
+- Axios
+- React Router
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB (Mongoose)
+- JWT Authentication
+- Bcrypt
+
+---
+
+## 📁 Proposed Architecture
+
+```bash
+slotify/
+│
+├── client/        # React frontend
+├── server/        # Express backend
+├── models/        # Database schemas
+├── routes/        # API routes
+├── controllers/   # Business logic
+├── middleware/    # Auth & validation
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🎯 MVP Scope
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- User authentication
+- Vendor profile management
+- Service management
+- Availability scheduling
+- Appointment booking with conflict prevention
+- Basic dashboards
+
+### Future Phases
+- Online payments
+- Reviews & ratings
+- Email notifications
+- Advanced analytics
+- SMS reminders
+
+---
+
+## 🔐 Security Considerations
+
+- Password hashing using bcrypt
+- JWT access tokens
+- Role-based middleware
+- Input validation
+- Proper error handling
+- Rate limiting (planned)
+
+---
+
+## 📌 Current Status
+
+🚧 **In active development**.
+
+This project is being built as a portfolio-grade SaaS application focusing on clean backend architecture, real-world business logic, and scalable system design.
