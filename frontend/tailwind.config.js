@@ -7,6 +7,14 @@ export default {
   ],
   theme: {
   	extend: {
+		fontFamily: {
+			sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			heading: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			montserrat: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			poppins: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			manrope: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			serifDisplay: ['Playfair Display', 'ui-serif', 'Georgia', 'serif']
+		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
