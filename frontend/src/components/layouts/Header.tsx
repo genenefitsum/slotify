@@ -15,7 +15,7 @@ const Header = () => {
                     </div>
                     <span className="text-xl font-bold text-foreground">Slotify</span>
                 </Link>
-
+                
                 <nav className="hidden items-center gap-8 md:flex">
                     <Link to="/vendors" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                         Browse Vendors
