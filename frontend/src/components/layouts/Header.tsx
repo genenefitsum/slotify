@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const Header = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,7 +9,7 @@ const Header = () => {
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <Link to="/" className="flex items-center gap-2">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-                        <Calendar className="h-5 w-5 text-primary-foreground" />
+                        <span className="text-sm font-bold text-primary-foreground">S</span>
                     </div>
                     <span className="text-xl font-bold text-foreground">Slotify</span>
                 </Link>
@@ -27,9 +25,9 @@ const Header = () => {
                         Log In
                     </Link>
                     <Link to="/register">
-                        <Button size="sm" className="rounded-xl">
+                        <button className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground">
                             Get Started
-                        </Button>
+                        </button>
                     </Link>
                 </nav>
 
@@ -38,7 +36,7 @@ const Header = () => {
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label="Toggle mobile navigation"
                 >
-                    {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    {mobileOpen ? "Close" : "Menu"}
                 </button>
             </div>
 
@@ -67,7 +65,9 @@ const Header = () => {
                             Log In
                         </Link>
                         <Link to="/register" onClick={() => setMobileOpen(false)}>
-                            <Button className="w-full rounded-xl">Get Started</Button>
+                            <button className="w-full rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground">
+                                Get Started
+                            </button>
                         </Link>
                     </nav>
                 </div>
