@@ -15,14 +15,14 @@ const HowItWorksSection = () => {
           Booking a professional has never been easier. Just three simple steps.
         </p>
 
-        <div className="mt-10 grid gap-7 md:grid-cols-3">
+        <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-7">
           {HOW_IT_WORKS_STEPS.map((step, index) => {
             const Icon = STEP_ICONS[index] ?? Search;
 
             return (
               <article
                 key={step.id}
-                className="text-center"
+                className={index === HOW_IT_WORKS_STEPS.length - 1 ? "col-span-2 mx-auto w-full max-w-xs text-center md:col-span-1 md:max-w-none" : "text-center"}
               >
                 <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
                   <Icon className="size-[18px]" />

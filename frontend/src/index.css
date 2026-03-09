@@ -113,15 +113,15 @@
   @keyframes hero-float {
     0%,
     100% {
-      transform: translateY(0);
+      transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
     }
     50% {
-      transform: translateY(-22px);
+      transform: translate3d(0, -32px, 0) scale(1.018) rotate(-0.8deg);
     }
   }
 
   .animate-hero-float {
-    animation: hero-float 2.8s ease-in-out infinite;
+    animation: hero-float 1.9s cubic-bezier(0.33, 0, 0.2, 1) infinite;
     will-change: transform;
   }
 
