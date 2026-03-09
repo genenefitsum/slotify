@@ -116,12 +116,12 @@
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-12px);
+      transform: translateY(-22px);
     }
   }
 
   .animate-hero-float {
-    animation: hero-float 4.8s ease-in-out infinite;
+    animation: hero-float 2.8s ease-in-out infinite;
     will-change: transform;
   }
 

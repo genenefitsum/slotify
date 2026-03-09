@@ -1,26 +1,33 @@
 import { TESTIMONIALS } from "@/lib/constants";
+import { Card } from "@/components/ui/card";
+import { Star } from "lucide-react";
 
 const TestimonialsSection = () => {
   return (
     <section className="border-b bg-background">
-      <div className="container mx-auto px-4 py-16">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+      <div className="container mx-auto max-w-5xl px-4 py-14 lg:py-16">
+        <p className="text-center text-green-600 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
           Testimonials
         </p>
-        <h2 className="mt-3 text-center text-3xl sm:text-4xl">What People Say</h2>
+        <h2 className="mt-2 text-center text-3xl sm:text-4xl">What People Say</h2>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        <div className="mt-9 grid gap-4 lg:grid-cols-3">
           {TESTIMONIALS.map((testimonial) => (
-            <blockquote
+            <Card
               key={`${testimonial.name}-${testimonial.role}`}
-              className="rounded-2xl border border-border/70 bg-card p-6 text-center shadow-card"
+              className="rounded-xl border-border/70 p-4 shadow-sm"
             >
-              <p className="text-base leading-7 text-foreground">"{testimonial.quote}"</p>
-              <footer className="mt-6">
-                <p className="font-semibold">{testimonial.name}</p>
-                <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+              <div className="flex items-center gap-1 text-amber-500">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star key={`${testimonial.name}-${index}`} className="size-3.5 fill-current" />
+                ))}
+              </div>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">"{testimonial.quote}"</p>
+              <footer className="mt-4">
+                <p className="text-base font-semibold text-foreground">{testimonial.name}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{testimonial.role}</p>
               </footer>
-            </blockquote>
+            </Card>
           ))}
         </div>
       </div>

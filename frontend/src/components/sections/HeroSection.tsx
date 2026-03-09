@@ -1,53 +1,55 @@
 import { Link } from "react-router-dom";
 import { HERO_STATS } from "@/lib/constants";
 import heroIllustration from "@/assets/hero-illustration.png";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CircleCheckBig } from "lucide-react";
 
 const HeroSection = () => {
   return (
     <section className="border-b bg-muted/30 bg-gradient-hero">
-      <div className="container mx-auto grid gap-10 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
+      <div className="container mx-auto grid gap-8 px-16 py-16 lg:grid-cols-2 lg:items-center lg:px-20 lg:py-24">
         <div className="text-center lg:text-left">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+          <Badge
+            variant="secondary"
+            className="mb-4 gap-2 rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em]"
+          >
+            <span className="inline-block size-1.5 rounded-full bg-accent" />
             Ethiopia's #1 Booking Platform
-          </p>
-          <h1 className="mx-auto max-w-2xl text-4xl font-bold leading-tight sm:text-5xl lg:mx-0">
-            Book Trusted Professionals in Minutes
+          </Badge>
+          <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl lg:mx-0">
+            Book Trusted Professionals <span className="text-primary">in Minutes</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground sm:text-lg lg:mx-0">
+          <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground sm:text-base lg:mx-0">
             Discover, compare, and book service providers across Ethiopia. Simple,
             fast, and reliable.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-            <Link
-              to="/vendors"
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-            >
-              Browse Services
-            </Link>
-            <Link
-              to="/register"
-              className="rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium"
-            >
-              Become a Vendor
-            </Link>
+            <Button asChild size="sm" className="rounded-lg">
+              <Link to="/vendors">
+                Browse Services
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="rounded-lg">
+              <Link to="/register">Become a Vendor</Link>
+            </Button>
           </div>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+          <div className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-2 lg:justify-start">
             {HERO_STATS.map((stat) => (
-              <div
-                key={stat}
-                className="rounded-xl border border-border/70 bg-card px-4 py-2 text-sm font-medium shadow-sm"
-              >
-                {stat}
+              <div key={stat} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <CircleCheckBig className="size-4 text-accent" />
+                <span>{stat}</span>
               </div>
             ))}
           </div>
         </div>
-        <div>
+        <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-lg">
           <img
             src={heroIllustration}
             alt="Book appointments easily with Slotify"
-            className="animate-hero-float mx-auto w-full max-w-xl rounded-2xl border border-border/60 bg-background p-2 shadow-card"
+            className="animate-hero-float mx-auto w-full max-w-lg"
           />
         </div>
       </div>

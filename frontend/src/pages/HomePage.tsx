@@ -1,4 +1,3 @@
-import AdditionalLinksSection from "@/components/sections/AdditionalLinksSection";
 import FeaturedVendorsSection from "@/components/sections/FeaturedVendorsSection";
 import HeroSection from "@/components/sections/HeroSection";
 import HowItWorksSection from "@/components/sections/HowItWorksSection";
@@ -13,7 +12,6 @@ const HomePage = () => {
 			<FeaturedVendorsSection />
 			<TestimonialsSection />
 			<ReadyToStartSection />
-			<AdditionalLinksSection />
 		</>
 	);
 };
