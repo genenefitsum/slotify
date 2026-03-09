@@ -1,4 +1,5 @@
 import MainLayout from "@/components/layouts/MainLayout";
+import { useAuth } from '@/contexts/AuthContext';
 import AboutPage from "@/pages/AboutPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import CustomerBookingsPage from "@/pages/CustomerBookingsPage";
@@ -9,13 +10,33 @@ import RegisterPage from "@/pages/RegisterPage";
 import VendorDashboardPage from "@/pages/VendorDashboardPage";
 import VendorDetailPage from "@/pages/VendorDetailPage";
 import VendorsPage from "@/pages/VendorsPage";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import type { UserRole } from '@/types/auth';
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
-const hasAuthToken = () => Boolean(localStorage.getItem("slotify_token"));
+const RequireAuth = () => {
+	const { isAuthenticated, isLoading } = useAuth();
+	const location = useLocation();
 
-const VendorProtectedRoute = () => {
-	if (!hasAuthToken()) {
+	if (isLoading) {
+		return null;
+	}
+
+	if (!isAuthenticated) {
+		return <Navigate to="/login" replace state={{ from: location }} />;
+	}
+
+	return <Outlet />;
+};
+
+const RequireRole = ({ allowed }: { allowed: UserRole[] }) => {
+	const { user } = useAuth();
+
+	if (!user) {
 		return <Navigate to="/login" replace />;
+	}
+
+	if (!allowed.includes(user.role)) {
+		return <Navigate to="/" replace />;
 	}
 
 	return <Outlet />;
@@ -32,10 +53,16 @@ const AppRoutes = () => {
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/register" element={<RegisterPage />} />
 
-				<Route element={<VendorProtectedRoute />}>
-					<Route path="/dashboard/vendor" element={<VendorDashboardPage />} />
-					<Route path="/bookings" element={<CustomerBookingsPage />} />
-					<Route path="/dashboard/admin" element={<AdminDashboardPage />} />
+				<Route element={<RequireAuth />}>
+					<Route element={<RequireRole allowed={['vendor_owner', 'vendor_staff']} />}>
+						<Route path="/dashboard/vendor" element={<VendorDashboardPage />} />
+					</Route>
+					<Route element={<RequireRole allowed={['customer']} />}>
+						<Route path="/bookings" element={<CustomerBookingsPage />} />
+					</Route>
+					<Route element={<RequireRole allowed={['admin']} />}>
+						<Route path="/dashboard/admin" element={<AdminDashboardPage />} />
+					</Route>
 				</Route>
 
 				<Route path="*" element={<NotFoundPage />} />

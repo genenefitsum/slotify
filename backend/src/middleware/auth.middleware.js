@@ -1,5 +1,3 @@
-const requireAuth = (req, res, next) => {
-  next();
-};
+const { requireAuth } = require('../common/middlewares/auth');
 
 module.exports = { requireAuth };

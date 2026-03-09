@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Menu, X } from "lucide-react";
@@ -6,6 +7,14 @@ import { CalendarDays, Menu, X } from "lucide-react";
 
 const Header = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { isAuthenticated, user, logout } = useAuth();
+
+    const roleRoute =
+        user?.role === 'admin'
+            ? '/dashboard/admin'
+            : user?.role === 'vendor_owner' || user?.role === 'vendor_staff'
+                ? '/dashboard/vendor'
+                : '/bookings';
 
     return (
         <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur">
@@ -30,17 +39,33 @@ const Header = () => {
                     >
                         How It Works
                     </Link>
-                    <Link
-                        to="/login"
-                        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                        Log In
-                    </Link>
-                    <Button asChild size="sm" className="rounded-lg">
-                        <Link to="/register">
-                            Get Started
-                        </Link>
-                    </Button>
+                    {isAuthenticated ? (
+                        <>
+                            <Link
+                                to={roleRoute}
+                                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Dashboard
+                            </Link>
+                            <Button size="sm" className="rounded-lg" onClick={logout}>
+                                Log Out
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                to="/login"
+                                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Log In
+                            </Link>
+                            <Button asChild size="sm" className="rounded-lg">
+                                <Link to="/register">
+                                    Get Started
+                                </Link>
+                            </Button>
+                        </>
+                    )}
                 </nav>
 
                 <Button
@@ -71,18 +96,42 @@ const Header = () => {
                         >
                             How It Works
                         </Link>
-                        <Link
-                            to="/login"
-                            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            Log In
-                        </Link>
-                        <Button asChild size="sm" className="mt-1 rounded-lg">
-                            <Link to="/register" onClick={() => setMobileOpen(false)}>
-                                Get Started
-                            </Link>
-                        </Button>
+                        {isAuthenticated ? (
+                            <>
+                                <Link
+                                    to={roleRoute}
+                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    onClick={() => setMobileOpen(false)}
+                                >
+                                    Dashboard
+                                </Link>
+                                <Button
+                                    size="sm"
+                                    className="mt-1 rounded-lg"
+                                    onClick={() => {
+                                        logout();
+                                        setMobileOpen(false);
+                                    }}
+                                >
+                                    Log Out
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    onClick={() => setMobileOpen(false)}
+                                >
+                                    Log In
+                                </Link>
+                                <Button asChild size="sm" className="mt-1 rounded-lg">
+                                    <Link to="/register" onClick={() => setMobileOpen(false)}>
+                                        Get Started
+                                    </Link>
+                                </Button>
+                            </>
+                        )}
                     </nav>
                 </div>
             )}

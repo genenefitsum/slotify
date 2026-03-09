@@ -1,6 +1,14 @@
+const mongoose = require('mongoose');
+const env = require('./env');
+
 const connectDb = async () => {
-  // Database connection setup goes here.
-  return Promise.resolve();
+  mongoose.set('strictQuery', true);
+
+  await mongoose.connect(env.mongoUri, {
+    serverSelectionTimeoutMS: 5000,
+  });
+
+  return mongoose.connection;
 };
 
 module.exports = { connectDb };
