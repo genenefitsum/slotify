@@ -1,13 +1,7 @@
-import Header from "@/components/layouts/Header";
-import HeroSection from "@/components/sections/HeroSection";
+import AppRoutes from "@/routes/appRoutes";
 
 function App() {
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
-      <HeroSection />
-    </div>
-  );
+  return <AppRoutes />;
 }
 
 export default App;
