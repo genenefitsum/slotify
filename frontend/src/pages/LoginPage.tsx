@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
 import { FcGoogle } from 'react-icons/fc';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { HttpError } from '@/api/http';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { requestGoogleCredential } from '@/lib/googleCredential';
 
 const LoginPage = () => {
 	const { login, loginWithGoogle } = useAuth();
@@ -16,6 +16,7 @@ const LoginPage = () => {
 	const [error, setError] = useState('');
 	const [googleError, setGoogleError] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
 	const redirectTo = useMemo(() => {
 		const state = location.state as { from?: { pathname?: string } } | null;
@@ -43,11 +44,16 @@ const LoginPage = () => {
 
 	const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '').trim();
 
-	const handleGoogleSignIn = async () => {
+	const handleGoogleSuccess = async (credential?: string) => {
+		if (!credential) {
+			setGoogleError('Google sign-in did not return a credential. Please try again.');
+			return;
+		}
+
 		setGoogleError('');
+		setIsGoogleSubmitting(true);
 
 		try {
-			const credential = await requestGoogleCredential(googleClientId);
 			await loginWithGoogle({ credential });
 			navigate(redirectTo, { replace: true });
 		} catch (googleSignInError) {
@@ -62,6 +68,8 @@ const LoginPage = () => {
 			}
 
 			setGoogleError('Google sign-in failed. Please try again.');
+		} finally {
+			setIsGoogleSubmitting(false);
 		}
 	};
 
@@ -107,16 +115,28 @@ const LoginPage = () => {
 				<div className="text-center text-[11px] uppercase tracking-wide text-muted-foreground">
 					Or continue with
 				</div>
-				<Button
-					type="button"
-					variant="outline"
-					className="mt-2 w-full"
-					onClick={handleGoogleSignIn}
-					disabled={isSubmitting}
-				>
-					<FcGoogle className="h-4 w-4" />
-					Continue with Google
-				</Button>
+
+				{googleClientId ? (
+					<div className="mt-3 flex justify-center" aria-busy={isGoogleSubmitting}>
+						<GoogleLogin
+							onSuccess={(response) => {
+								void handleGoogleSuccess(response.credential);
+							}}
+							onError={() => {
+								setGoogleError('Google sign-in was cancelled or blocked. Please try again.');
+							}}
+							shape="pill"
+							size="large"
+							text="continue_with"
+							useOneTap={false}
+						/>
+					</div>
+				) : (
+					<Button type="button" variant="outline" className="mt-2 w-full" disabled>
+						<FcGoogle className="h-4 w-4" />
+						Google sign-in unavailable
+					</Button>
+				)}
 
 				{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
 			</div>

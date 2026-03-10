@@ -14,6 +14,50 @@ export class HttpError extends Error {
 	}
 }
 
+type PrimitiveQueryValue = string | number | boolean | null | undefined;
+type QueryValue = PrimitiveQueryValue | PrimitiveQueryValue[];
+type QueryParams = Record<string, QueryValue>;
+
+const stringifyQueryValue = (value: PrimitiveQueryValue): string | null => {
+	if (value === null || value === undefined) {
+		return null;
+	}
+
+	return String(value);
+};
+
+const buildPathWithQuery = (path: string, query?: QueryParams): string => {
+	if (!query) {
+		return path;
+	}
+
+	const searchParams = new URLSearchParams();
+
+	for (const [key, rawValue] of Object.entries(query)) {
+		if (Array.isArray(rawValue)) {
+			for (const value of rawValue) {
+				const serialized = stringifyQueryValue(value);
+				if (serialized !== null) {
+					searchParams.append(key, serialized);
+				}
+			}
+			continue;
+		}
+
+		const serialized = stringifyQueryValue(rawValue);
+		if (serialized !== null) {
+			searchParams.set(key, serialized);
+		}
+	}
+
+	const queryString = searchParams.toString();
+	if (!queryString) {
+		return path;
+	}
+
+	return `${path}?${queryString}`;
+};
+
 const createHeaders = (init?: HeadersInit) => {
 	const headers = new Headers(init || {});
 
@@ -55,10 +99,21 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
 };
 
 export const http = {
-	get: <T>(path: string) => request<T>(path, { method: 'GET' }),
-	post: <T>(path: string, body?: unknown) =>
-		request<T>(path, {
+	get: <T>(path: string, query?: QueryParams) =>
+		request<T>(buildPathWithQuery(path, query), { method: 'GET' }),
+	post: <T>(path: string, body?: unknown, query?: QueryParams) =>
+		request<T>(buildPathWithQuery(path, query), {
 			method: 'POST',
 			body: body ? JSON.stringify(body) : undefined,
+		}),
+	patch: <T>(path: string, body?: unknown, query?: QueryParams) =>
+		request<T>(buildPathWithQuery(path, query), {
+			method: 'PATCH',
+			body: body ? JSON.stringify(body) : undefined,
+		}),
+	delete: <T>(path: string, options?: { body?: unknown; query?: QueryParams }) =>
+		request<T>(buildPathWithQuery(path, options?.query), {
+			method: 'DELETE',
+			body: options?.body ? JSON.stringify(options.body) : undefined,
 		}),
 };

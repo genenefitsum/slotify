@@ -12,7 +12,10 @@ type GoogleWindow = Window & {
         prompt: (callback?: (notification: {
           isNotDisplayed?: () => boolean;
           isSkippedMoment?: () => boolean;
+          isDismissedMoment?: () => boolean;
           getNotDisplayedReason?: () => string;
+          getSkippedReason?: () => string;
+          getDismissedReason?: () => string;
         }) => void) => void;
         cancel: () => void;
       };
@@ -68,6 +71,14 @@ export const requestGoogleCredential = async (clientId: string): Promise<string>
       return;
     }
 
+    // Quick probe to catch strict popup blockers before initializing GIS.
+    const popupProbe = window.open('', '_blank', 'popup,width=1,height=1');
+    if (!popupProbe) {
+      reject(new Error('Popup blocked by browser settings. Allow popups for this site and retry.'));
+      return;
+    }
+    popupProbe.close();
+
     let settled = false;
     const timeoutId = window.setTimeout(() => {
       fail('Google sign-in popup was blocked or unavailable. Please allow popups and try again.');
@@ -119,6 +130,48 @@ export const requestGoogleCredential = async (clientId: string): Promise<string>
 
         if (reason === 'browser_not_supported' || reason === 'invalid_client') {
           fail('Google sign-in is unavailable in this browser/client configuration.');
+          return;
+        }
+
+        if (reason === 'unregistered_origin') {
+          fail('Google OAuth origin is not authorized. Add your frontend URL to Authorized JavaScript origins.');
+          return;
+        }
+
+        if (reason) {
+          fail(`Google sign-in could not be shown (${reason}).`);
+          return;
+        }
+      }
+
+      if (notification?.isSkippedMoment?.()) {
+        const reason = notification.getSkippedReason?.();
+
+        if (reason === 'auto_cancel' || reason === 'user_cancel') {
+          fail('Google sign-in was cancelled.');
+          return;
+        }
+
+        if (reason === 'tap_outside') {
+          fail('Google sign-in popup was dismissed before completion.');
+          return;
+        }
+
+        if (reason) {
+          fail(`Google sign-in was skipped (${reason}).`);
+          return;
+        }
+      }
+
+      if (notification?.isDismissedMoment?.()) {
+        const reason = notification.getDismissedReason?.();
+
+        if (reason === 'credential_returned') {
+          return;
+        }
+
+        if (reason) {
+          fail(`Google sign-in was dismissed (${reason}).`);
         }
       }
     });
