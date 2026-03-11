@@ -1,8 +1,8 @@
-import FeaturedVendorsSection from "@/components/sections/FeaturedVendorsSection";
-import HeroSection from "@/components/sections/HeroSection";
-import HowItWorksSection from "@/components/sections/HowItWorksSection";
-import ReadyToStartSection from "@/components/sections/ReadyToStartSection";
-import TestimonialsSection from "@/components/sections/TestimonialsSection";
+import FeaturedVendorsSection from "@/components/main/FeaturedVendorsSection";
+import HeroSection from "@/components/main/HeroSection";
+import HowItWorksSection from "@/components/main/HowItWorksSection";
+import ReadyToStartSection from "@/components/main/ReadyToStartSection";
+import TestimonialsSection from "@/components/main/TestimonialsSection";
 
 const HomePage = () => {
 	return (

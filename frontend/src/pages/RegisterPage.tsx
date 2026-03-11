@@ -85,8 +85,9 @@ const RegisterPage = () => {
 	};
 
 	return (
-		<section className="container mx-auto max-w-md px-4 py-14">
-			<h1 className="text-3xl font-semibold">Create Account</h1>
+		<section className="container mx-auto max-w-md px-2 py-10">
+			
+			<h1 className="text-3xl font-montserrat font-semibold">Create Account</h1>
 			<p className="mt-3 text-muted-foreground">Join Slotify to book services or manage your vendor profile.</p>
 
 			<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -201,6 +202,7 @@ const RegisterPage = () => {
 					Log in
 				</Link>
 			</p>
+			
 		</section>
 	);
 };

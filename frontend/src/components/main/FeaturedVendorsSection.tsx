@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { FEATURED_VENDORS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import VendorCard from "@/components/sections/VendorCard";
+import VendorCard from "@/components/main/VendorCard";
 
 const FeaturedVendorsSection = () => {
   return (
