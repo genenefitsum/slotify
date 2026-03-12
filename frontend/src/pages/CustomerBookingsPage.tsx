@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { bookingsApi } from '@/api/bookings.api';
 import { HttpError } from '@/api/http';
@@ -39,6 +39,24 @@ const statusChipMap: Record<BookingStatus, string> = {
 	completed: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700',
 	cancelled: 'border-destructive/40 bg-destructive/10 text-destructive',
 	no_show: 'border-slate-500/40 bg-slate-500/10 text-slate-700',
+};
+
+const formatDuration = (startsAtUtc: string, endsAtUtc: string) => {
+	const durationMs = new Date(endsAtUtc).getTime() - new Date(startsAtUtc).getTime();
+	const minutes = Math.max(Math.round(durationMs / 60000), 0);
+
+	if (minutes >= 60 && minutes % 60 === 0) {
+		const hours = minutes / 60;
+		return `${hours} hr${hours === 1 ? '' : 's'}`;
+	}
+
+	if (minutes > 60) {
+		const hours = Math.floor(minutes / 60);
+		const remainder = minutes % 60;
+		return `${hours} hr ${remainder} min`;
+	}
+
+	return `${minutes} min`;
 };
 
 const CustomerBookingsPage = () => {
@@ -82,6 +100,19 @@ const CustomerBookingsPage = () => {
 				maximumFractionDigits: 2,
 			}),
 		[bookingsQuery.data]
+	);
+
+	const dateFormatter = useMemo(
+		() =>
+			new Intl.DateTimeFormat(undefined, {
+				weekday: 'short',
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: '2-digit',
+			}),
+		[]
 	);
 
 	return (
@@ -146,13 +177,18 @@ const CustomerBookingsPage = () => {
 					<div className="space-y-3">
 						{bookingsQuery.data?.items.map((booking) => {
 							const canCancel = booking.status === 'pending_payment' || booking.status === 'confirmed';
+							const appointmentDate = dateFormatter.format(new Date(booking.startsAtUtc));
+							const duration = formatDuration(booking.startsAtUtc, booking.endsAtUtc);
 
 							return (
-								<article key={booking.id} className="rounded-xl border border-border bg-card p-4">
+								<article key={booking.id} className="rounded-xl border border-border bg-card p-5">
 									<div className="flex flex-wrap items-start justify-between gap-3">
 										<div>
-											<p className="text-sm text-muted-foreground">Booking #{booking.bookingNumber}</p>
-											<h2 className="mt-1 text-lg font-semibold">Service #{booking.serviceId}</h2>
+											<p className="text-sm font-medium text-primary">{booking.serviceName || 'Scheduled service'}</p>
+											<h2 className="mt-1 text-lg font-semibold">{appointmentDate}</h2>
+											<p className="text-sm text-muted-foreground">
+												with {booking.vendorName || 'your selected vendor'} • {duration}
+											</p>
 										</div>
 										<span
 											className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusChipMap[booking.status]}`}
@@ -161,18 +197,34 @@ const CustomerBookingsPage = () => {
 										</span>
 									</div>
 
-									<div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+									<div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
 										<p>
 											<span className="font-medium text-foreground">Starts:</span>{' '}
-											{new Date(booking.startsAtUtc).toLocaleString()}
+											{new Date(booking.startsAtUtc).toLocaleTimeString([], {
+												hour: 'numeric',
+												minute: '2-digit',
+											})}
 										</p>
 										<p>
-											<span className="font-medium text-foreground">Timezone:</span> {booking.localTimezone}
+											<span className="font-medium text-foreground">Ends:</span>{' '}
+											{new Date(booking.endsAtUtc).toLocaleTimeString([], {
+												hour: 'numeric',
+												minute: '2-digit',
+											})}
 										</p>
 										<p>
 											<span className="font-medium text-foreground">Price:</span>{' '}
 											{currencyFormatter.format(booking.pricingSnapshot.servicePriceAmount)}
 										</p>
+									</div>
+
+									<div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-sm">
+										<p className="text-muted-foreground">
+											{booking.vendorName ? `Booked with ${booking.vendorName}` : 'Vendor details available on profile'}
+										</p>
+										<Button asChild type="button" variant="ghost" className="px-0 text-primary hover:bg-transparent">
+											<Link to={`/vendor/${booking.vendorId}`}>View vendor profile</Link>
+										</Button>
 									</div>
 
 									{booking.customerNotes ? (

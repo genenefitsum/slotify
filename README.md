@@ -114,3 +114,26 @@ slotify/
 
 ---
 
+## 🧪 Local Seed Data
+
+To quickly test authentication roles and vendor discovery/detail flows with realistic data:
+
+```bash
+cd backend
+npm run seed:local
+```
+
+This command inserts or refreshes deterministic local fixtures for:
+- Users (admin, customer, vendor owners)
+- Vendors (active and non-active)
+- Services (for active vendors)
+- Reviews (for active vendors)
+
+Default local test credentials:
+- `admin@slotify.local` / `SlotifyPass123!`
+- `customer@slotify.local` / `SlotifyPass123!`
+- `owner.one@slotify.local` / `SlotifyPass123!`
+- `owner.two@slotify.local` / `SlotifyPass123!`
+
+---
+

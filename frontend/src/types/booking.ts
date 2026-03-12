@@ -28,8 +28,11 @@ export type Booking = {
 	bookingNumber: string;
 	customerUserId: string;
 	vendorId: string;
+	vendorName: string | null;
 	staffId: string | null;
 	serviceId: string;
+	serviceName: string | null;
+	serviceDurationMinutes: number | null;
 	startsAtUtc: string;
 	endsAtUtc: string;
 	localTimezone: string;

@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { HttpError } from '@/api/http';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LoginPage = () => {
@@ -74,79 +75,88 @@ const LoginPage = () => {
 	};
 
 	return (
-		<section className="container mx-auto max-w-md px-4 py-14">
-			<h1 className="text-3xl font-semibold">Log In</h1>
-			<p className="mt-3 text-muted-foreground">Sign in to continue booking and managing your account.</p>
+		<section className="relative isolate overflow-hidden border-b bg-gradient-hero">
+			<div className="pointer-events-none absolute -left-20 top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+			<div className="pointer-events-none absolute -right-20 bottom-10 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
 
-			<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-				<div>
-					<label htmlFor="email" className="mb-1 block text-sm font-medium">Email</label>
-					<input
-						id="email"
-						type="email"
-						required
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={email}
-						onChange={(event) => setEmail(event.target.value)}
-					/>
-				</div>
+			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
+				<div className="glass rounded-3xl border border-border/80 bg-card/90 p-6 shadow-card sm:p-8">
+					<h2 className="text-2xl font-heading font-semibold">Log In</h2>
+					<p className="mt-2 text-sm text-muted-foreground">Access your account and continue where you left off.</p>
 
-				<div>
-					<label htmlFor="password" className="mb-1 block text-sm font-medium">Password</label>
-					<input
-						id="password"
-						type="password"
-						required
-						minLength={8}
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={password}
-						onChange={(event) => setPassword(event.target.value)}
-					/>
-				</div>
+					<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+						<div>
+							<label htmlFor="email" className="mb-1.5 block text-sm font-medium">Email</label>
+							<Input
+								id="email"
+								type="email"
+								required
+								placeholder="you@example.com"
+								className="h-11 rounded-xl border-border/70 bg-background/80"
+								value={email}
+								onChange={(event) => setEmail(event.target.value)}
+							/>
+						</div>
 
-				{error ? <p className="text-sm text-destructive">{error}</p> : null}
+						<div>
+							<label htmlFor="password" className="mb-1.5 block text-sm font-medium">Password</label>
+							<Input
+								id="password"
+								type="password"
+								required
+								minLength={8}
+								placeholder="Enter your password"
+								className="h-11 rounded-xl border-border/70 bg-background/80"
+								value={password}
+								onChange={(event) => setPassword(event.target.value)}
+							/>
+						</div>
 
-				<Button type="submit" className="w-full" disabled={isSubmitting}>
-					{isSubmitting ? 'Signing in...' : 'Log In'}
-				</Button>
-			</form>
+						{error ? <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
 
-			<div className="my-5 border-t border-border pt-5">
-				<div className="text-center text-[11px] uppercase tracking-wide text-muted-foreground">
-					Or continue with
-				</div>
+						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
+							{isSubmitting ? 'Signing in...' : 'Log In'}
+						</Button>
+					</form>
 
-				{googleClientId ? (
-					<div className="mt-3 flex justify-center" aria-busy={isGoogleSubmitting}>
-						<GoogleLogin
-							onSuccess={(response) => {
-								void handleGoogleSuccess(response.credential);
-							}}
-							onError={() => {
-								setGoogleError('Google sign-in was cancelled or blocked. Please try again.');
-							}}
-							shape="pill"
-							size="large"
-							text="continue_with"
-							useOneTap={false}
-						/>
+					<div className="my-5 border-t border-border/70 pt-5">
+						<div className="text-center text-[11px] uppercase tracking-wide text-muted-foreground">
+							Or continue with
+						</div>
+
+						{googleClientId ? (
+							<div className="mt-3 flex justify-center" aria-busy={isGoogleSubmitting}>
+								<GoogleLogin
+									onSuccess={(response) => {
+										void handleGoogleSuccess(response.credential);
+									}}
+									onError={() => {
+										setGoogleError('Google sign-in was cancelled or blocked. Please try again.');
+									}}
+									shape="pill"
+									size="large"
+									text="continue_with"
+									useOneTap={false}
+								/>
+							</div>
+						) : (
+							<Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-xl" disabled>
+								<FcGoogle className="h-4 w-4" />
+								Google sign-in unavailable
+							</Button>
+						)}
+
+						{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
 					</div>
-				) : (
-					<Button type="button" variant="outline" className="mt-2 w-full" disabled>
-						<FcGoogle className="h-4 w-4" />
-						Google sign-in unavailable
-					</Button>
-				)}
 
-				{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
+					<p className="text-sm text-muted-foreground">
+						No account yet?{' '}
+						<Link to="/register" className="font-medium text-primary hover:underline">
+							Create one
+						</Link>
+					</p>
+				</div>
 			</div>
-
-			<p className="text-sm text-muted-foreground">
-				No account yet?{' '}
-				<Link to="/register" className="text-primary hover:underline">
-					Create one
-				</Link>
-			</p>
 		</section>
 	);
 };

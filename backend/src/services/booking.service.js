@@ -8,6 +8,7 @@ const { Vendor } = require('../models/Vendor');
 const { Staff } = require('../models/Staff');
 
 const ACTIVE_CONFLICT_STATUSES = ['pending_payment', 'confirmed', 'in_service'];
+const ADDIS_TIMEZONE = 'Africa/Addis_Ababa';
 const TRANSITION_RULES = {
   confirm: { from: ['pending_payment'], to: 'confirmed', eventType: 'booking_confirmed' },
   start: { from: ['confirmed'], to: 'in_service', eventType: 'booking_started' },
@@ -42,13 +43,93 @@ const createBookingNumber = () => {
   return `BK-${ts}-${rand}`;
 };
 
-const toBookingDto = (doc) => ({
+const addisDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: ADDIS_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  weekday: 'short',
+  hour12: false,
+});
+
+const WEEKDAY_MAP = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+const timeStringToMinutes = (value) => {
+  const [hours, minutes] = String(value).split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const getAddisDateParts = (date) => {
+  const parts = addisDateFormatter.formatToParts(date);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    localDate: `${byType.year}-${byType.month}-${byType.day}`,
+    dayOfWeek: WEEKDAY_MAP[byType.weekday],
+    minuteOfDay: Number(byType.hour) * 60 + Number(byType.minute),
+  };
+};
+
+const ensureVendorAvailable = (vendor, startsAtUtc, endsAtUtc) => {
+  const start = getAddisDateParts(startsAtUtc);
+  const end = getAddisDateParts(endsAtUtc);
+
+  if (start.localDate !== end.localDate) {
+    throw new ApiError('Appointments must start and end on the same Addis Ababa calendar day.', 400);
+  }
+
+  const workingHours = Array.isArray(vendor.workingHours) ? vendor.workingHours : [];
+  const blackouts = Array.isArray(vendor.blackoutSlots) ? vendor.blackoutSlots : [];
+
+  const workingDay = workingHours.find(
+    (item) => item.dayOfWeek === start.dayOfWeek && item.isEnabled
+  );
+
+  if (!workingDay) {
+    throw new ApiError('This vendor is not accepting bookings on the selected day.', 409);
+  }
+
+  const openMinute = timeStringToMinutes(workingDay.startTime);
+  const closeMinute = timeStringToMinutes(workingDay.endTime);
+
+  if (start.minuteOfDay < openMinute || end.minuteOfDay > closeMinute) {
+    throw new ApiError('Selected time is outside this vendor\'s working hours.', 409);
+  }
+
+  const hasBlackoutConflict = blackouts.some((item) => {
+    if (item.date !== start.localDate) {
+      return false;
+    }
+
+    const blackoutStart = timeStringToMinutes(item.startTime);
+    const blackoutEnd = timeStringToMinutes(item.endTime);
+    return start.minuteOfDay < blackoutEnd && end.minuteOfDay > blackoutStart;
+  });
+
+  if (hasBlackoutConflict) {
+    throw new ApiError('Selected time is unavailable because the vendor has blocked that period.', 409);
+  }
+};
+
+const toBookingDto = (doc, details = {}) => ({
   id: String(doc._id),
   bookingNumber: doc.bookingNumber,
   customerUserId: String(doc.customerUserId),
   vendorId: String(doc.vendorId),
+  vendorName: details.vendorName || null,
   staffId: doc.staffId ? String(doc.staffId) : null,
   serviceId: String(doc.serviceId),
+  serviceName: details.serviceName || null,
+  serviceDurationMinutes: details.serviceDurationMinutes ?? null,
   startsAtUtc: doc.startsAtUtc,
   endsAtUtc: doc.endsAtUtc,
   localTimezone: doc.localTimezone,
@@ -59,6 +140,36 @@ const toBookingDto = (doc) => ({
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 });
+
+const enrichBookings = async (docs) => {
+  if (!docs.length) {
+    return [];
+  }
+
+  const vendorIds = [...new Set(docs.map((doc) => String(doc.vendorId)))];
+  const serviceIds = [...new Set(docs.map((doc) => String(doc.serviceId)))];
+
+  const [vendors, services] = await Promise.all([
+    Vendor.find({ _id: { $in: vendorIds }, deletedAt: null }).select({ displayName: 1 }).lean(),
+    Service.find({ _id: { $in: serviceIds }, deletedAt: null })
+      .select({ name: 1, durationMinutes: 1 })
+      .lean(),
+  ]);
+
+  const vendorMap = new Map(vendors.map((vendor) => [String(vendor._id), vendor]));
+  const serviceMap = new Map(services.map((service) => [String(service._id), service]));
+
+  return docs.map((doc) => {
+    const vendor = vendorMap.get(String(doc.vendorId));
+    const service = serviceMap.get(String(doc.serviceId));
+
+    return toBookingDto(doc, {
+      vendorName: vendor?.displayName || null,
+      serviceName: service?.name || null,
+      serviceDurationMinutes: service?.durationMinutes ?? null,
+    });
+  });
+};
 
 const createEvent = async ({ bookingId, vendorId, actorUserId, eventType, metadata }) => {
   await BookingEvent.create({
@@ -150,7 +261,7 @@ const list = async (user, { status, page = 1, limit = 20 }) => {
   ]);
 
   return {
-    items: items.map(toBookingDto),
+    items: await enrichBookings(items),
     pagination: {
       page: normalizedPage,
       limit: normalizedLimit,
@@ -182,6 +293,16 @@ const create = async (user, payload) => {
     throw new ApiError('Service not found.', 404);
   }
 
+  const vendor = await Vendor.findOne({
+    _id: service.vendorId,
+    deletedAt: null,
+    status: 'active',
+  }).lean();
+
+  if (!vendor) {
+    throw new ApiError('Vendor not found.', 404);
+  }
+
   if (payload.staffId) {
     ensureObjectId(payload.staffId, 'staff id');
     const staff = await Staff.findOne({
@@ -197,6 +318,7 @@ const create = async (user, payload) => {
   }
 
   const endsAtUtc = new Date(startsAtUtc.getTime() + service.durationMinutes * 60 * 1000);
+  ensureVendorAvailable(vendor, startsAtUtc, endsAtUtc);
 
   const conflictFilter = {
     vendorId: service.vendorId,
@@ -231,7 +353,7 @@ const create = async (user, payload) => {
         serviceId: service._id,
         startsAtUtc,
         endsAtUtc,
-        localTimezone: payload.localTimezone || 'UTC',
+        localTimezone: ADDIS_TIMEZONE,
         pricingSnapshot: {
           currency: service.currency,
           servicePriceAmount: service.priceAmount,
@@ -265,7 +387,7 @@ const create = async (user, payload) => {
     },
   });
 
-  return toBookingDto(booking);
+  return (await enrichBookings([booking]))[0];
 };
 
 const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) => {
@@ -324,7 +446,7 @@ const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) 
     },
   });
 
-  return toBookingDto(booking);
+  return (await enrichBookings([booking]))[0];
 };
 
 module.exports = {

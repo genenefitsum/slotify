@@ -6,10 +6,6 @@ const validateCreateVendorPayload = (payload = {}) => {
     throw new ApiError('displayName is required.', 400);
   }
 
-  if (!payload.timezone) {
-    throw new ApiError('timezone is required.', 400);
-  }
-
   if (!payload.location?.countryCode || !payload.location?.city) {
     throw new ApiError('location.countryCode and location.city are required.', 400);
   }

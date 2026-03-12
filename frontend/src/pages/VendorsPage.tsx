@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { vendorsApi } from '@/api/vendors.api';
+import VendorCard from '@/components/main/VendorCard';
 import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
 import PageSkeleton from '@/components/ui/page-skeleton';
@@ -93,6 +94,7 @@ const VendorsPage = () => {
 							void refetch();
 						}}
 					/>
+
 				) : null}
 
 				{!isLoading && !isError && data && data.items.length === 0 ? (
@@ -106,26 +108,28 @@ const VendorsPage = () => {
 
 				{!isLoading && !isError && data && data.items.length > 0 ? (
 					<>
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						<div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
+							<p className="text-muted-foreground">
+								Showing <span className="font-semibold text-foreground">{data.items.length}</span> vendors
+								{city ? <span> in <span className="font-semibold text-foreground">{city}</span></span> : null}
+								{category ? <span> for <span className="font-semibold text-foreground">{category}</span></span> : null}
+							</p>
+							<p className="text-muted-foreground">Choose a profile to review services and availability.</p>
+						</div>
+
+						<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 							{data.items.map((vendor) => (
-								<article key={vendor.id} className="rounded-xl border border-border bg-card p-5">
-									<p className="text-xs font-semibold uppercase tracking-wide text-primary">
-										{vendor.categories[0] || 'General'}
-									</p>
-									<h2 className="mt-2 text-lg font-semibold">{vendor.displayName}</h2>
-									<p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-										{vendor.description || 'Professional services available for booking.'}
-									</p>
-									<div className="mt-4 flex items-center justify-between text-sm">
-										<span className="text-muted-foreground">{vendor.location.city}</span>
-										<span className="font-medium">
-											{vendor.averageRating.toFixed(1)} ({vendor.reviewCount})
-										</span>
-									</div>
-									<Button asChild variant="outline" className="mt-4 w-full">
-										<Link to={`/vendor/${vendor.id}`}>View Profile</Link>
-									</Button>
-								</article>
+								<VendorCard
+									key={vendor.id}
+									id={vendor.id}
+									name={vendor.displayName}
+									image={vendor.imageUrl || undefined}
+									category={vendor.categories[0] || 'General'}
+									rating={vendor.averageRating}
+									reviews={vendor.reviewCount}
+									price={vendor.startingPrice || undefined}
+									location={vendor.location.city}
+								/>
 							))}
 						</div>
 

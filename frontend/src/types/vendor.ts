@@ -17,10 +17,25 @@ export type VendorLocation = {
 	city: string;
 	addressLine1?: string;
 	addressLine2?: string;
+	description?: string;
 	coordinates: {
 		type: 'Point';
 		coordinates: number[];
 	};
+};
+
+export type WorkingHour = {
+	dayOfWeek: number;
+	isEnabled: boolean;
+	startTime: string;
+	endTime: string;
+};
+
+export type BlackoutSlot = {
+	date: string;
+	startTime: string;
+	endTime: string;
+	label: string;
 };
 
 export type Vendor = {
@@ -28,14 +43,23 @@ export type Vendor = {
 	displayName: string;
 	legalBusinessName: string | null;
 	description: string;
+	imageUrl: string | null;
 	categories: string[];
 	timezone: string;
 	location: VendorLocation;
+	workingHours: WorkingHour[];
+	blackoutSlots: BlackoutSlot[];
 	averageRating: number;
 	reviewCount: number;
+	startingPrice: number | null;
 	status: VendorStatus;
 	createdAt: string;
 	updatedAt: string;
+};
+
+export type VendorImagePayload = {
+	data: string;
+	contentType: string;
 };
 
 export type VendorListQuery = {
@@ -49,15 +73,18 @@ export type VendorListResponse = PaginatedResponse<Vendor>;
 
 export type CreateVendorPayload = {
 	displayName: string;
+	image?: VendorImagePayload | null;
 	legalBusinessName?: string;
 	description?: string;
 	categories?: string[];
-	timezone: string;
+	workingHours?: WorkingHour[];
+	blackoutSlots?: BlackoutSlot[];
 	location: {
 		countryCode: string;
 		city: string;
 		addressLine1?: string;
 		addressLine2?: string;
+		description?: string;
 		coordinates?: number[];
 	};
 };

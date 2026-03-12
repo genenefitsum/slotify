@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BriefcaseBusiness, CalendarClock, CircleDollarSign, MapPin, Upload } from 'lucide-react';
 
 import { bookingsApi } from '@/api/bookings.api';
 import { HttpError } from '@/api/http';
@@ -15,10 +16,69 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import type { Booking, BookingTransitionAction } from '@/types/booking';
 import type { CreateServicePayload, Service, UpdateServicePayload } from '@/types/service';
-import type { CreateVendorPayload, UpdateVendorPayload } from '@/types/vendor';
+import type { BlackoutSlot, CreateVendorPayload, UpdateVendorPayload, Vendor, WorkingHour } from '@/types/vendor';
 
 const BOOKINGS_PAGE_SIZE = 8;
 const SERVICES_PAGE_SIZE = 10;
+const ADDIS_TIMEZONE = 'Africa/Addis_Ababa';
+const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const createDefaultWorkingHours = (): WorkingHour[] =>
+	DAY_LABELS.map((_, index) => ({
+		dayOfWeek: index,
+		isEnabled: index >= 1 && index <= 5,
+		startTime: '09:00',
+		endTime: '18:00',
+	}));
+
+const createEmptyBlackout = (): BlackoutSlot => ({
+	date: '',
+	startTime: '09:00',
+	endTime: '10:00',
+	label: '',
+});
+
+const createVendorForm = (vendor?: Vendor): CreateVendorPayload => ({
+	displayName: vendor?.displayName || '',
+	image: undefined,
+	legalBusinessName: vendor?.legalBusinessName || '',
+	description: vendor?.description || '',
+	categories: vendor?.categories || [],
+	workingHours: vendor?.workingHours?.length ? vendor.workingHours : createDefaultWorkingHours(),
+	blackoutSlots: vendor?.blackoutSlots || [],
+	location: {
+		countryCode: vendor?.location.countryCode || 'ET',
+		city: vendor?.location.city || '',
+		addressLine1: vendor?.location.addressLine1 || '',
+		addressLine2: vendor?.location.addressLine2 || '',
+		description: vendor?.location.description || '',
+		coordinates: vendor?.location.coordinates.coordinates || [0, 0],
+	},
+});
+
+const parseGoogleMapsCoordinates = (value: string) => {
+	const text = value.trim();
+	if (!text) {
+		return null;
+	}
+
+	const atMatch = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+	if (atMatch) {
+		return [Number(atMatch[1]), Number(atMatch[2])] as [number, number];
+	}
+
+	const queryMatch = text.match(/(?:q=|query=)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+	if (queryMatch) {
+		return [Number(queryMatch[1]), Number(queryMatch[2])] as [number, number];
+	}
+
+	const plainMatch = text.match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+	if (plainMatch) {
+		return [Number(plainMatch[1]), Number(plainMatch[2])] as [number, number];
+	}
+
+	return null;
+};
 
 const actionLabelMap: Record<BookingTransitionAction, string> = {
 	confirm: 'Confirm',
@@ -26,6 +86,15 @@ const actionLabelMap: Record<BookingTransitionAction, string> = {
 	complete: 'Complete',
 	cancel: 'Cancel',
 	'no-show': 'No-show',
+};
+
+const bookingStatusLabelMap: Record<Booking['status'], string> = {
+	pending_payment: 'Pending payment',
+	confirmed: 'Confirmed',
+	in_service: 'In service',
+	completed: 'Completed',
+	cancelled: 'Cancelled',
+	no_show: 'No-show',
 };
 
 const getAllowedActions = (booking: Booking): BookingTransitionAction[] => {
@@ -47,21 +116,9 @@ const VendorDashboardPage = () => {
 	const [servicePage, setServicePage] = useState(1);
 	const [bookingPage, setBookingPage] = useState(1);
 
-	const [vendorForm, setVendorForm] = useState<CreateVendorPayload>({
-		displayName: '',
-		legalBusinessName: '',
-		description: '',
-		categories: [],
-		timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-		location: {
-			countryCode: 'ET',
-			city: '',
-			addressLine1: '',
-			addressLine2: '',
-			coordinates: [0, 0],
-		},
-	});
-	const [categoryInput, setCategoryInput] = useState('');
+	const [vendorDraft, setVendorDraft] = useState<CreateVendorPayload | null>(null);
+	const [categoryInput, setCategoryInput] = useState<string | null>(null);
+	const [googleMapsLink, setGoogleMapsLink] = useState('');
 	const [serviceDraft, setServiceDraft] = useState<CreateServicePayload>({
 		name: '',
 		description: '',
@@ -69,7 +126,7 @@ const VendorDashboardPage = () => {
 		bufferBeforeMinutes: 0,
 		bufferAfterMinutes: 0,
 		priceAmount: 0,
-		currency: 'USD',
+		currency: 'ETB',
 		depositType: 'none',
 		depositValue: 0,
 	});
@@ -81,26 +138,106 @@ const VendorDashboardPage = () => {
 		retry: false,
 	});
 
-	useEffect(() => {
-		if (!vendorQuery.data) {
+	const vendorForm = vendorDraft ?? createVendorForm(vendorQuery.data);
+	const imagePreview = useMemo(() => {
+		if (vendorDraft?.image === null) {
+			return '';
+		}
+
+		if (vendorDraft?.image?.data) {
+			return vendorDraft.image.data;
+		}
+
+		return vendorQuery.data?.imageUrl || '';
+	}, [vendorDraft, vendorQuery.data?.imageUrl]);
+	const updateVendorForm = (updater: (current: CreateVendorPayload) => CreateVendorPayload) => {
+		setVendorDraft((prev) => updater(prev ?? createVendorForm(vendorQuery.data)));
+	};
+
+	const handleMapLinkApply = () => {
+		const parsed = parseGoogleMapsCoordinates(googleMapsLink);
+		if (!parsed) {
+			push('Paste a Google Maps link or coordinates like 8.9950, 38.7924.', 'error');
 			return;
 		}
 
-		setVendorForm({
-			displayName: vendorQuery.data.displayName,
-			legalBusinessName: vendorQuery.data.legalBusinessName || '',
-			description: vendorQuery.data.description || '',
-			categories: vendorQuery.data.categories || [],
-			timezone: vendorQuery.data.timezone,
+		updateVendorForm((current) => ({
+			...current,
 			location: {
-				countryCode: vendorQuery.data.location.countryCode,
-				city: vendorQuery.data.location.city,
-				addressLine1: vendorQuery.data.location.addressLine1 || '',
-				addressLine2: vendorQuery.data.location.addressLine2 || '',
-				coordinates: vendorQuery.data.location.coordinates.coordinates,
+				...current.location,
+				coordinates: [parsed[1], parsed[0]],
 			},
-		});
-	}, [vendorQuery.data]);
+		}));
+		push('Coordinates updated from Google Maps.', 'success');
+	};
+
+	const updateWorkingHour = (dayOfWeek: number, patch: Partial<WorkingHour>) => {
+		updateVendorForm((current) => ({
+			...current,
+			workingHours: (current.workingHours || createDefaultWorkingHours()).map((item) =>
+				item.dayOfWeek === dayOfWeek ? { ...item, ...patch } : item
+			),
+		}));
+	};
+
+	const updateBlackoutSlot = (index: number, patch: Partial<BlackoutSlot>) => {
+		updateVendorForm((current) => ({
+			...current,
+			blackoutSlots: (current.blackoutSlots || []).map((item, itemIndex) =>
+				itemIndex === index ? { ...item, ...patch } : item
+			),
+		}));
+	};
+
+	const addBlackoutSlot = () => {
+		updateVendorForm((current) => ({
+			...current,
+			blackoutSlots: [...(current.blackoutSlots || []), createEmptyBlackout()],
+		}));
+	};
+
+	const removeBlackoutSlot = (index: number) => {
+		updateVendorForm((current) => ({
+			...current,
+			blackoutSlots: (current.blackoutSlots || []).filter((_, itemIndex) => itemIndex !== index),
+		}));
+	};
+
+	const handleVendorImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (!file) {
+			return;
+		}
+
+		if (!file.type.startsWith('image/')) {
+			push('Select a valid image file.', 'error');
+			return;
+		}
+
+		if (file.size > 2 * 1024 * 1024) {
+			push('Vendor image must be 2MB or less.', 'error');
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = () => {
+			const result = typeof reader.result === 'string' ? reader.result : '';
+			if (!result) {
+				push('Unable to read the selected image.', 'error');
+				return;
+			}
+
+			updateVendorForm((current) => ({
+				...current,
+				image: {
+					data: result,
+					contentType: file.type,
+				},
+			}));
+		};
+		reader.readAsDataURL(file);
+		event.target.value = '';
+	};
 
 	const servicesQuery = useQuery({
 		queryKey: ['services', 'vendor-dashboard', { page: servicePage, vendorId: vendorQuery.data?.id }],
@@ -123,6 +260,7 @@ const VendorDashboardPage = () => {
 		mutationFn: () => {
 			const payload = {
 				...vendorForm,
+				image: vendorForm.image,
 				legalBusinessName: vendorForm.legalBusinessName || undefined,
 				description: vendorForm.description || undefined,
 				categories: vendorForm.categories,
@@ -167,7 +305,7 @@ const VendorDashboardPage = () => {
 				bufferBeforeMinutes: 0,
 				bufferAfterMinutes: 0,
 				priceAmount: 0,
-				currency: 'USD',
+					currency: 'ETB',
 				depositType: 'none',
 				depositValue: 0,
 			});
@@ -221,11 +359,42 @@ const VendorDashboardPage = () => {
 		() =>
 			new Intl.NumberFormat(undefined, {
 				style: 'currency',
-				currency: serviceDraft.currency || 'USD',
+				currency: 'ETB',
 				maximumFractionDigits: 2,
 			}),
-		[serviceDraft.currency]
+		[]
 	);
+
+	const mapEmbedUrl = useMemo(() => {
+		const [longitude, latitude] = vendorForm.location.coordinates || [0, 0];
+		if (!latitude || !longitude) {
+			return '';
+		}
+
+		return `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+	}, [vendorForm.location.coordinates]);
+
+	const googleMapsOpenUrl = useMemo(() => {
+		const [longitude, latitude] = vendorForm.location.coordinates || [0, 0];
+		if (latitude && longitude) {
+			return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+		}
+
+		return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(vendorForm.location.city || 'Addis Ababa')}`;
+	}, [vendorForm.location.city, vendorForm.location.coordinates]);
+
+	const serviceItems = servicesQuery.data?.items || [];
+	const bookingItems = bookingsQuery.data?.items || [];
+	const nextActionableBookings = bookingItems.filter(
+		(booking) => booking.status === 'pending_payment' || booking.status === 'confirmed' || booking.status === 'in_service'
+	).length;
+	const averageServicePrice =
+		serviceItems.length > 0
+			? serviceItems.reduce((sum, service) => sum + service.priceAmount, 0) / serviceItems.length
+			: 0;
+	const nextBookingTime = bookingItems[0]?.startsAtUtc
+		? new Date(bookingItems[0].startsAtUtc).toLocaleString()
+		: null;
 
 	const syncServiceDraftFromItem = (service: Service) => {
 		setServiceEditingId(service.id);
@@ -236,7 +405,7 @@ const VendorDashboardPage = () => {
 			bufferBeforeMinutes: service.bufferBeforeMinutes,
 			bufferAfterMinutes: service.bufferAfterMinutes,
 			priceAmount: service.priceAmount,
-			currency: service.currency,
+			currency: 'ETB',
 			depositType: service.depositType,
 			depositValue: service.depositValue,
 		});
@@ -248,6 +417,57 @@ const VendorDashboardPage = () => {
 				<h1 className="text-3xl font-semibold">Vendor Dashboard</h1>
 				<p className="mt-2 text-muted-foreground">Manage your profile, services, and booking operations from one place.</p>
 			</header>
+
+			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+				<div className="rounded-2xl border border-border bg-card p-5">
+					<div className="flex items-center gap-3">
+						<div className="rounded-2xl bg-emerald-100 p-2 text-emerald-700">
+							<BriefcaseBusiness className="h-4 w-4" />
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">Published services</p>
+							<p className="text-xl font-semibold">{serviceItems.length}</p>
+						</div>
+					</div>
+				</div>
+				<div className="rounded-2xl border border-border bg-card p-5">
+					<div className="flex items-center gap-3">
+						<div className="rounded-2xl bg-sky-100 p-2 text-sky-700">
+							<CalendarClock className="h-4 w-4" />
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">Needs action</p>
+							<p className="text-xl font-semibold">{nextActionableBookings}</p>
+						</div>
+					</div>
+				</div>
+				<div className="rounded-2xl border border-border bg-card p-5">
+					<div className="flex items-center gap-3">
+						<div className="rounded-2xl bg-amber-100 p-2 text-amber-700">
+							<CircleDollarSign className="h-4 w-4" />
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">Average service price</p>
+							<p className="text-xl font-semibold">{currencyFormatter.format(averageServicePrice || 0)}</p>
+							<p className="text-xs text-muted-foreground">Displayed in Ethiopian Birr</p>
+						</div>
+					</div>
+				</div>
+				<div className="rounded-2xl border border-border bg-card p-5">
+					<div className="flex items-center gap-3">
+						<div className="rounded-2xl bg-violet-100 p-2 text-violet-700">
+							<MapPin className="h-4 w-4" />
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">Profile status</p>
+							<p className="text-xl font-semibold">
+								{vendorQuery.data ? vendorQuery.data.status.replace('_', ' ') : 'Set up profile'}
+							</p>
+							<p className="text-xs text-muted-foreground">{nextBookingTime ? `Next booking ${nextBookingTime}` : 'No upcoming bookings yet'}</p>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			{vendorQuery.isLoading ? <PageSkeleton rows={2} className="grid-cols-1" /> : null}
 
@@ -262,7 +482,7 @@ const VendorDashboardPage = () => {
 			) : null}
 
 			{vendorQuery.isSuccess || isVendorMissing ? (
-				<article className="rounded-xl border border-border bg-card p-6">
+				<article className="rounded-[1.75rem] border border-border bg-card p-6">
 					<h2 className="text-xl font-semibold">
 						{isVendorMissing ? 'Create Vendor Profile' : 'Vendor Profile'}
 					</h2>
@@ -282,7 +502,7 @@ const VendorDashboardPage = () => {
 							<Input
 								id="displayName"
 								value={vendorForm.displayName}
-								onChange={(event) => setVendorForm((prev) => ({ ...prev, displayName: event.target.value }))}
+								onChange={(event) => updateVendorForm((current) => ({ ...current, displayName: event.target.value }))}
 								required
 							/>
 						</div>
@@ -291,18 +511,7 @@ const VendorDashboardPage = () => {
 							<Input
 								id="legalBusinessName"
 								value={vendorForm.legalBusinessName || ''}
-								onChange={(event) =>
-									setVendorForm((prev) => ({ ...prev, legalBusinessName: event.target.value }))
-								}
-							/>
-						</div>
-						<div>
-							<label htmlFor="timezone" className="mb-1 block text-sm font-medium">Timezone</label>
-							<Input
-								id="timezone"
-								value={vendorForm.timezone}
-								onChange={(event) => setVendorForm((prev) => ({ ...prev, timezone: event.target.value }))}
-								required
+								onChange={(event) => updateVendorForm((current) => ({ ...current, legalBusinessName: event.target.value }))}
 							/>
 						</div>
 						<div>
@@ -310,9 +519,10 @@ const VendorDashboardPage = () => {
 							<Input
 								id="city"
 								value={vendorForm.location.city}
-								onChange={(event) =>
-									setVendorForm((prev) => ({ ...prev, location: { ...prev.location, city: event.target.value } }))
-								}
+								onChange={(event) => updateVendorForm((current) => ({
+									...current,
+									location: { ...current.location, city: event.target.value },
+								}))}
 								required
 							/>
 						</div>
@@ -321,26 +531,35 @@ const VendorDashboardPage = () => {
 							<Input
 								id="countryCode"
 								value={vendorForm.location.countryCode}
-								onChange={(event) =>
-									setVendorForm((prev) => ({ ...prev, location: { ...prev.location, countryCode: event.target.value } }))
-								}
+								onChange={(event) => updateVendorForm((current) => ({
+									...current,
+									location: { ...current.location, countryCode: event.target.value },
+								}))}
 								required
 							/>
+						</div>
+						<div>
+							<label className="mb-1 block text-sm font-medium">Timezone</label>
+							<div className="h-10 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+								{ADDIS_TIMEZONE}
+							</div>
 						</div>
 						<div>
 							<label htmlFor="categories" className="mb-1 block text-sm font-medium">Categories</label>
 							<Input
 								id="categories"
-								value={categoryInput}
+								value={categoryInput ?? (vendorForm.categories?.join(', ') || '')}
 								placeholder="Comma separated e.g. Beauty, Nails"
 								onChange={(event) => setCategoryInput(event.target.value)}
 								onBlur={() => {
-									const categories = categoryInput
+									const categoriesSource = categoryInput ?? vendorForm.categories?.join(', ') ?? '';
+									const categories = categoriesSource
 										.split(',')
 										.map((item) => item.trim())
 										.filter(Boolean);
 
-									setVendorForm((prev) => ({ ...prev, categories }));
+									updateVendorForm((current) => ({ ...current, categories }));
+									setCategoryInput(categories.join(', '));
 								}}
 							/>
 							{(vendorForm.categories?.length ?? 0) > 0 ? (
@@ -348,11 +567,175 @@ const VendorDashboardPage = () => {
 							) : null}
 						</div>
 						<div className="md:col-span-2">
+							<label htmlFor="vendorImage" className="mb-1 block text-sm font-medium">Profile Image</label>
+							<div className="flex flex-col gap-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4 md:flex-row md:items-center">
+								<div className="h-28 w-full overflow-hidden rounded-2xl bg-background md:w-44">
+									{imagePreview ? (
+										<img src={imagePreview} alt="Vendor preview" className="h-full w-full object-cover" />
+									) : (
+										<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+											No image uploaded
+										</div>
+									)}
+								</div>
+								<div className="flex-1 space-y-3">
+										<input id="vendorImage" type="file" accept="image/*" onChange={handleVendorImageChange} className="hidden" />
+										<label
+											htmlFor="vendorImage"
+											className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+										>
+											<Upload className="h-4 w-4" />
+											Choose image
+										</label>
+									<p className="text-xs text-muted-foreground">Upload a square or landscape image up to 2MB.</p>
+									{imagePreview ? (
+										<Button
+											type="button"
+											variant="outline"
+											onClick={() => {
+												updateVendorForm((current) => ({ ...current, image: null }));
+											}}
+										>
+											Remove image
+										</Button>
+									) : null}
+								</div>
+							</div>
+						</div>
+						<div className="md:col-span-2 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+							<div className="space-y-3 rounded-2xl border border-border bg-muted/20 p-4">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<h3 className="font-semibold">Exact location</h3>
+										<p className="text-sm text-muted-foreground">Paste a Google Maps link or enter coordinates directly.</p>
+									</div>
+									<Button asChild type="button" variant="outline">
+										<a href={googleMapsOpenUrl} target="_blank" rel="noreferrer">Open Google Maps</a>
+									</Button>
+								</div>
+								<div className="grid gap-3 md:grid-cols-[1fr_auto]">
+									<Input
+										value={googleMapsLink}
+										onChange={(event) => setGoogleMapsLink(event.target.value)}
+										placeholder="Paste Google Maps link or coordinates"
+									/>
+									<Button type="button" variant="outline" onClick={handleMapLinkApply}>Use link</Button>
+								</div>
+								<div className="grid gap-3 md:grid-cols-2">
+									<div>
+										<label htmlFor="latitude" className="mb-1 block text-sm font-medium">Latitude</label>
+										<Input
+											id="latitude"
+											type="number"
+											step="0.000001"
+											value={vendorForm.location.coordinates?.[1] || ''}
+											onChange={(event) => updateVendorForm((current) => ({
+												...current,
+												location: {
+													...current.location,
+													coordinates: [current.location.coordinates?.[0] || 0, Number(event.target.value)],
+												},
+											}))}
+										/>
+									</div>
+									<div>
+										<label htmlFor="longitude" className="mb-1 block text-sm font-medium">Longitude</label>
+										<Input
+											id="longitude"
+											type="number"
+											step="0.000001"
+											value={vendorForm.location.coordinates?.[0] || ''}
+											onChange={(event) => updateVendorForm((current) => ({
+												...current,
+												location: {
+													...current.location,
+													coordinates: [Number(event.target.value), current.location.coordinates?.[1] || 0],
+												},
+											}))}
+										/>
+									</div>
+								</div>
+								<div>
+									<label htmlFor="locationDescription" className="mb-1 block text-sm font-medium">Location description</label>
+									<Textarea
+										id="locationDescription"
+										value={vendorForm.location.description || ''}
+										placeholder="Landmarks, floor, nearby buildings, or parking instructions"
+										onChange={(event) => updateVendorForm((current) => ({
+											...current,
+											location: { ...current.location, description: event.target.value },
+										}))}
+									/>
+								</div>
+							</div>
+							<div className="overflow-hidden rounded-2xl border border-border bg-background">
+								{mapEmbedUrl ? (
+									<iframe title="Vendor location map" src={mapEmbedUrl} className="h-full min-h-72 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+								) : (
+									<div className="flex h-full min-h-72 items-center justify-center p-6 text-sm text-muted-foreground">
+										Add coordinates or paste a Google Maps link to preview the location.
+									</div>
+								)}
+							</div>
+						</div>
+						<div className="md:col-span-2 rounded-2xl border border-border bg-muted/20 p-4">
+							<div className="mb-4">
+								<h3 className="font-semibold">Working hours</h3>
+								<p className="text-sm text-muted-foreground">All times are saved in {ADDIS_TIMEZONE}.</p>
+							</div>
+							<div className="space-y-3">
+								{(vendorForm.workingHours || createDefaultWorkingHours()).map((hour) => (
+									<div key={hour.dayOfWeek} className="grid gap-3 rounded-xl border border-border bg-background p-3 md:grid-cols-[1.1fr_auto_1fr_1fr] md:items-center">
+										<div>
+											<p className="font-medium">{DAY_LABELS[hour.dayOfWeek]}</p>
+											<p className="text-xs text-muted-foreground">Addis Ababa time</p>
+										</div>
+										<label className="flex items-center gap-2 text-sm">
+											<input
+												type="checkbox"
+												checked={hour.isEnabled}
+												onChange={(event) => updateWorkingHour(hour.dayOfWeek, { isEnabled: event.target.checked })}
+											/>
+											Open
+										</label>
+										<Input type="time" value={hour.startTime} disabled={!hour.isEnabled} onChange={(event) => updateWorkingHour(hour.dayOfWeek, { startTime: event.target.value })} />
+										<Input type="time" value={hour.endTime} disabled={!hour.isEnabled} onChange={(event) => updateWorkingHour(hour.dayOfWeek, { endTime: event.target.value })} />
+									</div>
+								))}
+							</div>
+						</div>
+						<div className="md:col-span-2 rounded-2xl border border-border bg-muted/20 p-4">
+							<div className="mb-4 flex items-center justify-between gap-3">
+								<div>
+									<h3 className="font-semibold">Blocked times</h3>
+									<p className="text-sm text-muted-foreground">Block dates and hours when customers should not be able to book.</p>
+								</div>
+								<Button type="button" variant="outline" onClick={addBlackoutSlot}>Add blocked time</Button>
+							</div>
+							<div className="space-y-3">
+								{(vendorForm.blackoutSlots || []).length === 0 ? (
+									<div className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">
+										No blocked times added yet.
+									</div>
+								) : (
+									(vendorForm.blackoutSlots || []).map((slot, index) => (
+										<div key={`${slot.date}-${index}`} className="grid gap-3 rounded-xl border border-border bg-background p-3 lg:grid-cols-[1fr_0.9fr_0.9fr_1.2fr_auto] lg:items-center">
+											<Input type="date" value={slot.date} onChange={(event) => updateBlackoutSlot(index, { date: event.target.value })} />
+											<Input type="time" value={slot.startTime} onChange={(event) => updateBlackoutSlot(index, { startTime: event.target.value })} />
+											<Input type="time" value={slot.endTime} onChange={(event) => updateBlackoutSlot(index, { endTime: event.target.value })} />
+											<Input value={slot.label} placeholder="Reason or note" onChange={(event) => updateBlackoutSlot(index, { label: event.target.value })} />
+											<Button type="button" variant="outline" onClick={() => removeBlackoutSlot(index)}>Remove</Button>
+										</div>
+									))
+								)}
+							</div>
+						</div>
+						<div className="md:col-span-2">
 							<label htmlFor="description" className="mb-1 block text-sm font-medium">Description</label>
 							<Textarea
 								id="description"
 								value={vendorForm.description || ''}
-								onChange={(event) => setVendorForm((prev) => ({ ...prev, description: event.target.value }))}
+								onChange={(event) => updateVendorForm((current) => ({ ...current, description: event.target.value }))}
 							/>
 						</div>
 						<div className="md:col-span-2 flex justify-end">
@@ -365,7 +748,7 @@ const VendorDashboardPage = () => {
 			) : null}
 
 			{vendorQuery.data ? (
-				<article className="rounded-xl border border-border bg-card p-6">
+				<article className="rounded-[1.75rem] border border-border bg-card p-6">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<h2 className="text-xl font-semibold">Services</h2>
@@ -418,13 +801,8 @@ const VendorDashboardPage = () => {
 							/>
 						</div>
 						<div>
-							<label htmlFor="serviceCurrency" className="mb-1 block text-sm font-medium">Currency</label>
-							<Input
-								id="serviceCurrency"
-								value={serviceDraft.currency}
-								onChange={(event) => setServiceDraft((prev) => ({ ...prev, currency: event.target.value.toUpperCase() }))}
-								required
-							/>
+							<label className="mb-1 block text-sm font-medium">Currency</label>
+							<div className="h-10 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">ETB</div>
 						</div>
 						<div className="md:col-span-2">
 							<label htmlFor="serviceDescription" className="mb-1 block text-sm font-medium">Description</label>
@@ -454,7 +832,7 @@ const VendorDashboardPage = () => {
 												bufferBeforeMinutes: 0,
 												bufferAfterMinutes: 0,
 												priceAmount: 0,
-												currency: 'USD',
+												currency: 'ETB',
 												depositType: 'none',
 												depositValue: 0,
 											});
@@ -485,13 +863,17 @@ const VendorDashboardPage = () => {
 							<>
 								<div className="space-y-3">
 									{servicesQuery.data.items.map((service) => (
-										<article key={service.id} className="rounded-lg border border-border bg-background p-4">
+										<article key={service.id} className="rounded-2xl border border-border bg-background p-5">
 											<div className="flex flex-wrap items-start justify-between gap-3">
 												<div>
-													<h3 className="font-semibold">{service.name}</h3>
+													<p className="text-sm font-medium text-primary">Public listing</p>
+													<h3 className="mt-1 font-semibold">{service.name}</h3>
 													<p className="text-sm text-muted-foreground">{service.description || 'No description.'}</p>
 												</div>
-												<p className="font-semibold">{currencyFormatter.format(service.priceAmount)}</p>
+												<div className="text-right">
+													<p className="font-semibold">{currencyFormatter.format(service.priceAmount)}</p>
+													<p className="text-sm text-muted-foreground">{service.durationMinutes} min</p>
+												</div>
 											</div>
 											<div className="mt-3 flex justify-end gap-2">
 												<Button type="button" variant="outline" onClick={() => syncServiceDraftFromItem(service)}>
@@ -525,7 +907,7 @@ const VendorDashboardPage = () => {
 				</article>
 			) : null}
 
-			<article className="rounded-xl border border-border bg-card p-6">
+			<article className="rounded-[1.75rem] border border-border bg-card p-6">
 				<h2 className="text-xl font-semibold">Booking Operations</h2>
 				<p className="mt-1 text-sm text-muted-foreground">Update booking statuses as customers progress through appointments.</p>
 
@@ -545,16 +927,25 @@ const VendorDashboardPage = () => {
 						<>
 							<div className="space-y-3">
 								{bookingsQuery.data.items.map((booking) => (
-									<article key={booking.id} className="rounded-lg border border-border bg-background p-4">
+									<article key={booking.id} className="rounded-2xl border border-border bg-background p-5">
 										<div className="flex flex-wrap items-center justify-between gap-3">
 											<div>
-												<p className="text-sm text-muted-foreground">#{booking.bookingNumber}</p>
+												<p className="text-sm font-medium text-primary">{booking.serviceName || 'Booked service'}</p>
 												<p className="font-semibold">{new Date(booking.startsAtUtc).toLocaleString()}</p>
+												<p className="text-sm text-muted-foreground">
+													{booking.vendorName || 'Your vendor profile'} • {currencyFormatter.format(booking.pricingSnapshot.servicePriceAmount)}
+												</p>
 											</div>
 											<p className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wide">
-												{booking.status.replace('_', ' ')}
+												{bookingStatusLabelMap[booking.status]}
 											</p>
 										</div>
+
+										{booking.customerNotes ? (
+											<p className="mt-3 rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
+												{booking.customerNotes}
+											</p>
+										) : null}
 
 										<div className="mt-3 flex flex-wrap gap-2">
 											{getAllowedActions(booking).map((action) => (

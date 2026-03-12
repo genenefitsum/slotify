@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { HttpError } from '@/api/http';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 
 const RegisterPage = () => {
@@ -85,124 +86,135 @@ const RegisterPage = () => {
 	};
 
 	return (
-		<section className="container mx-auto max-w-md px-2 py-10">
-			
-			<h1 className="text-3xl font-montserrat font-semibold">Create Account</h1>
-			<p className="mt-3 text-muted-foreground">Join Slotify to book services or manage your vendor profile.</p>
+		<section className="relative isolate overflow-hidden border-b bg-gradient-hero">
+			<div className="pointer-events-none absolute left-0 top-12 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
+			<div className="pointer-events-none absolute -right-16 bottom-12 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
 
-			<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-				<div>
-					<label htmlFor="firstName" className="mb-1 block text-sm font-medium">First Name</label>
-					<input
-						id="firstName"
-						required
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={firstName}
-						onChange={(event) => setFirstName(event.target.value)}
-					/>
-				</div>
+			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
+				<div className="glass rounded-3xl border border-border/80 bg-card/90 p-6 shadow-card sm:p-8">
+					<h2 className="text-2xl font-heading font-semibold">Create Account</h2>
+					<p className="mt-2 text-sm text-muted-foreground">Set up your profile and start using Slotify today.</p>
 
-				<div>
-					<label htmlFor="lastName" className="mb-1 block text-sm font-medium">Last Name</label>
-					<input
-						id="lastName"
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={lastName}
-						onChange={(event) => setLastName(event.target.value)}
-					/>
-				</div>
+					<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<label htmlFor="firstName" className="mb-1.5 block text-sm font-medium">First Name</label>
+								<Input
+									id="firstName"
+									required
+									placeholder="Abel"
+									className="h-11 rounded-xl border-border/70 bg-background/80"
+									value={firstName}
+									onChange={(event) => setFirstName(event.target.value)}
+								/>
+							</div>
+							<div>
+								<label htmlFor="lastName" className="mb-1.5 block text-sm font-medium">Last Name</label>
+								<Input
+									id="lastName"
+									placeholder="Tadesse"
+									className="h-11 rounded-xl border-border/70 bg-background/80"
+									value={lastName}
+									onChange={(event) => setLastName(event.target.value)}
+								/>
+							</div>
+						</div>
 
-				<div>
-					<label htmlFor="email" className="mb-1 block text-sm font-medium">Email</label>
-					<input
-						id="email"
-						type="email"
-						required
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={email}
-						onChange={(event) => setEmail(event.target.value)}
-					/>
-				</div>
+						<div>
+							<label htmlFor="email" className="mb-1.5 block text-sm font-medium">Email</label>
+							<Input
+								id="email"
+								type="email"
+								required
+								placeholder="you@example.com"
+								className="h-11 rounded-xl border-border/70 bg-background/80"
+								value={email}
+								onChange={(event) => setEmail(event.target.value)}
+							/>
+						</div>
 
-				<div>
-					<label htmlFor="phone" className="mb-1 block text-sm font-medium">Phone (optional)</label>
-					<input
-						id="phone"
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={phone}
-						onChange={(event) => setPhone(event.target.value)}
-					/>
-				</div>
+						<div>
+							<label htmlFor="phone" className="mb-1.5 block text-sm font-medium">Phone (optional)</label>
+							<Input
+								id="phone"
+								placeholder="+251..."
+								className="h-11 rounded-xl border-border/70 bg-background/80"
+								value={phone}
+								onChange={(event) => setPhone(event.target.value)}
+							/>
+						</div>
 
-				<div>
-					<label htmlFor="password" className="mb-1 block text-sm font-medium">Password</label>
-					<input
-						id="password"
-						type="password"
-						required
-						minLength={8}
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={password}
-						onChange={(event) => setPassword(event.target.value)}
-					/>
-				</div>
+						<div>
+							<label htmlFor="password" className="mb-1.5 block text-sm font-medium">Password</label>
+							<Input
+								id="password"
+								type="password"
+								required
+								minLength={8}
+								placeholder="Minimum 8 characters"
+								className="h-11 rounded-xl border-border/70 bg-background/80"
+								value={password}
+								onChange={(event) => setPassword(event.target.value)}
+							/>
+						</div>
 
-				<div>
-					<label htmlFor="role" className="mb-1 block text-sm font-medium">Account Type</label>
-					<select
-						id="role"
-						className="w-full rounded-md border border-border bg-background px-3 py-2"
-						value={role}
-						onChange={(event) => setRole(event.target.value as 'customer' | 'vendor_owner')}
-					>
-						<option value="customer">Customer</option>
-						<option value="vendor_owner">Vendor Owner</option>
-					</select>
-				</div>
+						<div>
+							<label htmlFor="role" className="mb-1.5 block text-sm font-medium">Account Type</label>
+							<select
+								id="role"
+								className="h-11 w-full rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+								value={role}
+								onChange={(event) => setRole(event.target.value as 'customer' | 'vendor_owner')}
+							>
+								<option value="customer">Customer</option>
+								<option value="vendor_owner">Vendor Owner</option>
+							</select>
+						</div>
 
-				{error ? <p className="text-sm text-destructive">{error}</p> : null}
+						{error ? <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
 
-				<Button type="submit" className="w-full" disabled={isSubmitting}>
-					{isSubmitting ? 'Creating account...' : 'Create Account'}
-				</Button>
-			</form>
+						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
+							{isSubmitting ? 'Creating account...' : 'Create Account'}
+						</Button>
+					</form>
 
-			<div className="my-5 border-t border-border pt-5">
-				<div className="text-center text-[11px] uppercase tracking-wide text-muted-foreground">
-					Or continue with
-				</div>
-				{googleClientId ? (
-					<div className="mt-3 flex justify-center" aria-busy={isGoogleSubmitting}>
-						<GoogleLogin
-							onSuccess={(response) => {
-								void handleGoogleSignUp(response.credential);
-							}}
-							onError={() => {
-								setGoogleError('Google sign-in was cancelled or blocked. Please try again.');
-							}}
-							shape="pill"
-							size="large"
-							text="continue_with"
-							useOneTap={false}
-						/>
+					<div className="my-5 border-t border-border/70 pt-5">
+						<div className="text-center text-[11px] uppercase tracking-wide text-muted-foreground">
+							Or continue with
+						</div>
+						{googleClientId ? (
+							<div className="mt-3 flex justify-center" aria-busy={isGoogleSubmitting}>
+								<GoogleLogin
+									onSuccess={(response) => {
+										void handleGoogleSignUp(response.credential);
+									}}
+									onError={() => {
+										setGoogleError('Google sign-in was cancelled or blocked. Please try again.');
+									}}
+									shape="pill"
+									size="large"
+									text="continue_with"
+									useOneTap={false}
+								/>
+							</div>
+						) : (
+							<Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-xl" disabled>
+								<FcGoogle className="h-4 w-4" />
+								Google sign-in unavailable
+							</Button>
+						)}
+
+						{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
 					</div>
-				) : (
-					<Button type="button" variant="outline" className="mt-2 w-full" disabled>
-						<FcGoogle className="h-4 w-4" />
-						Google sign-in unavailable
-					</Button>
-				)}
 
-				{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
+					<p className="text-sm text-muted-foreground">
+						Already have an account?{' '}
+						<Link to="/login" className="font-medium text-primary hover:underline">
+							Log in
+						</Link>
+					</p>
+				</div>
 			</div>
-
-			<p className="text-sm text-muted-foreground">
-				Already have an account?{' '}
-				<Link to="/login" className="text-primary hover:underline">
-					Log in
-				</Link>
-			</p>
-			
 		</section>
 	);
 };

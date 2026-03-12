@@ -3,13 +3,13 @@ import { MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type VendorCardProps = {
-  id: number;
+  id: string | number;
   name: string;
-  image: string;
+  image?: string;
   category: string;
   rating: number;
   reviews: number;
-  price: number;
+  price?: number;
   location: string;
 };
 
@@ -26,12 +26,23 @@ const VendorCard = ({
   return (
     <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover">
       <div className="aspect-[4/3] overflow-hidden bg-secondary">
-        <img
-          src={image}
-          alt={name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {image ? (
+          <img
+            src={image}
+            alt={name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full w-full items-end bg-gradient-to-br from-emerald-100 via-lime-50 to-white p-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                {category}
+              </p>
+              <p className="mt-2 max-w-[14rem] text-xl font-semibold text-foreground">{name}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 p-5">
@@ -57,8 +68,12 @@ const VendorCard = ({
 
         <div className="flex items-center justify-between border-t border-border pt-2">
           <div>
-            <span className="text-xs text-muted-foreground">Starting from</span>
-            <p className="text-lg font-bold">{price} ETB</p>
+            <span className="text-xs text-muted-foreground">
+              {typeof price === "number" && price > 0 ? "Starting from" : "Availability"}
+            </span>
+            <p className="text-lg font-bold">
+              {typeof price === "number" && price > 0 ? `${price} ETB` : "View services"}
+            </p>
           </div>
 
           <Button asChild variant="outline" size="sm" className="rounded-xl transition-colors hover:bg-primary hover:text-primary-foreground">

@@ -1,6 +1,62 @@
 const mongoose = require('mongoose');
 
 const VENDOR_STATUSES = ['draft', 'pending_verification', 'active', 'suspended'];
+const vendorWorkingHourSchema = new mongoose.Schema(
+  {
+    dayOfWeek: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 6,
+    },
+    isEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    startTime: {
+      type: String,
+      trim: true,
+      default: '09:00',
+    },
+    endTime: {
+      type: String,
+      trim: true,
+      default: '17:00',
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
+const vendorBlackoutSlotSchema = new mongoose.Schema(
+  {
+    date: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    startTime: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    endTime: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    label: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+      default: '',
+    },
+  },
+  {
+    _id: false,
+  }
+);
 
 const vendorSchema = new mongoose.Schema(
   {
@@ -17,6 +73,10 @@ const vendorSchema = new mongoose.Schema(
       trim: true,
       maxlength: 140,
     },
+    image: {
+      data: Buffer,
+      contentType: String,
+    },
     legalBusinessName: {
       type: String,
       trim: true,
@@ -26,6 +86,14 @@ const vendorSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 3000,
+    },
+    workingHours: {
+      type: [vendorWorkingHourSchema],
+      default: [],
+    },
+    blackoutSlots: {
+      type: [vendorBlackoutSlotSchema],
+      default: [],
     },
     categories: {
       type: [String],
@@ -61,6 +129,11 @@ const vendorSchema = new mongoose.Schema(
         type: String,
         trim: true,
         maxlength: 255,
+      },
+      description: {
+        type: String,
+        trim: true,
+        maxlength: 500,
       },
       coordinates: {
         type: {
