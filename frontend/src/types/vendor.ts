@@ -67,6 +67,7 @@ export type VendorListQuery = {
 	category?: string;
 	page?: number;
 	limit?: number;
+	all?: boolean;
 };
 
 export type VendorListResponse = PaginatedResponse<Vendor>;

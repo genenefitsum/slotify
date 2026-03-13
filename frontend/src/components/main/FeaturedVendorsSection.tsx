@@ -40,7 +40,7 @@ const FeaturedVendorsSection = () => {
             <h2 className="mt-2 text-2xl sm:text-3xl">Featured Vendors</h2>
           </div>
           <Button asChild variant="outline" size="sm" className="rounded-full px-4">
-            <Link to="/vendors">View all</Link>
+            <Link to="/vendors?view=all">View more</Link>
           </Button>
         </div>
 

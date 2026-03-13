@@ -8,22 +8,22 @@ import ErrorState from '@/components/ui/error-state';
 import PageSkeleton from '@/components/ui/page-skeleton';
 import { Button } from '@/components/ui/button';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 6;
 
 const VendorsPage = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const city = searchParams.get('city') || '';
 	const category = searchParams.get('category') || '';
-	const page = Math.max(Number(searchParams.get('page') || '1') || 1, 1);
+	const showAll = searchParams.get('view') === 'all';
 
 	const { data, isLoading, isError, error, refetch } = useQuery({
-		queryKey: ['vendors', { city, category, page }],
+		queryKey: ['vendors', { city, category, showAll }],
 		queryFn: () =>
 			vendorsApi.list({
 				city: city || undefined,
 				category: category || undefined,
-				page,
 				limit: PAGE_SIZE,
+				all: showAll,
 			}),
 		staleTime: 60_000,
 	});
@@ -39,14 +39,20 @@ const VendorsPage = () => {
 		if (nextCategory) {
 			nextParams.set('category', nextCategory);
 		}
-		nextParams.set('page', '1');
+		if (showAll) {
+			nextParams.set('view', 'all');
+		}
 
 		setSearchParams(nextParams);
 	};
 
-	const setPage = (nextPage: number) => {
+	const setShowAll = (nextValue: boolean) => {
 		const nextParams = new URLSearchParams(searchParams);
-		nextParams.set('page', String(nextPage));
+		if (nextValue) {
+			nextParams.set('view', 'all');
+		} else {
+			nextParams.delete('view');
+		}
 		setSearchParams(nextParams);
 	};
 
@@ -102,7 +108,7 @@ const VendorsPage = () => {
 						title="No vendors found"
 						description="Try a different city or category to broaden your results."
 						actionLabel="Clear filters"
-						onAction={() => setSearchParams({ page: '1' })}
+						onAction={() => setSearchParams(showAll ? { view: 'all' } : {})}
 					/>
 				) : null}
 
@@ -110,7 +116,7 @@ const VendorsPage = () => {
 					<>
 						<div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
 							<p className="text-muted-foreground">
-								Showing <span className="font-semibold text-foreground">{data.items.length}</span> vendors
+								Showing <span className="font-semibold text-foreground">{data.items.length}</span> of <span className="font-semibold text-foreground">{data.pagination.total}</span> vendors
 								{city ? <span> in <span className="font-semibold text-foreground">{city}</span></span> : null}
 								{category ? <span> for <span className="font-semibold text-foreground">{category}</span></span> : null}
 							</p>
@@ -133,27 +139,13 @@ const VendorsPage = () => {
 							))}
 						</div>
 
-						<div className="mt-6 flex items-center justify-between rounded-xl border border-border bg-card p-4">
-							<Button
-								type="button"
-								variant="outline"
-								disabled={data.pagination.page <= 1}
-								onClick={() => setPage(data.pagination.page - 1)}
-							>
-								Previous
-							</Button>
-							<p className="text-sm text-muted-foreground">
-								Page {data.pagination.page} of {data.pagination.totalPages}
-							</p>
-							<Button
-								type="button"
-								variant="outline"
-								disabled={data.pagination.page >= data.pagination.totalPages}
-								onClick={() => setPage(data.pagination.page + 1)}
-							>
-								Next
-							</Button>
-						</div>
+						{!showAll && data.pagination.total > data.items.length ? (
+							<div className="mt-6 flex justify-center rounded-xl border border-border bg-card p-4">
+								<Button type="button" variant="outline" onClick={() => setShowAll(true)}>
+									View more
+								</Button>
+							</div>
+						) : null}
 					</>
 				) : null}
 			</div>

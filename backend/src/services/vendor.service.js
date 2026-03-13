@@ -184,12 +184,60 @@ const resolveGoogleMapsUrl = async (link) => {
   throw new ApiError('Google Maps link redirected too many times.', 400);
 };
 
+const toBuffer = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return value;
+  }
+
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value);
+  }
+
+  if (Array.isArray(value)) {
+    return Buffer.from(value);
+  }
+
+  if (Array.isArray(value.data)) {
+    return Buffer.from(value.data);
+  }
+
+  if (Buffer.isBuffer(value.buffer)) {
+    const end = typeof value.position === 'number' && value.position > 0
+      ? value.position
+      : value.buffer.length;
+
+    return value.buffer.subarray(0, end);
+  }
+
+  if (value.buffer instanceof ArrayBuffer) {
+    return Buffer.from(value.buffer, value.byteOffset || 0, value.byteLength || value.length || 0);
+  }
+
+  if (typeof value.toJSON === 'function') {
+    const jsonValue = value.toJSON();
+    if (jsonValue && Array.isArray(jsonValue.data)) {
+      return Buffer.from(jsonValue.data);
+    }
+  }
+
+  return null;
+};
+
 const toImageUrl = (image) => {
   if (!image?.data || !image?.contentType) {
     return null;
   }
 
-  return `data:${image.contentType};base64,${Buffer.from(image.data).toString('base64')}`;
+  const buffer = toBuffer(image.data);
+  if (!buffer || buffer.length === 0) {
+    return null;
+  }
+
+  return `data:${image.contentType};base64,${buffer.toString('base64')}`;
 };
 
 const toPublicVendor = (vendorDoc, details = {}) => ({
@@ -357,14 +405,14 @@ const normalizeBlackoutSlots = (blackoutSlots) => {
   });
 };
 
-const list = async ({ city, category, page = 1, limit = 20 }) => {
+const list = async ({ city, category, page = 1, limit = 20, all = false }) => {
   const normalizedPage = Math.max(Number(page) || 1, 1);
-  const normalizedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const includeAll = all === true || all === 'true';
+  const normalizedLimit = includeAll ? 0 : Math.min(Math.max(Number(limit) || 20, 1), 100);
   const skip = (normalizedPage - 1) * normalizedLimit;
 
   const filter = {
     deletedAt: null,
-    status: 'active',
   };
 
   if (city) {
@@ -376,7 +424,9 @@ const list = async ({ city, category, page = 1, limit = 20 }) => {
   }
 
   const [items, total] = await Promise.all([
-    Vendor.find(filter).sort({ createdAt: -1 }).skip(skip).limit(normalizedLimit).lean(),
+    includeAll
+      ? Vendor.find(filter).sort({ createdAt: -1 }).lean()
+      : Vendor.find(filter).sort({ createdAt: -1 }).skip(skip).limit(normalizedLimit).lean(),
     Vendor.countDocuments(filter),
   ]);
 
@@ -388,9 +438,9 @@ const list = async ({ city, category, page = 1, limit = 20 }) => {
     ),
     pagination: {
       page: normalizedPage,
-      limit: normalizedLimit,
+      limit: includeAll ? total : normalizedLimit,
       total,
-      totalPages: Math.max(Math.ceil(total / normalizedLimit), 1),
+      totalPages: includeAll ? 1 : Math.max(Math.ceil(total / normalizedLimit), 1),
     },
   };
 };
@@ -401,7 +451,6 @@ const getById = async (id) => {
   const vendor = await Vendor.findOne({
     _id: id,
     deletedAt: null,
-    status: 'active',
   }).lean();
 
   if (!vendor) {
@@ -458,6 +507,7 @@ const createForOwner = async (ownerUserId, payload) => {
     blackoutSlots: normalizeBlackoutSlots(payload.blackoutSlots) || [],
     categories: payload.categories || [],
     timezone: ADDIS_TIMEZONE,
+    status: 'active',
     location: {
       countryCode: payload.location.countryCode,
       city: payload.location.city,
