@@ -22,6 +22,7 @@ const BOOKINGS_PAGE_SIZE = 8;
 const SERVICES_PAGE_SIZE = 10;
 const ADDIS_TIMEZONE = 'Africa/Addis_Ababa';
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+type CoordinatePair = [number, number];
 
 const createDefaultWorkingHours = (): WorkingHour[] =>
 	DAY_LABELS.map((_, index) => ({
@@ -56,29 +57,95 @@ const createVendorForm = (vendor?: Vendor): CreateVendorPayload => ({
 	},
 });
 
-const parseGoogleMapsCoordinates = (value: string) => {
+const isValidLatitude = (value: number) => Number.isFinite(value) && value >= -90 && value <= 90;
+
+const isValidLongitude = (value: number) => Number.isFinite(value) && value >= -180 && value <= 180;
+
+const toLatLng = (latitude: number, longitude: number): CoordinatePair | null => {
+	if (!isValidLatitude(latitude) || !isValidLongitude(longitude)) {
+		return null;
+	}
+
+	return [latitude, longitude];
+};
+
+const parseCoordinatePair = (value: string): CoordinatePair | null => {
+	const match = value.match(/(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)/);
+	if (!match) {
+		return null;
+	}
+
+	return toLatLng(Number(match[1]), Number(match[2]));
+};
+
+const parseGoogleMapsCoordinates = (value: string): CoordinatePair | null => {
 	const text = value.trim();
 	if (!text) {
 		return null;
 	}
 
-	const atMatch = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-	if (atMatch) {
-		return [Number(atMatch[1]), Number(atMatch[2])] as [number, number];
+	const normalizedText = text.replace(/\+/g, ' ');
+	const decodedText = (() => {
+		try {
+			return decodeURIComponent(normalizedText);
+		} catch {
+			return normalizedText;
+		}
+	})();
+
+	const parserStrategies: Array<(candidate: string) => CoordinatePair | null> = [
+		(candidate: string): CoordinatePair | null => {
+			const dataMatch = candidate.match(/!3d(-?\d{1,3}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)/);
+			return dataMatch ? toLatLng(Number(dataMatch[1]), Number(dataMatch[2])) : null;
+		},
+		(candidate: string): CoordinatePair | null => {
+			const atMatch = candidate.match(/@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/);
+			return atMatch ? toLatLng(Number(atMatch[1]), Number(atMatch[2])) : null;
+		},
+		(candidate: string): CoordinatePair | null => {
+			const queryMatch = candidate.match(/(?:q|query|ll|center|destination|saddr|daddr)=(-?\d{1,3}(?:\.\d+)?)(?:,|%2C)\s*(-?\d{1,3}(?:\.\d+)?)/i);
+			return queryMatch ? toLatLng(Number(queryMatch[1]), Number(queryMatch[2])) : null;
+		},
+		parseCoordinatePair,
+	];
+
+	for (const candidate of [decodedText, text]) {
+		for (const parseCandidate of parserStrategies) {
+			const parsed = parseCandidate(candidate);
+			if (parsed) {
+				return parsed;
+			}
+		}
 	}
 
-	const queryMatch = text.match(/(?:q=|query=)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-	if (queryMatch) {
-		return [Number(queryMatch[1]), Number(queryMatch[2])] as [number, number];
-	}
+	const urlText = /^[a-z][a-z\d+.-]*:\/\//i.test(text)
+		? text
+		: text.startsWith('www.')
+			? `https://${text}`
+			: null;
 
-	const plainMatch = text.match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
-	if (plainMatch) {
-		return [Number(plainMatch[1]), Number(plainMatch[2])] as [number, number];
+	if (urlText) {
+		try {
+			const url = new URL(urlText);
+			const paramCandidates = ['q', 'query', 'll', 'center', 'destination', 'saddr', 'daddr']
+				.map((key) => url.searchParams.get(key))
+				.filter((item): item is string => Boolean(item));
+
+			for (const candidate of [url.href, url.pathname, url.hash, ...paramCandidates]) {
+				const parsed = parseGoogleMapsCoordinates(candidate);
+				if (parsed) {
+					return parsed;
+				}
+			}
+		} catch {
+			return null;
+		}
 	}
 
 	return null;
 };
+
+const looksLikeUrl = (value: string) => /^[a-z][a-z\d+.-]*:\/\//i.test(value) || value.startsWith('www.') || value.includes('.');
 
 const actionLabelMap: Record<BookingTransitionAction, string> = {
 	confirm: 'Confirm',
@@ -119,6 +186,7 @@ const VendorDashboardPage = () => {
 	const [vendorDraft, setVendorDraft] = useState<CreateVendorPayload | null>(null);
 	const [categoryInput, setCategoryInput] = useState<string | null>(null);
 	const [googleMapsLink, setGoogleMapsLink] = useState('');
+	const [isResolvingMapLink, setIsResolvingMapLink] = useState(false);
 	const [serviceDraft, setServiceDraft] = useState<CreateServicePayload>({
 		name: '',
 		description: '',
@@ -154,10 +222,15 @@ const VendorDashboardPage = () => {
 		setVendorDraft((prev) => updater(prev ?? createVendorForm(vendorQuery.data)));
 	};
 
-	const handleMapLinkApply = () => {
-		const parsed = parseGoogleMapsCoordinates(googleMapsLink);
-		if (!parsed) {
-			push('Paste a Google Maps link or coordinates like 8.9950, 38.7924.', 'error');
+	const applyCoordinates = (coordinates: number[]) => {
+		if (coordinates.length < 2) {
+			push('Could not extract coordinates from that link.', 'error');
+			return;
+		}
+
+		const [longitude, latitude] = coordinates;
+		if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+			push('Could not extract coordinates from that link.', 'error');
 			return;
 		}
 
@@ -165,10 +238,36 @@ const VendorDashboardPage = () => {
 			...current,
 			location: {
 				...current.location,
-				coordinates: [parsed[1], parsed[0]],
+				coordinates: [longitude, latitude],
 			},
 		}));
+		setGoogleMapsLink('');
 		push('Coordinates updated from Google Maps.', 'success');
+	};
+
+	const handleMapLinkApply = async () => {
+		const rawLink = googleMapsLink.trim();
+		const parsed = parseGoogleMapsCoordinates(rawLink);
+		if (!parsed) {
+			if (!looksLikeUrl(rawLink)) {
+				push('Paste a Google Maps link or coordinates like 8.9950, 38.7924.', 'error');
+				return;
+			}
+
+			setIsResolvingMapLink(true);
+			try {
+				const resolved = await vendorsApi.resolveMapLink(rawLink);
+				applyCoordinates(resolved.coordinates);
+			} catch (error) {
+				push(error instanceof HttpError ? error.message : 'Unable to resolve that Google Maps link.', 'error');
+			} finally {
+				setIsResolvingMapLink(false);
+			}
+
+			return;
+		}
+
+		applyCoordinates([parsed[1], parsed[0]]);
 	};
 
 	const updateWorkingHour = (dayOfWeek: number, patch: Partial<WorkingHour>) => {
@@ -619,7 +718,9 @@ const VendorDashboardPage = () => {
 										onChange={(event) => setGoogleMapsLink(event.target.value)}
 										placeholder="Paste Google Maps link or coordinates"
 									/>
-									<Button type="button" variant="outline" onClick={handleMapLinkApply}>Use link</Button>
+									<Button type="button" variant="outline" loading={isResolvingMapLink} loadingText="Resolving..." onClick={() => {
+										void handleMapLinkApply();
+									}}>Use link</Button>
 								</div>
 								<div className="grid gap-3 md:grid-cols-2">
 									<div>

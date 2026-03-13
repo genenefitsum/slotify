@@ -13,6 +13,176 @@ const ALLOWED_IMAGE_CONTENT_TYPES = new Set([
   'image/svg+xml',
 ]);
 const MAX_VENDOR_IMAGE_BYTES = 2 * 1024 * 1024;
+const GOOGLE_MAPS_REDIRECT_LIMIT = 5;
+const GOOGLE_MAPS_RESOLVE_TIMEOUT_MS = 8000;
+
+const isAllowedGoogleMapsHostname = (hostname) => {
+  const normalizedHostname = String(hostname || '').toLowerCase();
+
+  return (
+    normalizedHostname === 'maps.app.goo.gl'
+    || normalizedHostname === 'goo.gl'
+    || normalizedHostname.endsWith('.goo.gl')
+    || /^(.+\.)?google\.[a-z.]+$/.test(normalizedHostname)
+  );
+};
+
+const isValidLatitude = (value) => Number.isFinite(value) && value >= -90 && value <= 90;
+
+const isValidLongitude = (value) => Number.isFinite(value) && value >= -180 && value <= 180;
+
+const toLatLng = (latitude, longitude) => {
+  if (!isValidLatitude(latitude) || !isValidLongitude(longitude)) {
+    return null;
+  }
+
+  return [latitude, longitude];
+};
+
+const parseCoordinatePair = (value) => {
+  const match = String(value || '').match(/(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)/);
+  if (!match) {
+    return null;
+  }
+
+  return toLatLng(Number(match[1]), Number(match[2]));
+};
+
+const parseGoogleMapsCoordinates = (value) => {
+  const text = String(value || '').trim();
+  if (!text) {
+    return null;
+  }
+
+  const normalizedText = text.replace(/\+/g, ' ');
+  const decodedText = (() => {
+    try {
+      return decodeURIComponent(normalizedText);
+    } catch {
+      return normalizedText;
+    }
+  })();
+
+  const parserStrategies = [
+    (candidate) => {
+      const dataMatch = candidate.match(/!3d(-?\d{1,3}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)/);
+      return dataMatch ? toLatLng(Number(dataMatch[1]), Number(dataMatch[2])) : null;
+    },
+    (candidate) => {
+      const atMatch = candidate.match(/@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/);
+      return atMatch ? toLatLng(Number(atMatch[1]), Number(atMatch[2])) : null;
+    },
+    (candidate) => {
+      const queryMatch = candidate.match(/(?:q|query|ll|center|destination|saddr|daddr)=(-?\d{1,3}(?:\.\d+)?)(?:,|%2C)\s*(-?\d{1,3}(?:\.\d+)?)/i);
+      return queryMatch ? toLatLng(Number(queryMatch[1]), Number(queryMatch[2])) : null;
+    },
+    parseCoordinatePair,
+  ];
+
+  for (const candidate of [decodedText, text]) {
+    for (const parseCandidate of parserStrategies) {
+      const parsed = parseCandidate(candidate);
+      if (parsed) {
+        return parsed;
+      }
+    }
+  }
+
+  const urlText = /^[a-z][a-z\d+.-]*:\/\//i.test(text)
+    ? text
+    : text.startsWith('www.')
+      ? `https://${text}`
+      : null;
+
+  if (!urlText) {
+    return null;
+  }
+
+  try {
+    const url = new URL(urlText);
+    const paramCandidates = ['q', 'query', 'll', 'center', 'destination', 'saddr', 'daddr']
+      .map((key) => url.searchParams.get(key))
+      .filter(Boolean);
+
+    for (const candidate of [url.href, url.pathname, url.hash, ...paramCandidates]) {
+      const parsed = parseGoogleMapsCoordinates(candidate);
+      if (parsed) {
+        return parsed;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const resolveGoogleMapsUrl = async (link) => {
+  const rawLink = String(link || '').trim();
+  if (!rawLink) {
+    throw new ApiError('Google Maps link is required.', 400);
+  }
+
+  const normalizedLink = /^[a-z][a-z\d+.-]*:\/\//i.test(rawLink) ? rawLink : `https://${rawLink}`;
+
+  let currentUrl;
+  try {
+    currentUrl = new URL(normalizedLink);
+  } catch {
+    throw new ApiError('Enter a valid Google Maps URL.', 400);
+  }
+
+  if (!isAllowedGoogleMapsHostname(currentUrl.hostname)) {
+    throw new ApiError('Only Google Maps links are supported.', 400);
+  }
+
+  for (let redirectCount = 0; redirectCount <= GOOGLE_MAPS_REDIRECT_LIMIT; redirectCount += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), GOOGLE_MAPS_RESOLVE_TIMEOUT_MS);
+
+    let response;
+    try {
+      response = await fetch(currentUrl, {
+        method: 'GET',
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: {
+          'user-agent': 'Slotify/1.0',
+        },
+      });
+    } catch (error) {
+      if (error && error.name === 'AbortError') {
+        throw new ApiError('Resolving the Google Maps link timed out.', 504);
+      }
+
+      throw new ApiError('Unable to resolve the Google Maps link right now.', 502);
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get('location');
+      if (!location) {
+        throw new ApiError('Google Maps link could not be resolved.', 400);
+      }
+
+      currentUrl = new URL(location, currentUrl);
+      if (!isAllowedGoogleMapsHostname(currentUrl.hostname)) {
+        throw new ApiError('Resolved URL is not a supported Google Maps link.', 400);
+      }
+
+      continue;
+    }
+
+    if (!response.ok) {
+      throw new ApiError('Google Maps link could not be resolved.', 400);
+    }
+
+    return currentUrl.toString();
+  }
+
+  throw new ApiError('Google Maps link redirected too many times.', 400);
+};
 
 const toImageUrl = (image) => {
   if (!image?.data || !image?.contentType) {
@@ -257,6 +427,20 @@ const getByOwnerUserId = async (ownerUserId) => {
   });
 };
 
+const resolveMapLink = async (link) => {
+  const resolvedUrl = await resolveGoogleMapsUrl(link);
+  const latLng = parseGoogleMapsCoordinates(resolvedUrl);
+
+  if (!latLng) {
+    throw new ApiError('Could not extract coordinates from this Google Maps link.', 400);
+  }
+
+  return {
+    resolvedUrl,
+    coordinates: [latLng[1], latLng[0]],
+  };
+};
+
 const createForOwner = async (ownerUserId, payload) => {
   const existing = await Vendor.findOne({ ownerUserId, deletedAt: null }).lean();
 
@@ -348,6 +532,7 @@ module.exports = {
   list,
   getById,
   getByOwnerUserId,
+  resolveMapLink,
   createForOwner,
   updateForOwner,
 };

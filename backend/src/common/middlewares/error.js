@@ -26,6 +26,12 @@ const errorHandler = (err, req, res, next) => {
 		});
 	}
 
+	if (err.type === 'entity.too.large' || err.status === 413 || err.statusCode === 413) {
+		return res.status(413).json({
+			message: 'Request payload is too large. Reduce the upload size and try again.',
+		});
+	}
+
 	const statusCode = err.statusCode || 500;
 	const response = {
 		message: err.message || 'Internal server error.',

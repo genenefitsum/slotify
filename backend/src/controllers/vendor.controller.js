@@ -38,6 +38,15 @@ const getMyVendor = async (req, res, next) => {
   }
 };
 
+const resolveMapLink = async (req, res, next) => {
+  try {
+    const data = await vendorService.resolveMapLink(req.body?.link);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createVendor = async (req, res, next) => {
   try {
     validateCreateVendorPayload(req.body);
@@ -61,6 +70,7 @@ module.exports = {
   listVendors,
   getVendorById,
   getMyVendor,
+  resolveMapLink,
   createVendor,
   updateMyVendor,
 };

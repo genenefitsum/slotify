@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.get("/", vendorController.listVendors);
 router.get('/me', requireAuth, requireRole('vendor_owner'), vendorController.getMyVendor);
+router.post('/resolve-map-link', requireAuth, requireRole('vendor_owner'), vendorController.resolveMapLink);
 router.post('/', requireAuth, requireRole('vendor_owner'), vendorController.createVendor);
 router.patch('/me', requireAuth, requireRole('vendor_owner'), vendorController.updateMyVendor);
 router.get("/:id", vendorController.getVendorById);
