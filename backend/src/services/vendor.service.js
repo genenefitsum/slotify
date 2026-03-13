@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const ApiError = require('../utils/apiError');
+const {
+  deleteVendorImage,
+  isCloudinaryConfigured,
+  uploadVendorImage,
+} = require('./cloudinary.service');
 const { Service } = require('../models/Service');
 const { Vendor } = require('../models/Vendor');
 
@@ -228,6 +233,10 @@ const toBuffer = (value) => {
 };
 
 const toImageUrl = (image) => {
+  if (image?.secureUrl) {
+    return image.secureUrl;
+  }
+
   if (!image?.data || !image?.contentType) {
     return null;
   }
@@ -238,6 +247,15 @@ const toImageUrl = (image) => {
   }
 
   return `data:${image.contentType};base64,${buffer.toString('base64')}`;
+};
+
+const createImageDataUrl = (contentType, buffer, rawValue) => {
+  const rawString = typeof rawValue === 'string' ? rawValue : '';
+  if (rawString.startsWith('data:')) {
+    return rawString;
+  }
+
+  return `data:${contentType};base64,${buffer.toString('base64')}`;
 };
 
 const toPublicVendor = (vendorDoc, details = {}) => ({
@@ -301,8 +319,61 @@ const normalizeImagePayload = (image) => {
   }
 
   return {
-    data: buffer,
     contentType: image.contentType,
+    buffer,
+    dataUrl: createImageDataUrl(image.contentType, buffer, image.data),
+  };
+};
+
+const uploadImageToCloudinary = async (normalizedImage, fileName) => {
+  try {
+    return await uploadVendorImage({
+      dataUrl: normalizedImage.dataUrl,
+      fileName,
+    });
+  } catch (error) {
+    throw new ApiError('Unable to upload vendor image.', 502);
+  }
+};
+
+const removeCloudinaryImage = async (publicId) => {
+  if (!publicId || !isCloudinaryConfigured()) {
+    return;
+  }
+
+  try {
+    await deleteVendorImage(publicId);
+  } catch {
+    // Ignore cleanup failures to avoid blocking user-facing updates.
+  }
+};
+
+const buildVendorImageRecord = async (image, fileName, currentImage) => {
+  if (image === undefined) {
+    return undefined;
+  }
+
+  if (image === null) {
+    await removeCloudinaryImage(currentImage?.publicId);
+    return null;
+  }
+
+  const normalizedImage = normalizeImagePayload(image);
+
+  if (isCloudinaryConfigured()) {
+    const uploadedImage = await uploadImageToCloudinary(normalizedImage, fileName);
+    await removeCloudinaryImage(currentImage?.publicId);
+
+    return {
+      contentType: normalizedImage.contentType,
+      publicId: uploadedImage.publicId,
+      secureUrl: uploadedImage.secureUrl,
+    };
+  }
+
+  return {
+    data: normalizedImage.buffer,
+    contentType: normalizedImage.contentType,
   };
 };
 
@@ -497,10 +568,12 @@ const createForOwner = async (ownerUserId, payload) => {
     throw new ApiError('Vendor profile already exists for this account.', 409);
   }
 
+  const image = await buildVendorImageRecord(payload.image, payload.displayName);
+
   const vendor = await Vendor.create({
     ownerUserId,
     displayName: payload.displayName,
-    image: normalizeImagePayload(payload.image),
+    image,
     legalBusinessName: payload.legalBusinessName,
     description: payload.description,
     workingHours: normalizeWorkingHours(payload.workingHours) || [],
@@ -548,7 +621,7 @@ const updateForOwner = async (ownerUserId, payload) => {
   }
 
   if (payload.image !== undefined) {
-    vendor.image = normalizeImagePayload(payload.image);
+    vendor.image = await buildVendorImageRecord(payload.image, payload.displayName || vendor.displayName, vendor.image);
   }
 
   if (payload.workingHours !== undefined) {

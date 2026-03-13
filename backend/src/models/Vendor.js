@@ -76,6 +76,8 @@ const vendorSchema = new mongoose.Schema(
     image: {
       data: Buffer,
       contentType: String,
+      publicId: String,
+      secureUrl: String,
     },
     legalBusinessName: {
       type: String,

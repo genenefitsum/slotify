@@ -62,6 +62,7 @@ Slotify aims to simplify appointment scheduling in Ethiopia by providing a centr
 - MongoDB (Mongoose)
 - JWT Authentication
 - Bcrypt
+- Cloudinary for vendor image hosting
 
 ---
 
@@ -134,6 +135,22 @@ Default local test credentials:
 - `customer@slotify.local` / `SlotifyPass123!`
 - `owner.one@slotify.local` / `SlotifyPass123!`
 - `owner.two@slotify.local` / `SlotifyPass123!`
+
+## Image Storage
+
+Vendor images support two storage modes:
+
+- Default fallback: stored in MongoDB and returned as inline data URLs.
+- Recommended deployment mode: uploaded to Cloudinary and returned as hosted URLs.
+
+To enable Cloudinary in `backend/.env`:
+
+```bash
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+CLOUDINARY_VENDOR_FOLDER=slotify/vendors
+```
 
 ---
 
