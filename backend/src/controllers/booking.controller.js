@@ -20,6 +20,33 @@ const listBookings = async (req, res, next) => {
   }
 };
 
+const listAvailableSlots = async (req, res, next) => {
+  try {
+    const { vendorId, serviceId, localDate } = req.query || {};
+
+    if (!vendorId) {
+      throw new ApiError('vendorId is required.', 400);
+    }
+
+    if (!serviceId) {
+      throw new ApiError('serviceId is required.', 400);
+    }
+
+    if (!localDate) {
+      throw new ApiError('localDate is required.', 400);
+    }
+
+    const data = await bookingService.listAvailableSlots(req.user, {
+      vendorId,
+      serviceId,
+      localDate,
+    });
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createBooking = async (req, res, next) => {
   try {
     validateCreatePayload(req.body);
@@ -98,6 +125,7 @@ const markNoShow = async (req, res, next) => {
 };
 
 module.exports = {
+  listAvailableSlots,
   listBookings,
   createBooking,
   confirmBooking,

@@ -69,6 +69,45 @@ const timeStringToMinutes = (value) => {
   return hours * 60 + minutes;
 };
 
+const minutesToTimeString = (value) => {
+  const hours = Math.floor(value / 60)
+    .toString()
+    .padStart(2, '0');
+  const minutes = Math.floor(value % 60)
+    .toString()
+    .padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const parseLocalDate = (value) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    throw new ApiError('localDate must be in YYYY-MM-DD format.', 400);
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) {
+    throw new ApiError('Invalid localDate.', 400);
+  }
+
+  return { year, month, day };
+};
+
+const addisLocalMinuteToUtcDate = (localDate, minuteOfDay) => {
+  const { year, month, day } = parseLocalDate(localDate);
+  const hours = Math.floor(minuteOfDay / 60);
+  const minutes = minuteOfDay % 60;
+  return new Date(Date.UTC(year, month - 1, day, hours - 3, minutes, 0, 0));
+};
+
+const getAddisDayOfWeek = (localDate) => {
+  const localMidnight = new Date(`${localDate}T00:00:00+03:00`);
+  if (Number.isNaN(localMidnight.getTime())) {
+    throw new ApiError('Invalid localDate.', 400);
+  }
+
+  return localMidnight.getUTCDay();
+};
+
 const getAddisDateParts = (date) => {
   const parts = addisDateFormatter.formatToParts(date);
   const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
@@ -271,6 +310,131 @@ const list = async (user, { status, page = 1, limit = 20 }) => {
   };
 };
 
+const listAvailableSlots = async (_user, { vendorId, serviceId, localDate }) => {
+  ensureObjectId(vendorId, 'vendor id');
+  ensureObjectId(serviceId, 'service id');
+  parseLocalDate(localDate);
+
+  const [vendor, service] = await Promise.all([
+    Vendor.findOne({
+      _id: vendorId,
+      deletedAt: null,
+      status: 'active',
+    }).lean(),
+    Service.findOne({
+      _id: serviceId,
+      vendorId,
+      isActive: true,
+      deletedAt: null,
+    }).lean(),
+  ]);
+
+  if (!vendor) {
+    throw new ApiError('Vendor not found.', 404);
+  }
+
+  if (!service) {
+    throw new ApiError('Service not found for this vendor.', 404);
+  }
+
+  const workingHours = Array.isArray(vendor.workingHours) ? vendor.workingHours : [];
+  const blackouts = Array.isArray(vendor.blackoutSlots) ? vendor.blackoutSlots : [];
+  const dayOfWeek = getAddisDayOfWeek(localDate);
+
+  const workingDay = workingHours.find(
+    (item) => item.dayOfWeek === dayOfWeek && item.isEnabled
+  );
+
+  if (!workingDay) {
+    return {
+      vendorId: String(vendor._id),
+      serviceId: String(service._id),
+      localDate,
+      timezone: ADDIS_TIMEZONE,
+      slotDurationMinutes: service.durationMinutes,
+      items: [],
+    };
+  }
+
+  const openMinute = timeStringToMinutes(workingDay.startTime);
+  const closeMinute = timeStringToMinutes(workingDay.endTime);
+
+  if (openMinute >= closeMinute) {
+    return {
+      vendorId: String(vendor._id),
+      serviceId: String(service._id),
+      localDate,
+      timezone: ADDIS_TIMEZONE,
+      slotDurationMinutes: service.durationMinutes,
+      items: [],
+    };
+  }
+
+  const dayStartUtc = addisLocalMinuteToUtcDate(localDate, 0);
+  const dayEndUtc = addisLocalMinuteToUtcDate(localDate, 24 * 60);
+
+  const existingBookings = await Booking.find({
+    vendorId,
+    status: { $in: ACTIVE_CONFLICT_STATUSES },
+    startsAtUtc: { $lt: dayEndUtc },
+    endsAtUtc: { $gt: dayStartUtc },
+  })
+    .select({ startsAtUtc: 1, endsAtUtc: 1 })
+    .lean();
+
+  const dayBlackouts = blackouts
+    .filter((item) => item.date === localDate)
+    .map((item) => ({
+      startMinute: timeStringToMinutes(item.startTime),
+      endMinute: timeStringToMinutes(item.endTime),
+    }))
+    .filter((item) => Number.isFinite(item.startMinute) && Number.isFinite(item.endMinute));
+
+  const slots = [];
+  for (
+    let currentStartMinute = openMinute;
+    currentStartMinute + service.durationMinutes <= closeMinute;
+    currentStartMinute += service.durationMinutes
+  ) {
+    const currentEndMinute = currentStartMinute + service.durationMinutes;
+    const startsAtUtc = addisLocalMinuteToUtcDate(localDate, currentStartMinute);
+    const endsAtUtc = addisLocalMinuteToUtcDate(localDate, currentEndMinute);
+
+    const hasBlackout = dayBlackouts.some(
+      (item) => currentStartMinute < item.endMinute && currentEndMinute > item.startMinute
+    );
+
+    const hasBookingConflict = existingBookings.some(
+      (item) => startsAtUtc < item.endsAtUtc && endsAtUtc > item.startsAtUtc
+    );
+
+    let reasonCode = null;
+    if (hasBlackout) {
+      reasonCode = 'blackout';
+    } else if (hasBookingConflict) {
+      reasonCode = 'conflict';
+    }
+
+    slots.push({
+      startsAtUtc: startsAtUtc.toISOString(),
+      endsAtUtc: endsAtUtc.toISOString(),
+      localStartTime: minutesToTimeString(currentStartMinute),
+      localEndTime: minutesToTimeString(currentEndMinute),
+      isAvailable: !reasonCode,
+      reasonCode,
+    });
+  }
+
+  return {
+    vendorId: String(vendor._id),
+    serviceId: String(service._id),
+    localDate,
+    timezone: ADDIS_TIMEZONE,
+    slotDurationMinutes: service.durationMinutes,
+    items: slots,
+  };
+};
+
 const create = async (user, payload) => {
   if (user.role !== 'customer' && user.role !== 'admin') {
     throw new ApiError('Only customers can create bookings.', 403);
@@ -451,6 +615,7 @@ const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) 
 
 module.exports = {
   list,
+  listAvailableSlots,
   create,
   transition,
 };

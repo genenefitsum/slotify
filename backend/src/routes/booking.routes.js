@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.use(requireAuth);
 
+router.get('/availability/slots', bookingController.listAvailableSlots);
 router.get("/", bookingController.listBookings);
 router.post("/", bookingController.createBooking);
 router.post('/:id/confirm', bookingController.confirmBooking);

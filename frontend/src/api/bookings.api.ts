@@ -1,5 +1,7 @@
 import { http } from '@/api/http';
 import type {
+	BookingAvailabilityQuery,
+	BookingAvailabilityResponse,
 	Booking,
 	BookingListQuery,
 	BookingListResponse,
@@ -16,4 +18,6 @@ export const bookingsApi = {
 	cancel: (id: string, payload?: CancelBookingPayload) =>
 		http.post<Booking>(`/bookings/${id}/cancel`, payload),
 	markNoShow: (id: string) => http.post<Booking>(`/bookings/${id}/no-show`),
+	listAvailableSlots: (query: BookingAvailabilityQuery) =>
+		http.get<BookingAvailabilityResponse>('/bookings/availability/slots', query),
 };

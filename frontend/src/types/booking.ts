@@ -66,3 +66,27 @@ export type CancelBookingPayload = {
 };
 
 export type BookingTransitionAction = 'confirm' | 'start' | 'complete' | 'cancel' | 'no-show';
+
+export type BookingAvailabilityQuery = {
+	vendorId: string;
+	serviceId: string;
+	localDate: string;
+};
+
+export type BookingAvailabilitySlot = {
+	startsAtUtc: string;
+	endsAtUtc: string;
+	localStartTime: string;
+	localEndTime: string;
+	isAvailable: boolean;
+	reasonCode: 'blackout' | 'conflict' | null;
+};
+
+export type BookingAvailabilityResponse = {
+	vendorId: string;
+	serviceId: string;
+	localDate: string;
+	timezone: string;
+	slotDurationMinutes: number;
+	items: BookingAvailabilitySlot[];
+};

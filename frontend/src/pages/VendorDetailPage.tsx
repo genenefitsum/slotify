@@ -25,11 +25,23 @@ import PageSkeleton from '@/components/ui/page-skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import type { BookingAvailabilitySlot } from '@/types/booking';
 import type { Service } from '@/types/service';
 
 const EMPTY_SERVICES: Service[] = [];
 const ADDIS_TIMEZONE = 'Africa/Addis_Ababa';
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const getCurrentAddisDate = () => {
+	const parts = new Intl.DateTimeFormat('en-CA', {
+		timeZone: ADDIS_TIMEZONE,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+	}).formatToParts(new Date());
+	const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+	return `${byType.year}-${byType.month}-${byType.day}`;
+};
 
 const VendorDetailPage = () => {
 	const { id: vendorId } = useParams();
@@ -41,7 +53,8 @@ const VendorDetailPage = () => {
 	const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
 	const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
 	const [selectedServiceId, setSelectedServiceId] = useState('');
-	const [bookingStartLocal, setBookingStartLocal] = useState('');
+	const [bookingDateLocal, setBookingDateLocal] = useState(getCurrentAddisDate);
+	const [selectedSlotStartUtc, setSelectedSlotStartUtc] = useState('');
 	const [bookingNotes, setBookingNotes] = useState('');
 	const [reviewBookingId, setReviewBookingId] = useState('');
 	const [reviewRating, setReviewRating] = useState('5');
@@ -76,20 +89,38 @@ const VendorDetailPage = () => {
 		staleTime: 20_000,
 	});
 
+	const availabilityQuery = useQuery({
+		queryKey: ['bookings', 'available-slots', vendorId, selectedServiceId, bookingDateLocal],
+		queryFn: () =>
+			bookingsApi.listAvailableSlots({
+				vendorId: vendorId || '',
+				serviceId: selectedServiceId,
+				localDate: bookingDateLocal,
+			}),
+		enabled: Boolean(
+			vendorId &&
+				selectedServiceId &&
+				bookingDateLocal &&
+				isAuthenticated &&
+				isCustomer &&
+				isBookingDialogOpen
+		),
+		staleTime: 10_000,
+	});
+
 	const bookingMutation = useMutation({
 		mutationFn: () => {
 			if (!selectedServiceId) {
 				throw new Error('Select a service before booking.');
 			}
 
-			if (!bookingStartLocal) {
-				throw new Error('Choose a date and time before booking.');
+			if (!selectedSlotStartUtc) {
+				throw new Error('Choose an available slot before booking.');
 			}
 
-			const startsAtUtc = new Date(bookingStartLocal).toISOString();
 			return bookingsApi.create({
 				serviceId: selectedServiceId,
-				startsAtUtc,
+				startsAtUtc: selectedSlotStartUtc,
 				localTimezone: ADDIS_TIMEZONE,
 				customerNotes: bookingNotes || undefined,
 			});
@@ -98,7 +129,8 @@ const VendorDetailPage = () => {
 			push('Booking request submitted successfully.', 'success');
 			setBookingDialogOpen(false);
 			setSelectedServiceId('');
-			setBookingStartLocal('');
+			setBookingDateLocal(getCurrentAddisDate());
+			setSelectedSlotStartUtc('');
 			setBookingNotes('');
 			setBookingFormError('');
 			void queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -106,6 +138,10 @@ const VendorDetailPage = () => {
 		onError: (error) => {
 			if (error instanceof HttpError) {
 				setBookingFormError(error.message);
+				if (error.status === 409) {
+					setSelectedSlotStartUtc('');
+					void availabilityQuery.refetch();
+				}
 				return;
 			}
 
@@ -182,6 +218,17 @@ const VendorDetailPage = () => {
 	const selectedService = useMemo(
 		() => services.find((service) => service.id === selectedServiceId) || null,
 		[selectedServiceId, services]
+	);
+	const availableSlots = useMemo(
+		() => (availabilityQuery.data?.items || []).filter((item) => item.isAvailable),
+		[availabilityQuery.data?.items]
+	);
+	const selectedSlot = useMemo(
+		() =>
+			(availabilityQuery.data?.items || []).find(
+				(item) => item.startsAtUtc === selectedSlotStartUtc
+			) || null,
+		[availabilityQuery.data?.items, selectedSlotStartUtc]
 	);
 	const startingPrice = useMemo(() => {
 		if (!services.length) {
@@ -262,10 +309,29 @@ const VendorDetailPage = () => {
 
 		if (serviceId) {
 			setSelectedServiceId(serviceId);
+			setSelectedSlotStartUtc('');
 		}
 
 		setBookingFormError('');
 		setBookingDialogOpen(true);
+	};
+
+	const handleServiceSelection = (serviceId: string) => {
+		setSelectedServiceId(serviceId);
+		setSelectedSlotStartUtc('');
+		setBookingFormError('');
+	};
+
+	const handleDateSelection = (localDate: string) => {
+		setBookingDateLocal(localDate);
+		setSelectedSlotStartUtc('');
+		setBookingFormError('');
+	};
+
+	const formatSlotLabel = (slot: BookingAvailabilitySlot) => {
+		const start = new Date(slot.startsAtUtc);
+		const end = new Date(slot.endsAtUtc);
+		return `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
 	};
 
 	const openReviewDialog = () => {
@@ -363,7 +429,7 @@ const VendorDetailPage = () => {
 													id="serviceId"
 													className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
 													value={selectedServiceId}
-													onChange={(event) => setSelectedServiceId(event.target.value)}
+													onChange={(event) => handleServiceSelection(event.target.value)}
 													required
 												>
 													<option value="">Select a service</option>
@@ -376,24 +442,76 @@ const VendorDetailPage = () => {
 											</div>
 
 											<div>
-												<label htmlFor="startDateTime" className="mb-1 block text-sm font-medium">
-													Date and time
+												<label htmlFor="slotDate" className="mb-1 block text-sm font-medium">
+													Date
 												</label>
 												<Input
-													id="startDateTime"
-													type="datetime-local"
-													value={bookingStartLocal}
-													onChange={(event) => setBookingStartLocal(event.target.value)}
+													id="slotDate"
+													type="date"
+													value={bookingDateLocal}
+													onChange={(event) => handleDateSelection(event.target.value)}
+													min={getCurrentAddisDate()}
 													required
 												/>
 											</div>
 
+											<div>
+												<p className="mb-2 block text-sm font-medium">Available slots</p>
+												{!selectedServiceId ? (
+													<p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+														Choose a service to load available slots.
+													</p>
+												) : availabilityQuery.isLoading ? (
+													<p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+														Loading slots...
+													</p>
+												) : availabilityQuery.isError ? (
+													<p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+														{availabilityQuery.error instanceof Error
+															? availabilityQuery.error.message
+															: 'Failed to load availability slots.'}
+													</p>
+												) : availableSlots.length === 0 ? (
+													<p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+														No open slots on this date. Try another day.
+													</p>
+												) : (
+													<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+														{availableSlots.map((slot) => {
+															const isSelected = selectedSlotStartUtc === slot.startsAtUtc;
+															return (
+																<Button
+																	key={slot.startsAtUtc}
+																	type="button"
+																	variant={isSelected ? 'default' : 'outline'}
+																	onClick={() => {
+																		setSelectedSlotStartUtc(slot.startsAtUtc);
+																		setBookingFormError('');
+																	}}
+																>
+																	{formatSlotLabel(slot)}
+																</Button>
+															);
+														})}
+													</div>
+												)}
+											</div>
+
 											<div className="rounded-2xl bg-muted/50 p-3 text-sm text-muted-foreground">
 												{selectedService ? (
-													<p>
-														You selected <span className="font-medium text-foreground">{selectedService.name}</span> for{' '}
-														<span className="font-medium text-foreground">{currencyFormatter.format(selectedService.priceAmount)}</span>.
-													</p>
+													<div className="space-y-1">
+														<p>
+															You selected <span className="font-medium text-foreground">{selectedService.name}</span> for{' '}
+															<span className="font-medium text-foreground">{currencyFormatter.format(selectedService.priceAmount)}</span>.
+														</p>
+														{selectedSlot ? (
+															<p>
+																Booking time:{' '}
+																<span className="font-medium text-foreground">{formatSlotLabel(selectedSlot)}</span>{' '}
+																on {bookingDateLocal}.
+															</p>
+														) : null}
+													</div>
 												) : (
 													<p>Choose a service to see the appointment summary here.</p>
 												)}
@@ -414,7 +532,12 @@ const VendorDetailPage = () => {
 											{bookingFormError ? <p className="text-sm text-destructive">{bookingFormError}</p> : null}
 
 											<DialogFooter>
-												<Button type="submit" loading={bookingMutation.isPending} loadingText="Booking...">
+												<Button
+													type="submit"
+													loading={bookingMutation.isPending}
+													loadingText="Booking..."
+													disabled={!selectedSlotStartUtc}
+												>
 													Submit booking
 												</Button>
 											</DialogFooter>
