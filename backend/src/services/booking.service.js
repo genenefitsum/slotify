@@ -6,9 +6,13 @@ const { BookingEvent } = require('../models/BookingEvent');
 const { Service } = require('../models/Service');
 const { Vendor } = require('../models/Vendor');
 const { Staff } = require('../models/Staff');
+const {
+  ADDIS_TIMEZONE,
+  ACTIVE_BOOKING_CONFLICT_STATUSES,
+  ensureVendorAvailable,
+  listAvailableSlotsByVendorService,
+} = require('../modules/availability/availability.service');
 
-const ACTIVE_CONFLICT_STATUSES = ['pending_payment', 'confirmed', 'in_service'];
-const ADDIS_TIMEZONE = 'Africa/Addis_Ababa';
 const TRANSITION_RULES = {
   confirm: { from: ['pending_payment'], to: 'confirmed', eventType: 'booking_confirmed' },
   start: { from: ['confirmed'], to: 'in_service', eventType: 'booking_started' },
@@ -43,121 +47,6 @@ const createBookingNumber = () => {
   return `BK-${ts}-${rand}`;
 };
 
-const addisDateFormatter = new Intl.DateTimeFormat('en-CA', {
-  timeZone: ADDIS_TIMEZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  weekday: 'short',
-  hour12: false,
-});
-
-const WEEKDAY_MAP = {
-  Sun: 0,
-  Mon: 1,
-  Tue: 2,
-  Wed: 3,
-  Thu: 4,
-  Fri: 5,
-  Sat: 6,
-};
-
-const timeStringToMinutes = (value) => {
-  const [hours, minutes] = String(value).split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const minutesToTimeString = (value) => {
-  const hours = Math.floor(value / 60)
-    .toString()
-    .padStart(2, '0');
-  const minutes = Math.floor(value % 60)
-    .toString()
-    .padStart(2, '0');
-  return `${hours}:${minutes}`;
-};
-
-const parseLocalDate = (value) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
-    throw new ApiError('localDate must be in YYYY-MM-DD format.', 400);
-  }
-
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) {
-    throw new ApiError('Invalid localDate.', 400);
-  }
-
-  return { year, month, day };
-};
-
-const addisLocalMinuteToUtcDate = (localDate, minuteOfDay) => {
-  const { year, month, day } = parseLocalDate(localDate);
-  const hours = Math.floor(minuteOfDay / 60);
-  const minutes = minuteOfDay % 60;
-  return new Date(Date.UTC(year, month - 1, day, hours - 3, minutes, 0, 0));
-};
-
-const getAddisDayOfWeek = (localDate) => {
-  const localMidnight = new Date(`${localDate}T00:00:00+03:00`);
-  if (Number.isNaN(localMidnight.getTime())) {
-    throw new ApiError('Invalid localDate.', 400);
-  }
-
-  return localMidnight.getUTCDay();
-};
-
-const getAddisDateParts = (date) => {
-  const parts = addisDateFormatter.formatToParts(date);
-  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return {
-    localDate: `${byType.year}-${byType.month}-${byType.day}`,
-    dayOfWeek: WEEKDAY_MAP[byType.weekday],
-    minuteOfDay: Number(byType.hour) * 60 + Number(byType.minute),
-  };
-};
-
-const ensureVendorAvailable = (vendor, startsAtUtc, endsAtUtc) => {
-  const start = getAddisDateParts(startsAtUtc);
-  const end = getAddisDateParts(endsAtUtc);
-
-  if (start.localDate !== end.localDate) {
-    throw new ApiError('Appointments must start and end on the same Addis Ababa calendar day.', 400);
-  }
-
-  const workingHours = Array.isArray(vendor.workingHours) ? vendor.workingHours : [];
-  const blackouts = Array.isArray(vendor.blackoutSlots) ? vendor.blackoutSlots : [];
-
-  const workingDay = workingHours.find(
-    (item) => item.dayOfWeek === start.dayOfWeek && item.isEnabled
-  );
-
-  if (!workingDay) {
-    throw new ApiError('This vendor is not accepting bookings on the selected day.', 409);
-  }
-
-  const openMinute = timeStringToMinutes(workingDay.startTime);
-  const closeMinute = timeStringToMinutes(workingDay.endTime);
-
-  if (start.minuteOfDay < openMinute || end.minuteOfDay > closeMinute) {
-    throw new ApiError('Selected time is outside this vendor\'s working hours.', 409);
-  }
-
-  const hasBlackoutConflict = blackouts.some((item) => {
-    if (item.date !== start.localDate) {
-      return false;
-    }
-
-    const blackoutStart = timeStringToMinutes(item.startTime);
-    const blackoutEnd = timeStringToMinutes(item.endTime);
-    return start.minuteOfDay < blackoutEnd && end.minuteOfDay > blackoutStart;
-  });
-
-  if (hasBlackoutConflict) {
-    throw new ApiError('Selected time is unavailable because the vendor has blocked that period.', 409);
-  }
-};
 
 const toBookingDto = (doc, details = {}) => ({
   id: String(doc._id),
@@ -311,128 +200,11 @@ const list = async (user, { status, page = 1, limit = 20 }) => {
 };
 
 const listAvailableSlots = async (_user, { vendorId, serviceId, localDate }) => {
-  ensureObjectId(vendorId, 'vendor id');
-  ensureObjectId(serviceId, 'service id');
-  parseLocalDate(localDate);
-
-  const [vendor, service] = await Promise.all([
-    Vendor.findOne({
-      _id: vendorId,
-      deletedAt: null,
-      status: 'active',
-    }).lean(),
-    Service.findOne({
-      _id: serviceId,
-      vendorId,
-      isActive: true,
-      deletedAt: null,
-    }).lean(),
-  ]);
-
-  if (!vendor) {
-    throw new ApiError('Vendor not found.', 404);
-  }
-
-  if (!service) {
-    throw new ApiError('Service not found for this vendor.', 404);
-  }
-
-  const workingHours = Array.isArray(vendor.workingHours) ? vendor.workingHours : [];
-  const blackouts = Array.isArray(vendor.blackoutSlots) ? vendor.blackoutSlots : [];
-  const dayOfWeek = getAddisDayOfWeek(localDate);
-
-  const workingDay = workingHours.find(
-    (item) => item.dayOfWeek === dayOfWeek && item.isEnabled
-  );
-
-  if (!workingDay) {
-    return {
-      vendorId: String(vendor._id),
-      serviceId: String(service._id),
-      localDate,
-      timezone: ADDIS_TIMEZONE,
-      slotDurationMinutes: service.durationMinutes,
-      items: [],
-    };
-  }
-
-  const openMinute = timeStringToMinutes(workingDay.startTime);
-  const closeMinute = timeStringToMinutes(workingDay.endTime);
-
-  if (openMinute >= closeMinute) {
-    return {
-      vendorId: String(vendor._id),
-      serviceId: String(service._id),
-      localDate,
-      timezone: ADDIS_TIMEZONE,
-      slotDurationMinutes: service.durationMinutes,
-      items: [],
-    };
-  }
-
-  const dayStartUtc = addisLocalMinuteToUtcDate(localDate, 0);
-  const dayEndUtc = addisLocalMinuteToUtcDate(localDate, 24 * 60);
-
-  const existingBookings = await Booking.find({
+  return listAvailableSlotsByVendorService({
     vendorId,
-    status: { $in: ACTIVE_CONFLICT_STATUSES },
-    startsAtUtc: { $lt: dayEndUtc },
-    endsAtUtc: { $gt: dayStartUtc },
-  })
-    .select({ startsAtUtc: 1, endsAtUtc: 1 })
-    .lean();
-
-  const dayBlackouts = blackouts
-    .filter((item) => item.date === localDate)
-    .map((item) => ({
-      startMinute: timeStringToMinutes(item.startTime),
-      endMinute: timeStringToMinutes(item.endTime),
-    }))
-    .filter((item) => Number.isFinite(item.startMinute) && Number.isFinite(item.endMinute));
-
-  const slots = [];
-  for (
-    let currentStartMinute = openMinute;
-    currentStartMinute + service.durationMinutes <= closeMinute;
-    currentStartMinute += service.durationMinutes
-  ) {
-    const currentEndMinute = currentStartMinute + service.durationMinutes;
-    const startsAtUtc = addisLocalMinuteToUtcDate(localDate, currentStartMinute);
-    const endsAtUtc = addisLocalMinuteToUtcDate(localDate, currentEndMinute);
-
-    const hasBlackout = dayBlackouts.some(
-      (item) => currentStartMinute < item.endMinute && currentEndMinute > item.startMinute
-    );
-
-    const hasBookingConflict = existingBookings.some(
-      (item) => startsAtUtc < item.endsAtUtc && endsAtUtc > item.startsAtUtc
-    );
-
-    let reasonCode = null;
-    if (hasBlackout) {
-      reasonCode = 'blackout';
-    } else if (hasBookingConflict) {
-      reasonCode = 'conflict';
-    }
-
-    slots.push({
-      startsAtUtc: startsAtUtc.toISOString(),
-      endsAtUtc: endsAtUtc.toISOString(),
-      localStartTime: minutesToTimeString(currentStartMinute),
-      localEndTime: minutesToTimeString(currentEndMinute),
-      isAvailable: !reasonCode,
-      reasonCode,
-    });
-  }
-
-  return {
-    vendorId: String(vendor._id),
-    serviceId: String(service._id),
+    serviceId,
     localDate,
-    timezone: ADDIS_TIMEZONE,
-    slotDurationMinutes: service.durationMinutes,
-    items: slots,
-  };
+  });
 };
 
 const create = async (user, payload) => {
@@ -482,11 +254,11 @@ const create = async (user, payload) => {
   }
 
   const endsAtUtc = new Date(startsAtUtc.getTime() + service.durationMinutes * 60 * 1000);
-  ensureVendorAvailable(vendor, startsAtUtc, endsAtUtc);
+  ensureVendorAvailable({ vendor, startsAtUtc, endsAtUtc });
 
   const conflictFilter = {
     vendorId: service.vendorId,
-    status: { $in: ACTIVE_CONFLICT_STATUSES },
+    status: { $in: ACTIVE_BOOKING_CONFLICT_STATUSES },
     startsAtUtc: { $lt: endsAtUtc },
     endsAtUtc: { $gt: startsAtUtc },
   };
