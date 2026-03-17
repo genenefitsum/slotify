@@ -4,6 +4,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { HttpError } from '@/api/http';
+import BackButton from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,6 +81,8 @@ const LoginPage = () => {
 			<div className="pointer-events-none absolute -right-20 bottom-10 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
 
 			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
+				<BackButton className="mb-4" fallbackTo="/" />
+
 				<div className="glass rounded-3xl border border-border/80 bg-card/90 p-6 shadow-card sm:p-8">
 					<h2 className="text-2xl font-heading font-semibold">Log In</h2>
 					<p className="mt-2 text-sm text-muted-foreground">Access your account and continue where you left off.</p>

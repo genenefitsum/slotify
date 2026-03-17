@@ -7,6 +7,7 @@ import { HttpError } from '@/api/http';
 import { servicesApi } from '@/api/services.api';
 import { vendorsApi } from '@/api/vendors.api';
 import { Button } from '@/components/ui/button';
+import BackButton from '@/components/ui/back-button';
 import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
 import { Input } from '@/components/ui/input';
@@ -621,6 +622,8 @@ const VendorDashboardPage = () => {
 
 	return (
 		<section className="container mx-auto space-y-8 px-4 py-14">
+			<BackButton fallbackTo="/" />
+
 			<header>
 				<h1 className="text-3xl font-semibold">Vendor Dashboard</h1>
 				<p className="mt-2 text-muted-foreground">Manage your profile, services, and booking operations from one place.</p>

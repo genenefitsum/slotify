@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { vendorsApi } from '@/api/vendors.api';
 import VendorCard from '@/components/main/VendorCard';
+import BackButton from '@/components/ui/back-button';
 import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
 import PageSkeleton from '@/components/ui/page-skeleton';
@@ -60,6 +61,8 @@ const VendorsPage = () => {
 
 	return (
 		<section className="container mx-auto px-4 py-10 lg:py-14">
+			<BackButton className="mb-4" fallbackTo="/" />
+
 			<div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
 				<div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
 				<div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-accent/15 blur-3xl" />

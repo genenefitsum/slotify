@@ -15,6 +15,7 @@ import {
 
 import { adminApi } from '@/api/admin.api';
 import { HttpError } from '@/api/http';
+import BackButton from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
@@ -900,6 +901,8 @@ const AdminDashboardPage = () => {
 
 	return (
 		<section className="container mx-auto px-4 py-8 lg:py-12">
+			<BackButton className="mb-4" fallbackTo="/" />
+
 			<div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-card sm:p-8 lg:p-10">
 				<div className="pointer-events-none absolute -left-10 top-0 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
 				<div className="pointer-events-none absolute -right-12 bottom-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />

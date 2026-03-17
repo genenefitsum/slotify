@@ -9,6 +9,7 @@ import { reviewsApi } from '@/api/reviews.api';
 import { servicesApi } from '@/api/services.api';
 import { vendorsApi } from '@/api/vendors.api';
 import { Button } from '@/components/ui/button';
+import BackButton from '@/components/ui/back-button';
 import {
 	Dialog,
 	DialogContent,
@@ -385,6 +386,8 @@ const VendorDetailPage = () => {
 
 	return (
 		<section className="container mx-auto px-4 py-10 lg:px-6 lg:py-14">
+			<BackButton className="mb-4" fallbackTo="/vendors" />
+
 			<div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
 				<div className="bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.95))] px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
 					<div className="flex flex-wrap items-start justify-between gap-6">

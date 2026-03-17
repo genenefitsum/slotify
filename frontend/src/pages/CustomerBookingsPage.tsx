@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { bookingsApi } from '@/api/bookings.api';
 import { HttpError } from '@/api/http';
+import BackButton from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
@@ -117,6 +118,8 @@ const CustomerBookingsPage = () => {
 
 	return (
 		<section className="container mx-auto px-4 py-14">
+			<BackButton className="mb-4" fallbackTo="/" />
+
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div>
 					<h1 className="text-3xl font-semibold">My Bookings</h1>

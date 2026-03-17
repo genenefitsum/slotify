@@ -161,6 +161,14 @@ Target hosting:
 - Backend: Render or Railway
 - Database: MongoDB Atlas
 
+Detailed rollout and rollback steps are documented in `DEPLOYMENT.md`.
+
+Environment templates:
+- `backend/.env.staging.example`
+- `backend/.env.production.example`
+- `frontend/.env.staging.example`
+- `frontend/.env.production.example`
+
 ### Required Backend Environment Variables
 
 Set these in staging and production:
