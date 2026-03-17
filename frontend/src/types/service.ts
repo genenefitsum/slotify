@@ -1,4 +1,5 @@
 import type { PaginatedResponse } from '@/types/vendor';
+import type { VendorImagePayload } from '@/types/vendor';
 
 export type DepositType = 'none' | 'fixed' | 'percentage';
 
@@ -14,6 +15,8 @@ export type Service = {
 	currency: string;
 	depositType: DepositType;
 	depositValue: number;
+	imageUrl: string | null;
+	images: string[];
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
@@ -37,6 +40,7 @@ export type CreateServicePayload = {
 	currency: string;
 	depositType?: DepositType;
 	depositValue?: number;
+	images?: VendorImagePayload[] | null;
 };
 
 export type UpdateServicePayload = Partial<CreateServicePayload> & {

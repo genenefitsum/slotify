@@ -1,6 +1,17 @@
 const mongoose = require('mongoose');
 
 const DEPOSIT_TYPES = ['none', 'fixed', 'percentage'];
+const serviceImageSchema = new mongoose.Schema(
+	{
+		data: Buffer,
+		contentType: String,
+		publicId: String,
+		secureUrl: String,
+	},
+	{
+		_id: false,
+	}
+);
 
 const serviceSchema = new mongoose.Schema(
 	{
@@ -60,6 +71,10 @@ const serviceSchema = new mongoose.Schema(
 			type: Number,
 			default: 0,
 			min: 0,
+		},
+		images: {
+			type: [serviceImageSchema],
+			default: [],
 		},
 		isActive: {
 			type: Boolean,

@@ -1,6 +1,18 @@
 const mongoose = require('mongoose');
 
 const VENDOR_STATUSES = ['draft', 'pending_verification', 'active', 'suspended'];
+const vendorImageSchema = new mongoose.Schema(
+  {
+    data: Buffer,
+    contentType: String,
+    publicId: String,
+    secureUrl: String,
+  },
+  {
+    _id: false,
+  }
+);
+
 const vendorWorkingHourSchema = new mongoose.Schema(
   {
     dayOfWeek: {
@@ -73,11 +85,10 @@ const vendorSchema = new mongoose.Schema(
       trim: true,
       maxlength: 140,
     },
-    image: {
-      data: Buffer,
-      contentType: String,
-      publicId: String,
-      secureUrl: String,
+    image: vendorImageSchema,
+    images: {
+      type: [vendorImageSchema],
+      default: [],
     },
     legalBusinessName: {
       type: String,

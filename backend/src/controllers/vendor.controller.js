@@ -1,5 +1,6 @@
 const ApiError = require('../utils/apiError');
 const vendorService = require('../services/vendor.service');
+const MAX_VENDOR_IMAGE_COUNT = 5;
 
 const validateCreateVendorPayload = (payload = {}) => {
   if (!payload.displayName) {
@@ -8,6 +9,16 @@ const validateCreateVendorPayload = (payload = {}) => {
 
   if (!payload.location?.countryCode || !payload.location?.city) {
     throw new ApiError('location.countryCode and location.city are required.', 400);
+  }
+
+  if (payload.images !== undefined) {
+    if (payload.images !== null && !Array.isArray(payload.images)) {
+      throw new ApiError('images must be an array.', 400);
+    }
+
+    if (Array.isArray(payload.images) && payload.images.length > MAX_VENDOR_IMAGE_COUNT) {
+      throw new ApiError(`images must contain ${MAX_VENDOR_IMAGE_COUNT} or fewer items.`, 400);
+    }
   }
 };
 

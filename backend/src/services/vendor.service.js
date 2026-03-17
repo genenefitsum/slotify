@@ -18,6 +18,7 @@ const ALLOWED_IMAGE_CONTENT_TYPES = new Set([
   'image/svg+xml',
 ]);
 const MAX_VENDOR_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_VENDOR_IMAGE_COUNT = 5;
 const GOOGLE_MAPS_REDIRECT_LIMIT = 5;
 const GOOGLE_MAPS_RESOLVE_TIMEOUT_MS = 8000;
 
@@ -249,6 +250,16 @@ const toImageUrl = (image) => {
   return `data:${image.contentType};base64,${buffer.toString('base64')}`;
 };
 
+const getVendorImages = (vendorDoc) => {
+  if (Array.isArray(vendorDoc?.images) && vendorDoc.images.length > 0) {
+    return vendorDoc.images;
+  }
+
+  return vendorDoc?.image ? [vendorDoc.image] : [];
+};
+
+const toImageUrls = (images = []) => images.map(toImageUrl).filter(Boolean);
+
 const createImageDataUrl = (contentType, buffer, rawValue) => {
   const rawString = typeof rawValue === 'string' ? rawValue : '';
   if (rawString.startsWith('data:')) {
@@ -263,7 +274,8 @@ const toPublicVendor = (vendorDoc, details = {}) => ({
   displayName: vendorDoc.displayName,
   legalBusinessName: vendorDoc.legalBusinessName || null,
   description: vendorDoc.description || '',
-  imageUrl: toImageUrl(vendorDoc.image),
+  imageUrl: toImageUrls(getVendorImages(vendorDoc))[0] || null,
+  images: toImageUrls(getVendorImages(vendorDoc)),
   categories: vendorDoc.categories || [],
   timezone: vendorDoc.timezone,
   location: vendorDoc.location,
@@ -283,25 +295,17 @@ const ensureObjectId = (value, label) => {
   }
 };
 
-const normalizeImagePayload = (image) => {
-  if (image === undefined) {
-    return undefined;
-  }
-
-  if (image === null) {
-    return null;
-  }
-
+const normalizeImagePayload = (image, label) => {
   if (!image || typeof image !== 'object') {
-    throw new ApiError('Invalid vendor image payload.', 400);
+    throw new ApiError(`Invalid ${label} payload.`, 400);
   }
 
   if (!image.data || !image.contentType) {
-    throw new ApiError('Vendor image data and contentType are required.', 400);
+    throw new ApiError(`${label} data and contentType are required.`, 400);
   }
 
   if (!ALLOWED_IMAGE_CONTENT_TYPES.has(image.contentType)) {
-    throw new ApiError('Unsupported vendor image content type.', 400);
+    throw new ApiError(`Unsupported ${label.toLowerCase()} content type.`, 400);
   }
 
   const base64Payload = String(image.data).includes(',')
@@ -311,11 +315,11 @@ const normalizeImagePayload = (image) => {
   const buffer = Buffer.from(base64Payload, 'base64');
 
   if (!buffer.length) {
-    throw new ApiError('Vendor image data is empty.', 400);
+    throw new ApiError(`${label} data is empty.`, 400);
   }
 
   if (buffer.length > MAX_VENDOR_IMAGE_BYTES) {
-    throw new ApiError('Vendor image must be 2MB or less.', 400);
+    throw new ApiError(`${label} must be 2MB or less.`, 400);
   }
 
   return {
@@ -323,6 +327,34 @@ const normalizeImagePayload = (image) => {
     buffer,
     dataUrl: createImageDataUrl(image.contentType, buffer, image.data),
   };
+};
+
+const normalizeImagesPayload = (imagesPayload, imagePayload) => {
+  if (imagesPayload === undefined && imagePayload === undefined) {
+    return undefined;
+  }
+
+  if (imagesPayload !== undefined) {
+    if (imagesPayload === null) {
+      return null;
+    }
+
+    if (!Array.isArray(imagesPayload)) {
+      throw new ApiError('Vendor images must be an array.', 400);
+    }
+
+    if (imagesPayload.length > MAX_VENDOR_IMAGE_COUNT) {
+      throw new ApiError(`Vendor photos must be ${MAX_VENDOR_IMAGE_COUNT} or fewer.`, 400);
+    }
+
+    return imagesPayload.map((image, index) => normalizeImagePayload(image, `Vendor photo ${index + 1}`));
+  }
+
+  if (imagePayload === null) {
+    return null;
+  }
+
+  return [normalizeImagePayload(imagePayload, 'Vendor image')];
 };
 
 const uploadImageToCloudinary = async (normalizedImage, fileName) => {
@@ -348,33 +380,58 @@ const removeCloudinaryImage = async (publicId) => {
   }
 };
 
-const buildVendorImageRecord = async (image, fileName, currentImage) => {
-  if (image === undefined) {
+const removeCloudinaryImages = async (images = []) => {
+  for (const image of images) {
+    await removeCloudinaryImage(image?.publicId);
+  }
+};
+
+const buildVendorImagesRecord = async (
+  imagesPayload,
+  imagePayload,
+  fileName,
+  currentImages = [],
+  { append = false } = {}
+) => {
+  const normalizedImages = normalizeImagesPayload(imagesPayload, imagePayload);
+  if (normalizedImages === undefined) {
     return undefined;
   }
 
-  if (image === null) {
-    await removeCloudinaryImage(currentImage?.publicId);
-    return null;
+  if (normalizedImages === null) {
+    await removeCloudinaryImages(currentImages);
+    return [];
   }
 
-  const normalizedImage = normalizeImagePayload(image);
+  if (append && currentImages.length + normalizedImages.length > MAX_VENDOR_IMAGE_COUNT) {
+    throw new ApiError(`Vendor photos must be ${MAX_VENDOR_IMAGE_COUNT} or fewer.`, 400);
+  }
 
   if (isCloudinaryConfigured()) {
-    const uploadedImage = await uploadImageToCloudinary(normalizedImage, fileName);
-    await removeCloudinaryImage(currentImage?.publicId);
+    const uploadedImages = [];
+    for (const [index, normalizedImage] of normalizedImages.entries()) {
+      const uploadedImage = await uploadImageToCloudinary(normalizedImage, `${fileName}-${index + 1}`);
+      uploadedImages.push({
+        contentType: normalizedImage.contentType,
+        publicId: uploadedImage.publicId,
+        secureUrl: uploadedImage.secureUrl,
+      });
+    }
 
-    return {
-      contentType: normalizedImage.contentType,
-      publicId: uploadedImage.publicId,
-      secureUrl: uploadedImage.secureUrl,
-    };
+    if (append) {
+      return [...currentImages, ...uploadedImages];
+    }
+
+    await removeCloudinaryImages(currentImages);
+    return uploadedImages;
   }
 
-  return {
+  const nextImages = normalizedImages.map((normalizedImage) => ({
     data: normalizedImage.buffer,
     contentType: normalizedImage.contentType,
-  };
+  }));
+
+  return append ? [...currentImages, ...nextImages] : nextImages;
 };
 
 const getStartingPricesByVendorId = async (vendorIds) => {
@@ -568,12 +625,13 @@ const createForOwner = async (ownerUserId, payload) => {
     throw new ApiError('Vendor profile already exists for this account.', 409);
   }
 
-  const image = await buildVendorImageRecord(payload.image, payload.displayName);
+  const images = await buildVendorImagesRecord(payload.images, payload.image, payload.displayName, []);
 
   const vendor = await Vendor.create({
     ownerUserId,
     displayName: payload.displayName,
-    image,
+    image: null,
+    images: images || [],
     legalBusinessName: payload.legalBusinessName,
     description: payload.description,
     workingHours: normalizeWorkingHours(payload.workingHours) || [],
@@ -620,8 +678,15 @@ const updateForOwner = async (ownerUserId, payload) => {
     }
   }
 
-  if (payload.image !== undefined) {
-    vendor.image = await buildVendorImageRecord(payload.image, payload.displayName || vendor.displayName, vendor.image);
+  if (payload.images !== undefined || payload.image !== undefined) {
+    vendor.images = await buildVendorImagesRecord(
+      payload.images,
+      payload.image,
+      payload.displayName || vendor.displayName,
+      getVendorImages(vendor),
+      { append: payload.images !== undefined }
+    );
+    vendor.image = null;
   }
 
   if (payload.workingHours !== undefined) {

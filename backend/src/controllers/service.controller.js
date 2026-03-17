@@ -1,5 +1,6 @@
 const ApiError = require('../utils/apiError');
 const serviceService = require('../services/service.service');
+const MAX_SERVICE_IMAGE_COUNT = 5;
 
 const validateCreateServicePayload = (payload = {}) => {
   const required = ['name', 'durationMinutes', 'priceAmount', 'currency'];
@@ -7,6 +8,16 @@ const validateCreateServicePayload = (payload = {}) => {
   for (const field of required) {
     if (payload[field] === undefined || payload[field] === null || payload[field] === '') {
       throw new ApiError(`${field} is required.`, 400);
+    }
+  }
+
+  if (payload.images !== undefined) {
+    if (payload.images !== null && !Array.isArray(payload.images)) {
+      throw new ApiError('images must be an array.', 400);
+    }
+
+    if (Array.isArray(payload.images) && payload.images.length > MAX_SERVICE_IMAGE_COUNT) {
+      throw new ApiError(`images must contain ${MAX_SERVICE_IMAGE_COUNT} or fewer items.`, 400);
     }
   }
 };

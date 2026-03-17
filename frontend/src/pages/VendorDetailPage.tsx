@@ -646,8 +646,8 @@ const VendorDetailPage = () => {
 
 						<div className="grid min-w-[280px] flex-1 gap-3 sm:grid-cols-2">
 							<div className="sm:col-span-2 overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/70 backdrop-blur">
-								{vendor.imageUrl ? (
-									<img src={vendor.imageUrl} alt={vendor.displayName} className="h-56 w-full object-cover" />
+								{(vendor.images?.[0] || vendor.imageUrl) ? (
+									<img src={vendor.images?.[0] || vendor.imageUrl || ''} alt={vendor.displayName} className="h-56 w-full object-cover" />
 								) : (
 									<div className="flex h-56 items-end bg-[linear-gradient(135deg,rgba(5,150,105,0.88),rgba(15,23,42,0.9))] p-6 text-white">
 										<div>
@@ -657,6 +657,15 @@ const VendorDetailPage = () => {
 									</div>
 								)}
 							</div>
+							{vendor.images?.length > 1 ? (
+								<div className="sm:col-span-2 grid grid-cols-4 gap-2 rounded-2xl border border-white/60 bg-white/70 p-3 backdrop-blur">
+									{vendor.images.slice(1, 5).map((image, index) => (
+										<div key={`${image}-${index}`} className="h-16 overflow-hidden rounded-lg border border-border bg-background">
+											<img src={image} alt={`${vendor.displayName} gallery ${index + 2}`} className="h-full w-full object-cover" />
+										</div>
+									))}
+								</div>
+							) : null}
 							<div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur">
 								<div className="flex items-center gap-3">
 									<div className="rounded-2xl bg-emerald-100 p-2 text-emerald-700">
@@ -807,6 +816,11 @@ const VendorDetailPage = () => {
 							<div className="mt-6 grid gap-4 sm:grid-cols-2">
 								{services.map((service) => (
 									<article key={service.id} className="flex h-full flex-col rounded-[1.5rem] border border-border bg-muted/20 p-5 transition-colors hover:bg-muted/35">
+										{service.imageUrl ? (
+											<div className="mb-4 h-36 overflow-hidden rounded-xl border border-border bg-background">
+												<img src={service.imageUrl} alt={service.name} className="h-full w-full object-cover" />
+											</div>
+										) : null}
 										<div className="flex items-start justify-between gap-3">
 											<div>
 												<h3 className="text-lg font-semibold">{service.name}</h3>

@@ -44,6 +44,7 @@ export type Vendor = {
 	legalBusinessName: string | null;
 	description: string;
 	imageUrl: string | null;
+	images: string[];
 	categories: string[];
 	timezone: string;
 	location: VendorLocation;
@@ -74,6 +75,7 @@ export type VendorListResponse = PaginatedResponse<Vendor>;
 
 export type CreateVendorPayload = {
 	displayName: string;
+	images?: VendorImagePayload[] | null;
 	image?: VendorImagePayload | null;
 	legalBusinessName?: string;
 	description?: string;

@@ -180,7 +180,7 @@ const VendorsPage = () => {
 									key={vendor.id}
 									id={vendor.id}
 									name={vendor.displayName}
-									image={vendor.imageUrl || undefined}
+									image={vendor.images?.[0] || vendor.imageUrl || undefined}
 									category={vendor.categories[0] || 'General'}
 									rating={vendor.averageRating}
 									reviews={vendor.reviewCount}

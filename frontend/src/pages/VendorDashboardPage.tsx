@@ -16,11 +16,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import type { Booking, BookingTransitionAction } from '@/types/booking';
 import type { CreateServicePayload, Service, UpdateServicePayload } from '@/types/service';
-import type { BlackoutSlot, CreateVendorPayload, UpdateVendorPayload, Vendor, WorkingHour } from '@/types/vendor';
+import type {
+	BlackoutSlot,
+	CreateVendorPayload,
+	UpdateVendorPayload,
+	Vendor,
+	VendorImagePayload,
+	WorkingHour,
+} from '@/types/vendor';
 
 const BOOKINGS_PAGE_SIZE = 8;
 const SERVICES_PAGE_SIZE = 10;
 const ADDIS_TIMEZONE = 'Africa/Addis_Ababa';
+const MAX_IMAGE_COUNT = 5;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 type CoordinatePair = [number, number];
 
@@ -41,6 +50,7 @@ const createEmptyBlackout = (): BlackoutSlot => ({
 
 const createVendorForm = (vendor?: Vendor): CreateVendorPayload => ({
 	displayName: vendor?.displayName || '',
+	images: undefined,
 	image: undefined,
 	legalBusinessName: vendor?.legalBusinessName || '',
 	description: vendor?.description || '',
@@ -56,6 +66,35 @@ const createVendorForm = (vendor?: Vendor): CreateVendorPayload => ({
 		coordinates: vendor?.location.coordinates.coordinates || [0, 0],
 	},
 });
+
+const createServiceForm = (): CreateServicePayload => ({
+	name: '',
+	description: '',
+	durationMinutes: 60,
+	bufferBeforeMinutes: 0,
+	bufferAfterMinutes: 0,
+	priceAmount: 0,
+	currency: 'ETB',
+	depositType: 'none',
+	depositValue: 0,
+	images: undefined,
+});
+
+const readFileAsDataUrl = (file: File) =>
+	new Promise<string>((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			const result = typeof reader.result === 'string' ? reader.result : '';
+			if (!result) {
+				reject(new Error('Unable to read selected image.'));
+				return;
+			}
+
+			resolve(result);
+		};
+		reader.onerror = () => reject(new Error('Unable to read selected image.'));
+		reader.readAsDataURL(file);
+	});
 
 const isValidLatitude = (value: number) => Number.isFinite(value) && value >= -90 && value <= 90;
 
@@ -187,18 +226,9 @@ const VendorDashboardPage = () => {
 	const [categoryInput, setCategoryInput] = useState<string | null>(null);
 	const [googleMapsLink, setGoogleMapsLink] = useState('');
 	const [isResolvingMapLink, setIsResolvingMapLink] = useState(false);
-	const [serviceDraft, setServiceDraft] = useState<CreateServicePayload>({
-		name: '',
-		description: '',
-		durationMinutes: 60,
-		bufferBeforeMinutes: 0,
-		bufferAfterMinutes: 0,
-		priceAmount: 0,
-		currency: 'ETB',
-		depositType: 'none',
-		depositValue: 0,
-	});
+	const [serviceDraft, setServiceDraft] = useState<CreateServicePayload>(createServiceForm());
 	const [serviceEditingId, setServiceEditingId] = useState<string | null>(null);
+	const [serviceExistingImages, setServiceExistingImages] = useState<string[]>([]);
 
 	const vendorQuery = useQuery({
 		queryKey: ['vendor', 'me'],
@@ -207,17 +237,24 @@ const VendorDashboardPage = () => {
 	});
 
 	const vendorForm = vendorDraft ?? createVendorForm(vendorQuery.data);
-	const imagePreview = useMemo(() => {
-		if (vendorDraft?.image === null) {
-			return '';
+	const vendorImagePreviews = useMemo(() => {
+		if (vendorDraft?.images !== undefined) {
+			return (vendorDraft.images || []).map((image) => image.data);
 		}
 
-		if (vendorDraft?.image?.data) {
-			return vendorDraft.image.data;
+		if (vendorQuery.data?.images?.length) {
+			return vendorQuery.data.images;
 		}
 
-		return vendorQuery.data?.imageUrl || '';
-	}, [vendorDraft, vendorQuery.data?.imageUrl]);
+		return vendorQuery.data?.imageUrl ? [vendorQuery.data.imageUrl] : [];
+	}, [vendorDraft?.images, vendorQuery.data?.images, vendorQuery.data?.imageUrl]);
+	const serviceImagePreviews = useMemo(() => {
+		if (serviceDraft.images !== undefined) {
+			return (serviceDraft.images || []).map((image) => image.data);
+		}
+
+		return serviceExistingImages;
+	}, [serviceDraft.images, serviceExistingImages]);
 	const updateVendorForm = (updater: (current: CreateVendorPayload) => CreateVendorPayload) => {
 		setVendorDraft((prev) => updater(prev ?? createVendorForm(vendorQuery.data)));
 	};
@@ -302,40 +339,117 @@ const VendorDashboardPage = () => {
 		}));
 	};
 
-	const handleVendorImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (!file) {
+	const handleVendorImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+		const selectedFiles = Array.from(event.target.files || []);
+		event.target.value = '';
+		if (selectedFiles.length === 0) {
 			return;
 		}
 
-		if (!file.type.startsWith('image/')) {
-			push('Select a valid image file.', 'error');
+		const currentCount = vendorForm.images?.length || 0;
+		const remainingSlots = MAX_IMAGE_COUNT - currentCount;
+		if (remainingSlots <= 0) {
+			push(`You can upload up to ${MAX_IMAGE_COUNT} vendor photos.`, 'error');
 			return;
 		}
 
-		if (file.size > 2 * 1024 * 1024) {
-			push('Vendor image must be 2MB or less.', 'error');
-			return;
+		const files = selectedFiles.slice(0, remainingSlots);
+		if (files.length < selectedFiles.length) {
+			push(`Only ${remainingSlots} more photo(s) can be added.`, 'error');
 		}
 
-		const reader = new FileReader();
-		reader.onload = () => {
-			const result = typeof reader.result === 'string' ? reader.result : '';
-			if (!result) {
-				push('Unable to read the selected image.', 'error');
+		for (const file of files) {
+			if (!file.type.startsWith('image/')) {
+				push('Select valid image files only.', 'error');
 				return;
 			}
 
+			if (file.size > MAX_IMAGE_BYTES) {
+				push('Each vendor photo must be 2MB or less.', 'error');
+				return;
+			}
+		}
+
+		try {
+			const nextImages: VendorImagePayload[] = await Promise.all(
+				files.map(async (file) => ({
+					data: await readFileAsDataUrl(file),
+					contentType: file.type,
+				}))
+			);
+
 			updateVendorForm((current) => ({
 				...current,
-				image: {
-					data: result,
-					contentType: file.type,
-				},
+				images: [...(current.images || []), ...nextImages],
+				image: undefined,
 			}));
-		};
-		reader.readAsDataURL(file);
+		} catch {
+			push('Unable to read one or more selected images.', 'error');
+		}
+	};
+
+	const removeVendorDraftImage = (indexToRemove: number) => {
+		updateVendorForm((current) => ({
+			...current,
+			images: (current.images || []).filter((_, index) => index !== indexToRemove),
+			image: undefined,
+		}));
+	};
+
+	const handleServiceImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+		const selectedFiles = Array.from(event.target.files || []);
 		event.target.value = '';
+		if (selectedFiles.length === 0) {
+			return;
+		}
+
+		const currentCount = serviceDraft.images?.length || 0;
+		const remainingSlots = MAX_IMAGE_COUNT - currentCount;
+		if (remainingSlots <= 0) {
+			push(`You can upload up to ${MAX_IMAGE_COUNT} service photos.`, 'error');
+			return;
+		}
+
+		const files = selectedFiles.slice(0, remainingSlots);
+		if (files.length < selectedFiles.length) {
+			push(`Only ${remainingSlots} more photo(s) can be added.`, 'error');
+		}
+
+		for (const file of files) {
+			if (!file.type.startsWith('image/')) {
+				push('Select valid image files only.', 'error');
+				return;
+			}
+
+			if (file.size > MAX_IMAGE_BYTES) {
+				push('Each service photo must be 2MB or less.', 'error');
+				return;
+			}
+		}
+
+		try {
+			const nextImages: VendorImagePayload[] = await Promise.all(
+				files.map(async (file) => ({
+					data: await readFileAsDataUrl(file),
+					contentType: file.type,
+				}))
+			);
+
+			setServiceExistingImages([]);
+			setServiceDraft((prev) => ({
+				...prev,
+				images: [...(prev.images || []), ...nextImages],
+			}));
+		} catch {
+			push('Unable to read one or more selected images.', 'error');
+		}
+	};
+
+	const removeServiceDraftImage = (indexToRemove: number) => {
+		setServiceDraft((prev) => ({
+			...prev,
+			images: (prev.images || []).filter((_, index) => index !== indexToRemove),
+		}));
 	};
 
 	const servicesQuery = useQuery({
@@ -359,7 +473,8 @@ const VendorDashboardPage = () => {
 		mutationFn: () => {
 			const payload = {
 				...vendorForm,
-				image: vendorForm.image,
+				images: vendorForm.images,
+				image: undefined,
 				legalBusinessName: vendorForm.legalBusinessName || undefined,
 				description: vendorForm.description || undefined,
 				categories: vendorForm.categories,
@@ -379,6 +494,7 @@ const VendorDashboardPage = () => {
 		},
 		onSuccess: () => {
 			push(vendorQuery.data ? 'Vendor profile updated.' : 'Vendor profile created.', 'success');
+			setVendorDraft(null);
 			void queryClient.invalidateQueries({ queryKey: ['vendor', 'me'] });
 			void queryClient.invalidateQueries({ queryKey: ['vendors'] });
 		},
@@ -397,17 +513,8 @@ const VendorDashboardPage = () => {
 		onSuccess: () => {
 			push(serviceEditingId ? 'Service updated.' : 'Service created.', 'success');
 			setServiceEditingId(null);
-			setServiceDraft({
-				name: '',
-				description: '',
-				durationMinutes: 60,
-				bufferBeforeMinutes: 0,
-				bufferAfterMinutes: 0,
-				priceAmount: 0,
-					currency: 'ETB',
-				depositType: 'none',
-				depositValue: 0,
-			});
+			setServiceExistingImages([]);
+			setServiceDraft(createServiceForm());
 			void queryClient.invalidateQueries({ queryKey: ['services'] });
 		},
 		onError: (error) => {
@@ -497,6 +604,7 @@ const VendorDashboardPage = () => {
 
 	const syncServiceDraftFromItem = (service: Service) => {
 		setServiceEditingId(service.id);
+		setServiceExistingImages(service.images || []);
 		setServiceDraft({
 			name: service.name,
 			description: service.description,
@@ -507,6 +615,7 @@ const VendorDashboardPage = () => {
 			currency: 'ETB',
 			depositType: service.depositType,
 			depositValue: service.depositValue,
+			images: undefined,
 		});
 	};
 
@@ -666,39 +775,52 @@ const VendorDashboardPage = () => {
 							) : null}
 						</div>
 						<div className="md:col-span-2">
-							<label htmlFor="vendorImage" className="mb-1 block text-sm font-medium">Profile Image</label>
-							<div className="flex flex-col gap-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4 md:flex-row md:items-center">
-								<div className="h-28 w-full overflow-hidden rounded-2xl bg-background md:w-44">
-									{imagePreview ? (
-										<img src={imagePreview} alt="Vendor preview" className="h-full w-full object-cover" />
+							<label htmlFor="vendorImage" className="mb-1 block text-sm font-medium">Profile Photos</label>
+							<div className="space-y-3 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+								<div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+									{vendorImagePreviews.length > 0 ? (
+										vendorImagePreviews.map((preview, index) => (
+											<div key={`${preview}-${index}`} className="group relative h-24 overflow-hidden rounded-xl border border-border bg-background">
+												<img src={preview} alt={`Vendor preview ${index + 1}`} className="h-full w-full object-cover" />
+												{vendorForm.images !== undefined ? (
+													<button
+														type="button"
+														onClick={() => removeVendorDraftImage(index)}
+														className="absolute right-1 top-1 rounded-md bg-black/65 px-2 py-0.5 text-xs text-white"
+													>
+														Remove
+													</button>
+												) : null}
+											</div>
+										))
 									) : (
-										<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-											No image uploaded
+										<div className="col-span-2 flex h-24 items-center justify-center rounded-xl border border-border bg-background text-sm text-muted-foreground md:col-span-5">
+											No photos uploaded
 										</div>
 									)}
 								</div>
-								<div className="flex-1 space-y-3">
-										<input id="vendorImage" type="file" accept="image/*" onChange={handleVendorImageChange} className="hidden" />
-										<label
-											htmlFor="vendorImage"
-											className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-										>
-											<Upload className="h-4 w-4" />
-											Choose image
-										</label>
-									<p className="text-xs text-muted-foreground">Upload a square or landscape image up to 2MB.</p>
-									{imagePreview ? (
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => {
-												updateVendorForm((current) => ({ ...current, image: null }));
-											}}
-										>
-											Remove image
-										</Button>
-									) : null}
+								<div className="flex flex-wrap items-center gap-3">
+									<input id="vendorImage" type="file" accept="image/*" multiple onChange={(event) => {
+										void handleVendorImageChange(event);
+									}} className="hidden" />
+									<label
+										htmlFor="vendorImage"
+										className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+									>
+										<Upload className="h-4 w-4" />
+										Add photos
+									</label>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => {
+											updateVendorForm((current) => ({ ...current, images: [] }));
+										}}
+									>
+										Clear photos
+									</Button>
 								</div>
+								<p className="text-xs text-muted-foreground">Upload up to 5 images, each 2MB or less.</p>
 							</div>
 						</div>
 						<div className="md:col-span-2 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
@@ -915,6 +1037,54 @@ const VendorDashboardPage = () => {
 								}
 							/>
 						</div>
+						<div className="md:col-span-2 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+							<label htmlFor="serviceImages" className="mb-1 block text-sm font-medium">Service Photos</label>
+							<div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+								{serviceImagePreviews.length > 0 ? (
+									serviceImagePreviews.map((preview, index) => (
+										<div key={`${preview}-${index}`} className="relative h-24 overflow-hidden rounded-xl border border-border bg-background">
+											<img src={preview} alt={`Service preview ${index + 1}`} className="h-full w-full object-cover" />
+											{serviceDraft.images !== undefined ? (
+												<button
+													type="button"
+													onClick={() => removeServiceDraftImage(index)}
+													className="absolute right-1 top-1 rounded-md bg-black/65 px-2 py-0.5 text-xs text-white"
+												>
+													Remove
+												</button>
+											) : null}
+										</div>
+									))
+								) : (
+									<div className="col-span-2 flex h-24 items-center justify-center rounded-xl border border-border bg-background text-sm text-muted-foreground md:col-span-5">
+										No photos uploaded
+									</div>
+								)}
+							</div>
+							<div className="mt-3 flex flex-wrap items-center gap-3">
+								<input id="serviceImages" type="file" accept="image/*" multiple onChange={(event) => {
+									void handleServiceImageChange(event);
+								}} className="hidden" />
+								<label
+									htmlFor="serviceImages"
+									className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+								>
+									<Upload className="h-4 w-4" />
+									Add photos
+								</label>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => {
+										setServiceExistingImages([]);
+										setServiceDraft((prev) => ({ ...prev, images: [] }));
+									}}
+								>
+									Clear photos
+								</Button>
+							</div>
+							<p className="mt-2 text-xs text-muted-foreground">Upload up to 5 images, each 2MB or less.</p>
+						</div>
 						<div className="md:col-span-2 flex items-center justify-between gap-3">
 							<p className="text-sm text-muted-foreground">
 								Preview: {currencyFormatter.format(serviceDraft.priceAmount || 0)}
@@ -926,17 +1096,8 @@ const VendorDashboardPage = () => {
 										variant="outline"
 										onClick={() => {
 											setServiceEditingId(null);
-											setServiceDraft({
-												name: '',
-												description: '',
-												durationMinutes: 60,
-												bufferBeforeMinutes: 0,
-												bufferAfterMinutes: 0,
-												priceAmount: 0,
-												currency: 'ETB',
-												depositType: 'none',
-												depositValue: 0,
-											});
+											setServiceExistingImages([]);
+											setServiceDraft(createServiceForm());
 										}}
 									>
 										Clear
@@ -965,6 +1126,11 @@ const VendorDashboardPage = () => {
 								<div className="space-y-3">
 									{servicesQuery.data.items.map((service) => (
 										<article key={service.id} className="rounded-2xl border border-border bg-background p-5">
+											{service.imageUrl ? (
+												<div className="mb-3 h-36 overflow-hidden rounded-xl border border-border bg-muted/20">
+													<img src={service.imageUrl} alt={service.name} className="h-full w-full object-cover" />
+												</div>
+											) : null}
 											<div className="flex flex-wrap items-start justify-between gap-3">
 												<div>
 													<p className="text-sm font-medium text-primary">Public listing</p>
