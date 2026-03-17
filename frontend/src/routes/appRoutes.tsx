@@ -18,7 +18,13 @@ const RequireAuth = () => {
 	const location = useLocation();
 
 	if (isLoading) {
-		return null;
+		return (
+			<section className="container mx-auto px-4 py-14">
+				<div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
+					Checking your session...
+				</div>
+			</section>
+		);
 	}
 
 	if (!isAuthenticated) {

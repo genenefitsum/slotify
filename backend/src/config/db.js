@@ -6,6 +6,9 @@ const connectDb = async () => {
 
   await mongoose.connect(env.mongoUri, {
     serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 10,
+    minPoolSize: 1,
   });
 
   return mongoose.connection;

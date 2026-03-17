@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
+import ErrorBoundary from './components/ui/error-boundary'
 import { ToastProvider } from './components/ui/toast'
 import { AuthProvider } from './contexts/AuthContext'
 
@@ -25,13 +26,15 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MaybeGoogleProvider>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </BrowserRouter>
-        </ToastProvider>
+        <ErrorBoundary>
+          <ToastProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </BrowserRouter>
+          </ToastProvider>
+        </ErrorBoundary>
       </QueryClientProvider>
     </MaybeGoogleProvider>
   </StrictMode>,

@@ -105,11 +105,59 @@ const PORT = env.port;
 const startServer = async () => {
   try {
     await connectDb();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info('Backend server started', {
         port: PORT,
         env: env.nodeEnv,
       });
+    });
+
+    let isShuttingDown = false;
+    const shutdown = (signal) => {
+      if (isShuttingDown) {
+        return;
+      }
+
+      isShuttingDown = true;
+      logger.info('Graceful shutdown initiated', { signal });
+
+      server.close(async () => {
+        try {
+          await mongoose.connection.close(false);
+          logger.info('HTTP server and database connection closed');
+          process.exit(0);
+        } catch (error) {
+          logger.error('Failed to close database connection during shutdown', {
+            message: error.message,
+            stack: error.stack,
+          });
+          process.exit(1);
+        }
+      });
+
+      setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000).unref();
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+
+    process.on('unhandledRejection', (error) => {
+      logger.error('Unhandled rejection encountered', {
+        message: error?.message || 'Unknown rejection',
+        stack: error?.stack,
+      });
+      shutdown('unhandledRejection');
+    });
+
+    process.on('uncaughtException', (error) => {
+      logger.error('Uncaught exception encountered', {
+        message: error?.message || 'Unknown exception',
+        stack: error?.stack,
+      });
+      shutdown('uncaughtException');
     });
   } catch (error) {
     logger.error('Failed to start backend', {

@@ -154,3 +154,70 @@ CLOUDINARY_VENDOR_FOLDER=slotify/vendors
 
 ---
 
+## Deployment Baseline
+
+Target hosting:
+- Frontend: Vercel
+- Backend: Render or Railway
+- Database: MongoDB Atlas
+
+### Required Backend Environment Variables
+
+Set these in staging and production:
+
+```bash
+NODE_ENV=production
+PORT=5000
+MONGO_URI=...
+JWT_ACCESS_SECRET=...
+CORS_ORIGINS=https://your-frontend-domain
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=300
+RATE_LIMIT_AUTH_MAX_REQUESTS=30
+```
+
+Optional (recommended for hosted images):
+
+```bash
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+CLOUDINARY_VENDOR_FOLDER=slotify/vendors
+```
+
+### Required Frontend Environment Variables
+
+```bash
+VITE_API_BASE_URL=https://your-backend-domain/api
+VITE_GOOGLE_CLIENT_ID=...
+```
+
+### Build and Smoke Checks
+
+Backend:
+
+```bash
+cd backend
+npm ci
+npm test
+npm run start:prod
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm run build
+```
+
+After deployment, verify:
+
+```bash
+curl https://your-backend-domain/api/health
+curl https://your-backend-domain/api/ready
+```
+
+---
+
