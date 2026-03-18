@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Clock3, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
+import { CalendarDays, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { bookingsApi } from '@/api/bookings.api';
@@ -44,6 +44,44 @@ const getCurrentAddisDate = () => {
 	return `${byType.year}-${byType.month}-${byType.day}`;
 };
 
+const parseLocalDate = (localDate: string) => {
+	const [year, month, day] = localDate.split('-').map(Number);
+	if (!year || !month || !day) {
+		return new Date(Date.UTC(1970, 0, 1));
+	}
+
+	return new Date(Date.UTC(year, month - 1, day));
+};
+
+const formatDatePart = (localDate: string, options: Intl.DateTimeFormatOptions) => {
+	return new Intl.DateTimeFormat(undefined, {
+		timeZone: 'UTC',
+		...options,
+	}).format(parseLocalDate(localDate));
+};
+
+const addDaysToLocalDate = (localDate: string, days: number) => {
+	const next = parseLocalDate(localDate);
+	next.setUTCDate(next.getUTCDate() + days);
+	const year = next.getUTCFullYear();
+	const month = String(next.getUTCMonth() + 1).padStart(2, '0');
+	const day = String(next.getUTCDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+};
+
+const buildDateOptions = (startDate: string, count: number) => {
+	return Array.from({ length: count }, (_, index) => {
+		const value = addDaysToLocalDate(startDate, index);
+		return {
+			value,
+			weekday: formatDatePart(value, { weekday: 'short' }),
+			dayNumber: formatDatePart(value, { day: 'numeric' }),
+			monthLabel: formatDatePart(value, { month: 'short' }),
+			isToday: index === 0,
+		};
+	});
+};
+
 const VendorDetailPage = () => {
 	const { id: vendorId } = useParams();
 	const { isAuthenticated, user } = useAuth();
@@ -51,7 +89,7 @@ const VendorDetailPage = () => {
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const [isBookingDialogOpen, setBookingDialogOpen] = useState(false);
+	const bookingPanelRef = useRef<HTMLDivElement | null>(null);
 	const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
 	const [selectedServiceId, setSelectedServiceId] = useState('');
 	const [bookingDateLocal, setBookingDateLocal] = useState(getCurrentAddisDate);
@@ -98,14 +136,7 @@ const VendorDetailPage = () => {
 				serviceId: selectedServiceId,
 				localDate: bookingDateLocal,
 			}),
-		enabled: Boolean(
-			vendorId &&
-				selectedServiceId &&
-				bookingDateLocal &&
-				isAuthenticated &&
-				isCustomer &&
-				isBookingDialogOpen
-		),
+		enabled: Boolean(vendorId && selectedServiceId && bookingDateLocal && isAuthenticated && isCustomer),
 		staleTime: 10_000,
 	});
 
@@ -128,8 +159,6 @@ const VendorDetailPage = () => {
 		},
 		onSuccess: () => {
 			push('Booking request submitted successfully.', 'success');
-			setBookingDialogOpen(false);
-			setSelectedServiceId('');
 			setBookingDateLocal(getCurrentAddisDate());
 			setSelectedSlotStartUtc('');
 			setBookingNotes('');
@@ -257,14 +286,10 @@ const VendorDetailPage = () => {
 				})),
 		[vendor?.workingHours]
 	);
-	const upcomingBlackouts = useMemo(
-		() =>
-			(vendor?.blackoutSlots || [])
-				.filter((item) => item.date)
-				.sort((left, right) => left.date.localeCompare(right.date))
-				.slice(0, 4),
-		[vendor?.blackoutSlots]
-	);
+
+	const dateOptions = useMemo(() => {
+		return buildDateOptions(getCurrentAddisDate(), 7);
+	}, []);
 
 	const currencyFormatter = useMemo(() => {
 		const currency = selectedService?.currency || services[0]?.currency || 'USD';
@@ -300,21 +325,13 @@ const VendorDetailPage = () => {
 		[]
 	);
 
-	const openBookingDialog = (serviceId?: string) => {
-		if (!ensureSignedIn() || !isCustomer) {
-			if (isAuthenticated && !isCustomer) {
-				push('Only customer accounts can create bookings.', 'error');
-			}
-			return;
-		}
-
+	const focusBookingPanel = (serviceId?: string) => {
 		if (serviceId) {
 			setSelectedServiceId(serviceId);
 			setSelectedSlotStartUtc('');
 		}
 
-		setBookingFormError('');
-		setBookingDialogOpen(true);
+		bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	};
 
 	const handleServiceSelection = (serviceId: string) => {
@@ -333,6 +350,24 @@ const VendorDetailPage = () => {
 		const start = new Date(slot.startsAtUtc);
 		const end = new Date(slot.endsAtUtc);
 		return `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+	};
+
+	const formatSlotStart = (slot: BookingAvailabilitySlot) => {
+		const start = new Date(slot.startsAtUtc);
+		return start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+	};
+
+	const submitBooking = () => {
+		if (!ensureSignedIn()) {
+			return;
+		}
+
+		if (!isCustomer) {
+			push('Only customer accounts can create bookings.', 'error');
+			return;
+		}
+
+		void bookingMutation.mutateAsync();
 	};
 
 	const openReviewDialog = () => {
@@ -385,412 +420,90 @@ const VendorDetailPage = () => {
 	}
 
 	return (
-		<section className="container mx-auto px-4 py-10 lg:px-6 lg:py-14">
+		<section className="container mx-auto px-4 py-8 lg:px-6 lg:py-12">
 			<BackButton className="mb-4" fallbackTo="/vendors" />
 
 			<div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
-				<div className="bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.95))] px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
-					<div className="flex flex-wrap items-start justify-between gap-6">
-						<div className="max-w-3xl">
-							<div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-								<span className="rounded-full bg-emerald-100 px-3 py-1">{vendor.categories[0] || 'General'}</span>
-								<span className="rounded-full bg-white/80 px-3 py-1 text-slate-600">{vendor.status.replace('_', ' ')}</span>
-							</div>
-							<h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-								{vendor.displayName}
-							</h1>
-							<p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-								{vendor.description || 'Professional services with clear booking details, modern scheduling, and customer-friendly support.'}
-							</p>
-							<div className="mt-6 flex flex-wrap gap-3">
-								<Dialog open={isBookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-									<DialogTrigger asChild>
-										<Button onClick={() => openBookingDialog()} className="rounded-full px-6">
-											Book an appointment
-										</Button>
-									</DialogTrigger>
-									<DialogContent>
-										<DialogHeader>
-											<DialogTitle>Book your appointment</DialogTitle>
-											<DialogDescription>
-												Choose a service, pick a time, and add any notes the vendor should see before your visit.
-											</DialogDescription>
-										</DialogHeader>
+				<div className="relative h-44 bg-[linear-gradient(120deg,#163e74,#1f4e8f,#0f305f)] sm:h-56">
+					<div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_10%,rgba(255,255,255,0.24),transparent_40%)]" />
+				</div>
 
-										<form
-											className="mt-4 space-y-4"
-											onSubmit={(event) => {
-												event.preventDefault();
-												void bookingMutation.mutateAsync();
-											}}
-										>
-											<div>
-												<label htmlFor="serviceId" className="mb-1 block text-sm font-medium">
-													Service
-												</label>
-												<select
-													id="serviceId"
-													className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-													value={selectedServiceId}
-													onChange={(event) => handleServiceSelection(event.target.value)}
-													required
-												>
-													<option value="">Select a service</option>
-													{services.map((service) => (
-														<option key={service.id} value={service.id}>
-															{service.name} • {currencyFormatter.format(service.priceAmount)}
-														</option>
-													))}
-												</select>
-											</div>
-
-											<div>
-												<label htmlFor="slotDate" className="mb-1 block text-sm font-medium">
-													Date
-												</label>
-												<Input
-													id="slotDate"
-													type="date"
-													value={bookingDateLocal}
-													onChange={(event) => handleDateSelection(event.target.value)}
-													min={getCurrentAddisDate()}
-													required
-												/>
-											</div>
-
-											<div>
-												<p className="mb-2 block text-sm font-medium">Available slots</p>
-												{!selectedServiceId ? (
-													<p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-														Choose a service to load available slots.
-													</p>
-												) : availabilityQuery.isLoading ? (
-													<p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-														Loading slots...
-													</p>
-												) : availabilityQuery.isError ? (
-													<p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-														{availabilityQuery.error instanceof Error
-															? availabilityQuery.error.message
-															: 'Failed to load availability slots.'}
-													</p>
-												) : availableSlots.length === 0 ? (
-													<p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-														No open slots on this date. Try another day.
-													</p>
-												) : (
-													<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-														{availableSlots.map((slot) => {
-															const isSelected = selectedSlotStartUtc === slot.startsAtUtc;
-															return (
-																<Button
-																	key={slot.startsAtUtc}
-																	type="button"
-																	variant={isSelected ? 'default' : 'outline'}
-																	onClick={() => {
-																		setSelectedSlotStartUtc(slot.startsAtUtc);
-																		setBookingFormError('');
-																	}}
-																>
-																	{formatSlotLabel(slot)}
-																</Button>
-															);
-														})}
-													</div>
-												)}
-											</div>
-
-											<div className="rounded-2xl bg-muted/50 p-3 text-sm text-muted-foreground">
-												{selectedService ? (
-													<div className="space-y-1">
-														<p>
-															You selected <span className="font-medium text-foreground">{selectedService.name}</span> for{' '}
-															<span className="font-medium text-foreground">{currencyFormatter.format(selectedService.priceAmount)}</span>.
-														</p>
-														{selectedSlot ? (
-															<p>
-																Booking time:{' '}
-																<span className="font-medium text-foreground">{formatSlotLabel(selectedSlot)}</span>{' '}
-																on {bookingDateLocal}.
-															</p>
-														) : null}
-													</div>
-												) : (
-													<p>Choose a service to see the appointment summary here.</p>
-												)}
-											</div>
-
-											<div>
-												<label htmlFor="bookingNotes" className="mb-1 block text-sm font-medium">
-													Notes (optional)
-												</label>
-												<Textarea
-													id="bookingNotes"
-													placeholder="Anything the vendor should know before your appointment"
-													value={bookingNotes}
-													onChange={(event) => setBookingNotes(event.target.value)}
-												/>
-											</div>
-
-											{bookingFormError ? <p className="text-sm text-destructive">{bookingFormError}</p> : null}
-
-											<DialogFooter>
-												<Button
-													type="submit"
-													loading={bookingMutation.isPending}
-													loadingText="Booking..."
-													disabled={!selectedSlotStartUtc}
-												>
-													Submit booking
-												</Button>
-											</DialogFooter>
-										</form>
-									</DialogContent>
-								</Dialog>
-
-								<Dialog open={isReviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-									<DialogTrigger asChild>
-										<Button variant="outline" onClick={openReviewDialog} className="rounded-full px-6">
-											Write a review
-										</Button>
-									</DialogTrigger>
-									<DialogContent>
-										<DialogHeader>
-											<DialogTitle>Share your experience</DialogTitle>
-											<DialogDescription>
-												Pick a completed appointment and leave short feedback that helps future customers.
-											</DialogDescription>
-										</DialogHeader>
-
-										<form
-											className="mt-4 space-y-4"
-											onSubmit={(event) => {
-												event.preventDefault();
-												void reviewMutation.mutateAsync();
-											}}
-										>
-											<div>
-												<label htmlFor="bookingId" className="mb-1 block text-sm font-medium">
-													Completed booking
-												</label>
-												{reviewEligibleBookings.length > 0 ? (
-													<select
-														id="bookingId"
-														className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-														value={reviewBookingId}
-														onChange={(event) => setReviewBookingId(event.target.value)}
-														required
-													>
-														<option value="">Choose a completed appointment</option>
-														{reviewEligibleBookings.map((booking) => (
-															<option key={booking.id} value={booking.id}>
-																{booking.serviceName || 'Completed service'} • {shortDateFormatter.format(new Date(booking.startsAtUtc))}
-															</option>
-														))}
-													</select>
-												) : (
-													<>
-														<Input
-															id="bookingId"
-															placeholder="Paste a completed booking id"
-															value={reviewBookingId}
-															onChange={(event) => setReviewBookingId(event.target.value)}
-															required
-														/>
-														<p className="mt-2 text-sm text-muted-foreground">
-															Completed appointments from this vendor will appear here automatically once available.
-														</p>
-													</>
-												)}
-											</div>
-
-											<div>
-												<label htmlFor="rating" className="mb-1 block text-sm font-medium">
-													Rating
-												</label>
-												<select
-													id="rating"
-													className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-													value={reviewRating}
-													onChange={(event) => setReviewRating(event.target.value)}
-												>
-													<option value="5">5 - Excellent</option>
-													<option value="4">4 - Very good</option>
-													<option value="3">3 - Good</option>
-													<option value="2">2 - Fair</option>
-													<option value="1">1 - Poor</option>
-												</select>
-											</div>
-
-											<div>
-												<label htmlFor="comment" className="mb-1 block text-sm font-medium">
-													Comment (optional)
-												</label>
-												<Textarea
-													id="comment"
-													placeholder="What stood out about the experience?"
-													value={reviewComment}
-													onChange={(event) => setReviewComment(event.target.value)}
-												/>
-											</div>
-
-											{reviewFormError ? <p className="text-sm text-destructive">{reviewFormError}</p> : null}
-
-											<DialogFooter>
-												<Button type="submit" loading={reviewMutation.isPending} loadingText="Submitting...">
-													Submit review
-												</Button>
-											</DialogFooter>
-										</form>
-									</DialogContent>
-								</Dialog>
-							</div>
-						</div>
-
-						<div className="grid min-w-[280px] flex-1 gap-3 sm:grid-cols-2">
-							<div className="sm:col-span-2 overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/70 backdrop-blur">
+				<div className="relative z-10 px-5 pb-6 sm:px-8 sm:pb-8">
+					<div className="-mt-16 flex flex-wrap items-end justify-between gap-5 sm:-mt-20">
+						<div className="flex items-end gap-4">
+							<div className="h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-slate-100 shadow-md sm:h-28 sm:w-28">
 								{(vendor.images?.[0] || vendor.imageUrl) ? (
-									<img src={vendor.images?.[0] || vendor.imageUrl || ''} alt={vendor.displayName} className="h-56 w-full object-cover" />
-								) : (
-									<div className="flex h-56 items-end bg-[linear-gradient(135deg,rgba(5,150,105,0.88),rgba(15,23,42,0.9))] p-6 text-white">
-										<div>
-											<p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100">Featured vendor</p>
-											<p className="mt-3 text-2xl font-semibold">{vendor.displayName}</p>
-										</div>
-									</div>
-								)}
+									<img
+										src={vendor.images?.[0] || vendor.imageUrl || ''}
+										alt={vendor.displayName}
+										className="h-full w-full object-cover"
+									/>
+								) : null}
 							</div>
-							{vendor.images?.length > 1 ? (
-								<div className="sm:col-span-2 grid grid-cols-4 gap-2 rounded-2xl border border-white/60 bg-white/70 p-3 backdrop-blur">
-									{vendor.images.slice(1, 5).map((image, index) => (
-										<div key={`${image}-${index}`} className="h-16 overflow-hidden rounded-lg border border-border bg-background">
-											<img src={image} alt={`${vendor.displayName} gallery ${index + 2}`} className="h-full w-full object-cover" />
-										</div>
-									))}
-								</div>
-							) : null}
-							<div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur">
-								<div className="flex items-center gap-3">
-									<div className="rounded-2xl bg-emerald-100 p-2 text-emerald-700">
+
+							<div className="pb-1">
+								<p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+									{vendor.categories[0] || 'General'}
+								</p>
+								<h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+									{vendor.displayName}
+								</h1>
+								<div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+									<span className="inline-flex items-center gap-1 text-amber-500">
+										<Star className="h-4 w-4 fill-current" />
+										<span className="font-semibold text-slate-800">{vendor.averageRating.toFixed(1)}</span>
+									</span>
+									<span>{vendor.reviewCount} reviews</span>
+									<span className="inline-flex items-center gap-1">
 										<MapPin className="h-4 w-4" />
-									</div>
-									<div>
-										<p className="text-sm text-slate-500">Location</p>
-										<p className="font-semibold text-slate-900">{vendor.location.city}</p>
-										<p className="text-xs text-slate-500">Addis Ababa timezone</p>
-									</div>
-								</div>
-							</div>
-							<div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur">
-								<div className="flex items-center gap-3">
-									<div className="rounded-2xl bg-amber-100 p-2 text-amber-700">
-										<Star className="h-4 w-4" />
-									</div>
-									<div>
-										<p className="text-sm text-slate-500">Rating</p>
-										<p className="font-semibold text-slate-900">{vendor.averageRating.toFixed(1)} out of 5</p>
-									</div>
-								</div>
-							</div>
-							<div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur">
-								<div className="flex items-center gap-3">
-									<div className="rounded-2xl bg-sky-100 p-2 text-sky-700">
-										<CalendarDays className="h-4 w-4" />
-									</div>
-									<div>
-										<p className="text-sm text-slate-500">Services</p>
-										<p className="font-semibold text-slate-900">{services.length} published</p>
-									</div>
-								</div>
-							</div>
-							<div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur">
-								<div className="flex items-center gap-3">
-									<div className="rounded-2xl bg-violet-100 p-2 text-violet-700">
-										<Clock3 className="h-4 w-4" />
-									</div>
-									<div>
-										<p className="text-sm text-slate-500">Pricing</p>
-										<p className="font-semibold text-slate-900">
-											{startingPrice !== null ? `From ${currencyFormatter.format(startingPrice)}` : 'View services'}
-										</p>
-									</div>
+										{vendor.location.city}
+									</span>
 								</div>
 							</div>
 						</div>
+
+					</div>
+
+					<p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+						{vendor.description ||
+							'Professional services with clear booking details, modern scheduling, and customer-friendly support.'}
+					</p>
+
+					<div className="mt-4 flex flex-wrap justify-end gap-3 sm:mt-5">
+						<Button className="rounded-full px-6" onClick={() => focusBookingPanel()}>
+							Book Now
+						</Button>
+						<Button variant="outline" className="rounded-full px-6" onClick={openReviewDialog}>
+							Write Review
+						</Button>
 					</div>
 				</div>
 			</div>
 
-			<div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_0.95fr]">
+			<div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
 				<div className="space-y-8">
 					<div className="rounded-[1.75rem] border border-border bg-card p-6 sm:p-7">
-						<p className="text-sm font-medium text-primary">Location and schedule</p>
-						<h2 className="mt-1 text-2xl font-semibold tracking-tight">Find the vendor and plan your visit</h2>
-						<div className="mt-5 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-							<div className="space-y-4">
-								<div className="rounded-2xl bg-muted/20 p-4">
-									<p className="font-medium text-foreground">Address</p>
-									<p className="mt-2 text-sm text-muted-foreground">
-										{vendor.location.addressLine1 || vendor.location.city}
-										{vendor.location.addressLine2 ? `, ${vendor.location.addressLine2}` : ''}
-									</p>
-									{vendor.location.description ? (
-										<p className="mt-2 text-sm text-muted-foreground">{vendor.location.description}</p>
-									) : null}
-								</div>
-								<div className="rounded-2xl bg-muted/20 p-4">
-									<p className="font-medium text-foreground">Working hours</p>
-									<div className="mt-3 space-y-2 text-sm text-muted-foreground">
-										{formattedWorkingHours.length > 0 ? (
-											formattedWorkingHours.map((item) => (
-												<div key={item.label} className="flex items-center justify-between gap-3 rounded-xl bg-background px-3 py-2">
-													<span className="font-medium text-foreground">{item.label}</span>
-													<span>{item.time}</span>
-												</div>
-											))
-										) : (
-											<p>No working hours published yet.</p>
-										)}
-									</div>
-								</div>
-								{upcomingBlackouts.length > 0 ? (
-									<div className="rounded-2xl bg-muted/20 p-4">
-										<p className="font-medium text-foreground">Unavailable times</p>
-										<div className="mt-3 space-y-2 text-sm text-muted-foreground">
-											{upcomingBlackouts.map((item, index) => (
-												<div key={`${item.date}-${index}`} className="rounded-xl bg-background px-3 py-2">
-													<p className="font-medium text-foreground">{item.date} • {item.startTime} - {item.endTime}</p>
-													{item.label ? <p className="mt-1">{item.label}</p> : null}
-												</div>
-											))}
-										</div>
-									</div>
-								) : null}
-							</div>
-							<div className="overflow-hidden rounded-2xl border border-border bg-background">
-								{mapEmbedUrl ? (
-									<iframe title="Vendor location" src={mapEmbedUrl} className="h-full min-h-80 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
-								) : (
-									<div className="flex h-full min-h-80 items-center justify-center p-6 text-sm text-muted-foreground">
-										Location coordinates have not been published yet.
-									</div>
-								)}
-							</div>
-						</div>
+						<h2 className="text-xl font-semibold tracking-tight">About</h2>
+						<p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
+							{vendor.description ||
+								'Experienced service provider with verified scheduling, transparent pricing, and responsive communication.'}
+						</p>
 					</div>
 
 					<div className="rounded-[1.75rem] border border-border bg-card p-6 sm:p-7">
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<div>
-								<p className="text-sm font-medium text-primary">Services</p>
-								<h2 className="mt-1 text-2xl font-semibold tracking-tight">Choose what fits your visit</h2>
+								<h2 className="text-xl font-semibold tracking-tight">Services</h2>
 								<p className="mt-2 text-sm text-muted-foreground">
-									Each option includes pricing, duration, and a direct booking path.
+									Choose a service to unlock available times instantly.
 								</p>
 							</div>
 							{startingPrice !== null ? (
-								<div className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-									Starting from <span className="font-semibold text-foreground">{currencyFormatter.format(startingPrice)}</span>
+								<div className="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground">
+									From{' '}
+									<span className="font-semibold text-foreground">
+										{currencyFormatter.format(startingPrice)}
+									</span>
 								</div>
 							) : null}
 						</div>
@@ -816,87 +529,55 @@ const VendorDetailPage = () => {
 						) : null}
 
 						{services.length > 0 ? (
-							<div className="mt-6 grid gap-4 sm:grid-cols-2">
-								{services.map((service) => (
-									<article key={service.id} className="flex h-full flex-col rounded-[1.5rem] border border-border bg-muted/20 p-5 transition-colors hover:bg-muted/35">
-										{service.imageUrl ? (
-											<div className="mb-4 h-36 overflow-hidden rounded-xl border border-border bg-background">
-												<img src={service.imageUrl} alt={service.name} className="h-full w-full object-cover" />
-											</div>
-										) : null}
-										<div className="flex items-start justify-between gap-3">
-											<div>
-												<h3 className="text-lg font-semibold">{service.name}</h3>
-												<p className="mt-2 text-sm leading-6 text-muted-foreground">
-													{service.description || 'No description provided for this service yet.'}
+							<div className="mt-5 space-y-3">
+								{services.map((service) => {
+									const isActive = selectedServiceId === service.id;
+									return (
+										<article
+											key={service.id}
+											className={`rounded-2xl border p-4 transition-colors ${
+												isActive
+													? 'border-primary/45 bg-primary/5'
+													: 'border-border bg-muted/15 hover:bg-muted/30'
+											}`}
+										>
+											<div className="flex flex-wrap items-start justify-between gap-3">
+												<div>
+													<p className="text-base font-semibold text-foreground">{service.name}</p>
+													<p className="mt-1 text-sm text-muted-foreground">
+														{service.durationMinutes} min
+													</p>
+												</div>
+												<p className="text-lg font-semibold text-slate-900">
+													{currencyFormatter.format(service.priceAmount)}
 												</p>
 											</div>
-											<span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-foreground shadow-sm">
-												{currencyFormatter.format(service.priceAmount)}
-											</span>
-										</div>
-
-										<div className="mt-5 flex items-center justify-between gap-3 text-sm text-muted-foreground">
-											<span>{service.durationMinutes} min</span>
-											<span>{service.depositType === 'none' ? 'No deposit required' : 'Deposit may apply'}</span>
-										</div>
-
-										<div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
-											<p className="text-sm text-muted-foreground">Fast booking confirmation starts here.</p>
-											<Button onClick={() => openBookingDialog(service.id)} variant="outline">
-												Book this service
-											</Button>
-										</div>
-									</article>
-								))}
+											<p className="mt-3 text-sm leading-6 text-muted-foreground">
+												{service.description ||
+													'No description provided for this service yet.'}
+											</p>
+											<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+												<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+													{service.depositType === 'none' ? 'No deposit required' : 'Deposit may apply'}
+												</span>
+												<Button variant={isActive ? 'default' : 'outline'} onClick={() => focusBookingPanel(service.id)}>
+													{isActive ? 'Selected' : 'Book this service'}
+												</Button>
+											</div>
+										</article>
+									);
+								})}
 							</div>
 						) : null}
 					</div>
-				</div>
-
-				<div className="space-y-8">
-					<div className="rounded-[1.75rem] border border-border bg-card p-6 sm:p-7">
-						<p className="text-sm font-medium text-primary">Before you book</p>
-						<h2 className="mt-1 text-2xl font-semibold tracking-tight">What to expect</h2>
-						<div className="mt-5 space-y-4">
-							<div className="flex gap-3 rounded-2xl bg-muted/30 p-4">
-								<div className="rounded-2xl bg-white p-2 shadow-sm">
-									<CalendarDays className="h-4 w-4 text-primary" />
-								</div>
-								<div>
-									<p className="font-medium">Choose the right service</p>
-									<p className="mt-1 text-sm text-muted-foreground">Compare pricing and duration before confirming your appointment.</p>
-								</div>
-							</div>
-							<div className="flex gap-3 rounded-2xl bg-muted/30 p-4">
-								<div className="rounded-2xl bg-white p-2 shadow-sm">
-									<MessageSquare className="h-4 w-4 text-primary" />
-								</div>
-								<div>
-									<p className="font-medium">Add notes if needed</p>
-									<p className="mt-1 text-sm text-muted-foreground">Use notes for preferences, concerns, or anything the vendor should prepare for.</p>
-								</div>
-							</div>
-							<div className="flex gap-3 rounded-2xl bg-muted/30 p-4">
-								<div className="rounded-2xl bg-white p-2 shadow-sm">
-									<ShieldCheck className="h-4 w-4 text-primary" />
-								</div>
-								<div>
-									<p className="font-medium">Leave feedback after completion</p>
-									<p className="mt-1 text-sm text-muted-foreground">Once a booking is completed you can review the experience directly from your appointments.</p>
-								</div>
-							</div>
-						</div>
-						<div className="mt-5 rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-							Need to manage existing appointments? <Link to="/bookings" className="font-medium text-primary hover:underline">Open my bookings</Link>
-						</div>
-					</div>
 
 					<div className="rounded-[1.75rem] border border-border bg-card p-6 sm:p-7">
-						<div className="flex items-center justify-between gap-3">
+						<div className="flex flex-wrap items-center justify-between gap-4">
 							<div>
-								<p className="text-sm font-medium text-primary">Customer reviews</p>
-								<h2 className="mt-1 text-2xl font-semibold tracking-tight">What people are saying</h2>
+								<h2 className="text-xl font-semibold tracking-tight">Reviews</h2>
+								<p className="mt-2 text-sm text-muted-foreground">
+									Real customer feedback after completed appointments.
+								</p>
 							</div>
 							<div className="text-right">
 								<p className="text-2xl font-semibold">{vendor.averageRating.toFixed(1)}</p>
@@ -948,9 +629,358 @@ const VendorDetailPage = () => {
 								))}
 							</div>
 						) : null}
+
+						<div className="mt-5 rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+							Need to manage existing appointments?{' '}
+							<Link to="/bookings" className="font-medium text-primary hover:underline">
+								Open my bookings
+							</Link>
+						</div>
+					</div>
+
+					<div className="rounded-[1.75rem] border border-border bg-card p-6 sm:p-7">
+						<p className="text-sm font-medium text-primary">Location and schedule</p>
+						<h2 className="mt-1 text-2xl font-semibold tracking-tight">Find the vendor and plan your visit</h2>
+						<div className="mt-5 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+							<div className="space-y-4">
+								<div className="rounded-2xl bg-muted/20 p-4">
+									<p className="font-medium text-foreground">Address</p>
+									<p className="mt-2 text-sm text-muted-foreground">
+										{vendor.location.addressLine1 || vendor.location.city}
+										{vendor.location.addressLine2 ? `, ${vendor.location.addressLine2}` : ''}
+									</p>
+									{vendor.location.description ? (
+										<p className="mt-2 text-sm text-muted-foreground">{vendor.location.description}</p>
+									) : null}
+								</div>
+								<div className="rounded-2xl bg-muted/20 p-4">
+									<p className="font-medium text-foreground">Working hours</p>
+									<div className="mt-3 space-y-2 text-sm text-muted-foreground">
+										{formattedWorkingHours.length > 0 ? (
+											formattedWorkingHours.map((item) => (
+												<div
+													key={item.label}
+													className="flex items-center justify-between gap-3 rounded-xl bg-background px-3 py-2"
+												>
+													<span className="font-medium text-foreground">{item.label}</span>
+													<span>{item.time}</span>
+												</div>
+											))
+										) : (
+											<p>No working hours published yet.</p>
+										)}
+									</div>
+								</div>
+							</div>
+							<div className="overflow-hidden rounded-2xl border border-border bg-background">
+								{mapEmbedUrl ? (
+									<iframe
+										title="Vendor location"
+										src={mapEmbedUrl}
+										className="h-full min-h-80 w-full border-0"
+										loading="lazy"
+										referrerPolicy="no-referrer-when-downgrade"
+									/>
+								) : (
+									<div className="flex h-full min-h-80 items-center justify-center p-6 text-sm text-muted-foreground">
+										Location coordinates have not been published yet.
+									</div>
+								)}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div ref={bookingPanelRef} className="xl:sticky xl:top-24">
+					<div className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm sm:p-6">
+						<p className="text-base font-semibold tracking-tight text-slate-900">Select Date and Time</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Pick a service, choose a date, then lock an available slot.
+						</p>
+
+						<div className="mt-5">
+							<label htmlFor="serviceId" className="mb-1 block text-sm font-medium">
+								Service
+							</label>
+							<select
+								id="serviceId"
+								className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+								value={selectedServiceId}
+								onChange={(event) => handleServiceSelection(event.target.value)}
+								disabled={services.length === 0}
+							>
+								<option value="">Select a service</option>
+								{services.map((service) => (
+									<option key={service.id} value={service.id}>
+										{service.name} • {currencyFormatter.format(service.priceAmount)}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div className="mt-5">
+							<p className="mb-2 text-sm font-medium">Select date</p>
+							<div className="grid grid-cols-4 gap-2">
+								{dateOptions.map((item) => {
+									const isActive = bookingDateLocal === item.value;
+									return (
+										<button
+											key={item.value}
+											type="button"
+											onClick={() => handleDateSelection(item.value)}
+											className={`rounded-xl border px-2 py-2 text-center transition-colors ${
+												isActive
+													? 'border-primary bg-primary text-primary-foreground'
+													: 'border-border bg-muted/20 text-foreground hover:bg-muted/40'
+											}`}
+										>
+											<p className="text-[11px] font-medium uppercase tracking-wide opacity-90">{item.weekday}</p>
+											<p className="text-lg font-semibold leading-5">{item.dayNumber}</p>
+											<p className="text-[11px] opacity-90">{item.monthLabel}</p>
+											{item.isToday ? <p className="text-[10px] opacity-80">Today</p> : null}
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
+						<div className="mt-5">
+							<p className="mb-2 text-sm font-medium">Available times</p>
+							{!isAuthenticated ? (
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+									Sign in as a customer to view live availability.
+								</div>
+							) : !isCustomer ? (
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+									Only customer accounts can book appointments.
+								</div>
+							) : !selectedServiceId ? (
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+									Choose a service to load available slots.
+								</div>
+							) : availabilityQuery.isLoading ? (
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+									Loading slots...
+								</div>
+							) : availabilityQuery.isError ? (
+								<div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-3 text-sm text-destructive">
+									{availabilityQuery.error instanceof Error
+										? availabilityQuery.error.message
+										: 'Failed to load availability slots.'}
+								</div>
+							) : availableSlots.length === 0 ? (
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+									No open slots on this date. Try another day.
+								</div>
+							) : (
+								<div className="grid grid-cols-2 gap-2">
+									{availableSlots.map((slot) => {
+										const isSelected = selectedSlotStartUtc === slot.startsAtUtc;
+										return (
+											<Button
+												key={slot.startsAtUtc}
+												type="button"
+												variant={isSelected ? 'default' : 'outline'}
+												onClick={() => {
+													setSelectedSlotStartUtc(slot.startsAtUtc);
+													setBookingFormError('');
+												}}
+											>
+												{formatSlotStart(slot)}
+											</Button>
+										);
+									})}
+								</div>
+							)}
+						</div>
+
+						<div className="mt-5 rounded-2xl bg-muted/50 p-3 text-sm text-muted-foreground">
+							{selectedService ? (
+								<div className="space-y-1">
+									<p>
+										Service:{' '}
+										<span className="font-medium text-foreground">{selectedService.name}</span>{' '}
+										for{' '}
+										<span className="font-medium text-foreground">
+											{currencyFormatter.format(selectedService.priceAmount)}
+										</span>
+									</p>
+									{selectedSlot ? (
+										<p>
+											Slot:{' '}
+											<span className="font-medium text-foreground">{formatSlotLabel(selectedSlot)}</span>{' '}
+											on <span className="font-medium text-foreground">{bookingDateLocal}</span>
+										</p>
+									) : null}
+								</div>
+							) : (
+								<p>Choose a service to see the booking summary.</p>
+							)}
+						</div>
+
+						<div className="mt-4">
+							<label htmlFor="bookingNotes" className="mb-1 block text-sm font-medium">
+								Notes (optional)
+							</label>
+							<Textarea
+								id="bookingNotes"
+								placeholder="Any preferences or details to share before your appointment"
+								value={bookingNotes}
+								onChange={(event) => setBookingNotes(event.target.value)}
+							/>
+						</div>
+
+						{bookingFormError ? <p className="mt-3 text-sm text-destructive">{bookingFormError}</p> : null}
+
+						<div className="mt-5 space-y-3">
+							{!isAuthenticated ? (
+								<Button
+									className="w-full"
+									onClick={() => {
+										navigate('/login', { state: { from: location } });
+									}}
+								>
+									Sign in to book
+								</Button>
+							) : (
+								<Button
+									className="w-full"
+									disabled={!selectedSlotStartUtc || !isCustomer}
+									loading={bookingMutation.isPending}
+									loadingText="Booking..."
+									onClick={submitBooking}
+								>
+									Confirm Booking
+								</Button>
+							)}
+
+							<div className="space-y-3 pt-1">
+								<div className="flex gap-3 rounded-2xl bg-muted/30 p-3">
+									<div className="rounded-xl bg-white p-2 shadow-sm">
+										<CalendarDays className="h-4 w-4 text-primary" />
+									</div>
+									<p className="text-xs leading-5 text-muted-foreground">
+										Choose the service that best matches your visit goal.
+									</p>
+								</div>
+								<div className="flex gap-3 rounded-2xl bg-muted/30 p-3">
+									<div className="rounded-xl bg-white p-2 shadow-sm">
+										<MessageSquare className="h-4 w-4 text-primary" />
+									</div>
+									<p className="text-xs leading-5 text-muted-foreground">
+										Share notes so the vendor can prepare before your slot.
+									</p>
+								</div>
+								<div className="flex gap-3 rounded-2xl bg-muted/30 p-3">
+									<div className="rounded-xl bg-white p-2 shadow-sm">
+										<ShieldCheck className="h-4 w-4 text-primary" />
+									</div>
+									<p className="text-xs leading-5 text-muted-foreground">
+										Review after completion to help future customers choose better.
+									</p>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
+
+			<Dialog open={isReviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+				<DialogTrigger asChild>
+					<span className="hidden" aria-hidden="true" />
+				</DialogTrigger>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Share your experience</DialogTitle>
+						<DialogDescription>
+							Pick a completed appointment and leave short feedback that helps future customers.
+						</DialogDescription>
+					</DialogHeader>
+
+					<form
+						className="mt-4 space-y-4"
+						onSubmit={(event) => {
+							event.preventDefault();
+							void reviewMutation.mutateAsync();
+						}}
+					>
+						<div>
+							<label htmlFor="bookingId" className="mb-1 block text-sm font-medium">
+								Completed booking
+							</label>
+							{reviewEligibleBookings.length > 0 ? (
+								<select
+									id="bookingId"
+									className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+									value={reviewBookingId}
+									onChange={(event) => setReviewBookingId(event.target.value)}
+									required
+								>
+									<option value="">Choose a completed appointment</option>
+									{reviewEligibleBookings.map((booking) => (
+										<option key={booking.id} value={booking.id}>
+											{booking.serviceName || 'Completed service'} •{' '}
+											{shortDateFormatter.format(new Date(booking.startsAtUtc))}
+										</option>
+									))}
+								</select>
+							) : (
+								<>
+									<Input
+										id="bookingId"
+										placeholder="Paste a completed booking id"
+										value={reviewBookingId}
+										onChange={(event) => setReviewBookingId(event.target.value)}
+										required
+									/>
+									<p className="mt-2 text-sm text-muted-foreground">
+										Completed appointments from this vendor will appear here automatically once
+										available.
+									</p>
+								</>
+							)}
+						</div>
+
+						<div>
+							<label htmlFor="rating" className="mb-1 block text-sm font-medium">
+								Rating
+							</label>
+							<select
+								id="rating"
+								className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+								value={reviewRating}
+								onChange={(event) => setReviewRating(event.target.value)}
+							>
+								<option value="5">5 - Excellent</option>
+								<option value="4">4 - Very good</option>
+								<option value="3">3 - Good</option>
+								<option value="2">2 - Fair</option>
+								<option value="1">1 - Poor</option>
+							</select>
+						</div>
+
+						<div>
+							<label htmlFor="comment" className="mb-1 block text-sm font-medium">
+								Comment (optional)
+							</label>
+							<Textarea
+								id="comment"
+								placeholder="What stood out about the experience?"
+								value={reviewComment}
+								onChange={(event) => setReviewComment(event.target.value)}
+							/>
+						</div>
+
+						{reviewFormError ? <p className="text-sm text-destructive">{reviewFormError}</p> : null}
+
+						<DialogFooter>
+							<Button type="submit" loading={reviewMutation.isPending} loadingText="Submitting...">
+								Submit review
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
 
 			{reviewEligibleBookings.length > 0 ? (
 				<div className="mt-8 rounded-[1.75rem] border border-border bg-card p-6 text-sm text-muted-foreground">
