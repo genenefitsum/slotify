@@ -11,6 +11,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "start:prod": "NODE_ENV=production node src/server.js",
+    "verify:deploy-env": "NODE_ENV=production node src/scripts/verify-deploy-env.js",
     "test": "node --test",
     "seed:local": "node src/scripts/seed.local.js",
     "promote:admin": "node src/scripts/promote-admin.js"

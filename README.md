@@ -178,6 +178,8 @@ NODE_ENV=production
 PORT=5000
 MONGO_URI=...
 JWT_ACCESS_SECRET=...
+JWT_ACCESS_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=...
 CORS_ORIGINS=https://your-frontend-domain
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=300
@@ -207,6 +209,7 @@ Backend:
 ```bash
 cd backend
 npm ci
+npm run verify:deploy-env
 npm test
 npm run start:prod
 ```
@@ -216,6 +219,7 @@ Frontend:
 ```bash
 cd frontend
 npm ci
+VITE_API_BASE_URL=https://your-backend-domain/api VITE_GOOGLE_CLIENT_ID=... npm run verify:deploy-env
 npm run lint
 npm run build
 ```

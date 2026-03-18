@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "verify:deploy-env": "node scripts/verify-deploy-env.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
