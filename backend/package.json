@@ -14,6 +14,7 @@
     "verify:deploy-env": "NODE_ENV=production node src/scripts/verify-deploy-env.js",
     "test": "node --test",
     "seed:local": "node src/scripts/seed.local.js",
+    "seed:vendors": "node src/scripts/seed.vendors.js",
     "promote:admin": "node src/scripts/promote-admin.js"
   },
   "dependencies": {
