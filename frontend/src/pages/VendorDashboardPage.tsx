@@ -692,6 +692,77 @@ const VendorDashboardPage = () => {
 				/>
 			) : null}
 
+			<article className="rounded-[1.75rem] border border-border bg-card p-6">
+				<h2 className="text-xl font-semibold">Booking Operations</h2>
+				<p className="mt-1 text-sm text-muted-foreground">Update booking statuses as customers progress through appointments.</p>
+
+				<div className="mt-5">
+					{bookingsQuery.isLoading ? <PageSkeleton rows={4} className="grid-cols-1" /> : null}
+					{bookingsQuery.isError ? (
+						<ErrorState
+							description={bookingsQuery.error instanceof Error ? bookingsQuery.error.message : 'Unable to load bookings.'}
+						/>
+					) : null}
+
+					{bookingsQuery.isSuccess && bookingsQuery.data.items.length === 0 ? (
+						<EmptyState title="No bookings to manage" description="Incoming bookings will appear here." />
+					) : null}
+
+					{bookingsQuery.data && bookingsQuery.data.items.length > 0 ? (
+						<>
+							<div className="space-y-3">
+								{bookingsQuery.data.items.map((booking) => (
+									<article key={booking.id} className="rounded-2xl border border-border bg-background p-5">
+										<div className="flex flex-wrap items-center justify-between gap-3">
+											<div>
+												<p className="text-sm font-medium text-primary">{booking.serviceName || 'Booked service'}</p>
+												<p className="font-semibold">{new Date(booking.startsAtUtc).toLocaleString()}</p>
+												<p className="text-sm text-muted-foreground">
+													{booking.vendorName || 'Your vendor profile'} • {currencyFormatter.format(booking.pricingSnapshot.servicePriceAmount)}
+												</p>
+											</div>
+											<p className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wide">
+												{bookingStatusLabelMap[booking.status]}
+											</p>
+										</div>
+
+										{booking.customerNotes ? (
+											<p className="mt-3 rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
+												{booking.customerNotes}
+											</p>
+										) : null}
+
+										<div className="mt-3 flex flex-wrap gap-2">
+											{getAllowedActions(booking).map((action) => (
+												<Button
+													key={action}
+													type="button"
+													variant={action === 'cancel' ? 'destructive' : 'outline'}
+													loading={bookingActionMutation.isPending}
+													loadingText="Updating..."
+													onClick={() => {
+														void bookingActionMutation.mutateAsync({ bookingId: booking.id, action });
+													}}
+												>
+													{actionLabelMap[action]}
+												</Button>
+											))}
+										</div>
+									</article>
+								))}
+							</div>
+
+							<Pagination
+								className="mt-6"
+								page={bookingsQuery.data.pagination.page}
+								totalPages={bookingsQuery.data.pagination.totalPages}
+								onPageChange={setBookingPage}
+							/>
+						</>
+					) : null}
+				</div>
+			</article>
+
 			{vendorQuery.isSuccess || isVendorMissing ? (
 				<article className="rounded-[1.75rem] border border-border bg-card p-6">
 					<h2 className="text-xl font-semibold">
@@ -1177,76 +1248,6 @@ const VendorDashboardPage = () => {
 				</article>
 			) : null}
 
-			<article className="rounded-[1.75rem] border border-border bg-card p-6">
-				<h2 className="text-xl font-semibold">Booking Operations</h2>
-				<p className="mt-1 text-sm text-muted-foreground">Update booking statuses as customers progress through appointments.</p>
-
-				<div className="mt-5">
-					{bookingsQuery.isLoading ? <PageSkeleton rows={4} className="grid-cols-1" /> : null}
-					{bookingsQuery.isError ? (
-						<ErrorState
-							description={bookingsQuery.error instanceof Error ? bookingsQuery.error.message : 'Unable to load bookings.'}
-						/>
-					) : null}
-
-					{bookingsQuery.isSuccess && bookingsQuery.data.items.length === 0 ? (
-						<EmptyState title="No bookings to manage" description="Incoming bookings will appear here." />
-					) : null}
-
-					{bookingsQuery.data && bookingsQuery.data.items.length > 0 ? (
-						<>
-							<div className="space-y-3">
-								{bookingsQuery.data.items.map((booking) => (
-									<article key={booking.id} className="rounded-2xl border border-border bg-background p-5">
-										<div className="flex flex-wrap items-center justify-between gap-3">
-											<div>
-												<p className="text-sm font-medium text-primary">{booking.serviceName || 'Booked service'}</p>
-												<p className="font-semibold">{new Date(booking.startsAtUtc).toLocaleString()}</p>
-												<p className="text-sm text-muted-foreground">
-													{booking.vendorName || 'Your vendor profile'} • {currencyFormatter.format(booking.pricingSnapshot.servicePriceAmount)}
-												</p>
-											</div>
-											<p className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wide">
-												{bookingStatusLabelMap[booking.status]}
-											</p>
-										</div>
-
-										{booking.customerNotes ? (
-											<p className="mt-3 rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
-												{booking.customerNotes}
-											</p>
-										) : null}
-
-										<div className="mt-3 flex flex-wrap gap-2">
-											{getAllowedActions(booking).map((action) => (
-												<Button
-													key={action}
-													type="button"
-													variant={action === 'cancel' ? 'destructive' : 'outline'}
-													loading={bookingActionMutation.isPending}
-													loadingText="Updating..."
-													onClick={() => {
-														void bookingActionMutation.mutateAsync({ bookingId: booking.id, action });
-													}}
-												>
-													{actionLabelMap[action]}
-												</Button>
-											))}
-										</div>
-									</article>
-								))}
-							</div>
-
-							<Pagination
-								className="mt-6"
-								page={bookingsQuery.data.pagination.page}
-								totalPages={bookingsQuery.data.pagination.totalPages}
-								onPageChange={setBookingPage}
-							/>
-						</>
-					) : null}
-				</div>
-			</article>
 		</section>
 	);
 };

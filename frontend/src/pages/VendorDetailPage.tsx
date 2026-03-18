@@ -424,7 +424,7 @@ const VendorDetailPage = () => {
 			<BackButton className="mb-4" fallbackTo="/vendors" />
 
 			<div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
-				<div className="relative h-44 bg-[linear-gradient(120deg,#163e74,#1f4e8f,#0f305f)] sm:h-56">
+				<div className="relative h-44 bg-gradient-primary sm:h-56">
 					<div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_10%,rgba(255,255,255,0.24),transparent_40%)]" />
 				</div>
 
@@ -442,7 +442,7 @@ const VendorDetailPage = () => {
 							</div>
 
 							<div className="pb-1">
-								<p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+								<p className="inline-flex rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
 									{vendor.categories[0] || 'General'}
 								</p>
 								<h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">

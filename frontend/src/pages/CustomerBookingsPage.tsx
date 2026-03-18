@@ -225,7 +225,7 @@ const CustomerBookingsPage = () => {
 										<p className="text-muted-foreground">
 											{booking.vendorName ? `Booked with ${booking.vendorName}` : 'Vendor details available on profile'}
 										</p>
-										<Button asChild type="button" variant="ghost" className="px-0 text-primary hover:bg-transparent">
+										<Button asChild type="button" variant="ghost" className="px-0 text-primary hover:bg-transparent hover:text-gray-500">
 											<Link to={`/vendor/${booking.vendorId}`}>View vendor profile</Link>
 										</Button>
 									</div>
