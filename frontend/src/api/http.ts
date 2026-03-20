@@ -18,6 +18,44 @@ export class HttpError extends Error {
 	}
 }
 
+const getMessageFromValue = (value: unknown): string | null => {
+	if (!value) {
+		return null;
+	}
+
+	if (typeof value === 'string') {
+		return value.trim() || null;
+	}
+
+	if (typeof value === 'object') {
+		if ('message' in value && typeof value.message === 'string') {
+			return value.message.trim() || null;
+		}
+
+		if ('error' in value && typeof value.error === 'string') {
+			return value.error.trim() || null;
+		}
+
+		if ('detail' in value && typeof value.detail === 'string') {
+			return value.detail.trim() || null;
+		}
+	}
+
+	return null;
+};
+
+export const getErrorMessage = (error: unknown, fallback = 'Something went wrong.'): string => {
+	if (error instanceof HttpError) {
+		return error.message || fallback;
+	}
+
+	if (error instanceof Error) {
+		return error.message || fallback;
+	}
+
+	return getMessageFromValue(error) || fallback;
+};
+
 type PrimitiveQueryValue = string | number | boolean | null | undefined;
 type QueryValue = PrimitiveQueryValue | PrimitiveQueryValue[];
 type QueryParams = Record<string, QueryValue>;
@@ -92,10 +130,15 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
 			clearAuthSession();
 		}
 
+		const message =
+			getMessageFromValue(payload) ||
+			getMessageFromValue(payload?.details) ||
+			'Request failed.';
+
 		throw new HttpError(
-			payload?.message || 'Request failed.',
+			message,
 			response.status,
-			payload?.details
+			payload?.details ?? payload
 		);
 	}
 

@@ -16,10 +16,16 @@ type ToastItem = {
   id: number;
   message: string;
   variant: ToastVariant;
+  dismissible: boolean;
+};
+
+type ToastPushOptions = {
+  durationMs?: number;
+  dismissible?: boolean;
 };
 
 type ToastContextValue = {
-  push: (message: string, variant?: ToastVariant) => void;
+  push: (message: string, variant?: ToastVariant, options?: ToastPushOptions) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
@@ -33,13 +39,15 @@ const variantClassMap: Record<ToastVariant, string> = {
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<ToastItem[]>([]);
 
-  const push = useCallback((message: string, variant: ToastVariant = 'info') => {
+  const push = useCallback((message: string, variant: ToastVariant = 'info', options?: ToastPushOptions) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
-    setItems((current) => [...current, { id, message, variant }]);
+    const durationMs = options?.durationMs ?? (variant === 'error' ? 5500 : variant === 'success' ? 3500 : 4000);
+    const dismissible = options?.dismissible ?? variant === 'error';
+    setItems((current) => [...current, { id, message, variant, dismissible }]);
 
     window.setTimeout(() => {
       setItems((current) => current.filter((item) => item.id !== id));
-    }, 4000);
+    }, durationMs);
   }, []);
 
   const value = useMemo<ToastContextValue>(() => ({ push }), [push]);
@@ -52,11 +60,22 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
           <div
             key={item.id}
             className={cn(
-              'rounded-lg border px-4 py-3 text-sm shadow-lg backdrop-blur',
+              'pointer-events-auto flex items-start gap-2 rounded-lg border px-4 py-3 text-sm shadow-lg backdrop-blur',
               variantClassMap[item.variant]
             )}
           >
-            {item.message}
+            <p className="flex-1">{item.message}</p>
+            {item.dismissible ? (
+              <button
+                type="button"
+                className="text-xs font-medium opacity-80 transition-opacity hover:opacity-100"
+                onClick={() => {
+                  setItems((current) => current.filter((toastItem) => toastItem.id !== item.id));
+                }}
+              >
+                Dismiss
+              </button>
+            ) : null}
           </div>
         ))}
       </div>

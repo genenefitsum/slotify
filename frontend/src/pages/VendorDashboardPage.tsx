@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BriefcaseBusiness, CalendarClock, CircleDollarSign, MapPin, Upload } from 'lucide-react';
 
 import { bookingsApi } from '@/api/bookings.api';
-import { HttpError } from '@/api/http';
+import { getErrorMessage, HttpError } from '@/api/http';
 import { servicesApi } from '@/api/services.api';
 import { vendorsApi } from '@/api/vendors.api';
 import { Button } from '@/components/ui/button';
@@ -230,6 +230,8 @@ const VendorDashboardPage = () => {
 	const [serviceDraft, setServiceDraft] = useState<CreateServicePayload>(createServiceForm());
 	const [serviceEditingId, setServiceEditingId] = useState<string | null>(null);
 	const [serviceExistingImages, setServiceExistingImages] = useState<string[]>([]);
+	const [pendingServiceDeleteId, setPendingServiceDeleteId] = useState<string | null>(null);
+	const [pendingBookingAction, setPendingBookingAction] = useState<{ bookingId: string; action: BookingTransitionAction } | null>(null);
 
 	const vendorQuery = useQuery({
 		queryKey: ['vendor', 'me'],
@@ -297,7 +299,7 @@ const VendorDashboardPage = () => {
 				const resolved = await vendorsApi.resolveMapLink(rawLink);
 				applyCoordinates(resolved.coordinates);
 			} catch (error) {
-				push(error instanceof HttpError ? error.message : 'Unable to resolve that Google Maps link.', 'error');
+				push(getErrorMessage(error, 'Unable to resolve that Google Maps link.'), 'error');
 			} finally {
 				setIsResolvingMapLink(false);
 			}
@@ -500,7 +502,7 @@ const VendorDashboardPage = () => {
 			void queryClient.invalidateQueries({ queryKey: ['vendors'] });
 		},
 		onError: (error) => {
-			push(error instanceof HttpError ? error.message : 'Unable to save vendor profile.', 'error');
+			push(getErrorMessage(error, 'Unable to save vendor profile.'), 'error');
 		},
 	});
 
@@ -519,18 +521,24 @@ const VendorDashboardPage = () => {
 			void queryClient.invalidateQueries({ queryKey: ['services'] });
 		},
 		onError: (error) => {
-			push(error instanceof HttpError ? error.message : 'Unable to save service.', 'error');
+			push(getErrorMessage(error, 'Unable to save service.'), 'error');
 		},
 	});
 
 	const deleteServiceMutation = useMutation({
 		mutationFn: (serviceId: string) => servicesApi.remove(serviceId),
+		onMutate: (serviceId) => {
+			setPendingServiceDeleteId(serviceId);
+		},
 		onSuccess: () => {
 			push('Service removed.', 'success');
 			void queryClient.invalidateQueries({ queryKey: ['services'] });
 		},
 		onError: (error) => {
-			push(error instanceof HttpError ? error.message : 'Unable to remove service.', 'error');
+			push(getErrorMessage(error, 'Unable to remove service.'), 'error');
+		},
+		onSettled: () => {
+			setPendingServiceDeleteId(null);
 		},
 	});
 
@@ -550,12 +558,18 @@ const VendorDashboardPage = () => {
 			}
 			return bookingsApi.markNoShow(bookingId);
 		},
+		onMutate: (variables) => {
+			setPendingBookingAction(variables);
+		},
 		onSuccess: () => {
 			push('Booking status updated.', 'success');
 			void queryClient.invalidateQueries({ queryKey: ['bookings'] });
 		},
 		onError: (error) => {
-			push(error instanceof HttpError ? error.message : 'Unable to update booking status.', 'error');
+			push(getErrorMessage(error, 'Unable to update booking status.'), 'error');
+		},
+		onSettled: () => {
+			setPendingBookingAction(null);
 		},
 	});
 
@@ -602,6 +616,7 @@ const VendorDashboardPage = () => {
 	const nextBookingTime = bookingItems[0]?.startsAtUtc
 		? new Date(bookingItems[0].startsAtUtc).toLocaleString()
 		: null;
+	const isSyncingDashboard = vendorQuery.isFetching || servicesQuery.isFetching || bookingsQuery.isFetching;
 
 	const syncServiceDraftFromItem = (service: Service) => {
 		setServiceEditingId(service.id);
@@ -628,6 +643,12 @@ const VendorDashboardPage = () => {
 				<h1 className="text-3xl font-semibold">Vendor Dashboard</h1>
 				<p className="mt-2 text-muted-foreground">Manage your profile, services, and booking operations from one place.</p>
 			</header>
+
+			{isSyncingDashboard ? (
+				<div className="rounded-xl border border-border bg-muted/30 px-4 py-2 text-sm text-muted-foreground">
+					Refreshing dashboard data...
+				</div>
+			) : null}
 
 			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 				<div className="rounded-2xl border border-border bg-card p-5">
@@ -698,9 +719,24 @@ const VendorDashboardPage = () => {
 
 				<div className="mt-5">
 					{bookingsQuery.isLoading ? <PageSkeleton rows={4} className="grid-cols-1" /> : null}
-					{bookingsQuery.isError ? (
+					{bookingsQuery.isError && !bookingsQuery.data ? (
 						<ErrorState
 							description={bookingsQuery.error instanceof Error ? bookingsQuery.error.message : 'Unable to load bookings.'}
+							actionLabel="Retry"
+							onAction={() => {
+								void bookingsQuery.refetch();
+							}}
+						/>
+					) : null}
+					{bookingsQuery.isError && bookingsQuery.data ? (
+						<ErrorState
+							className="mb-4 p-4 text-left"
+							title="Could not refresh bookings"
+							description={bookingsQuery.error instanceof Error ? bookingsQuery.error.message : 'Showing your last loaded bookings.'}
+							actionLabel="Retry"
+							onAction={() => {
+								void bookingsQuery.refetch();
+							}}
 						/>
 					) : null}
 
@@ -738,8 +774,13 @@ const VendorDashboardPage = () => {
 													key={action}
 													type="button"
 													variant={action === 'cancel' ? 'destructive' : 'outline'}
-													loading={bookingActionMutation.isPending}
+													loading={
+														bookingActionMutation.isPending &&
+														pendingBookingAction?.bookingId === booking.id &&
+														pendingBookingAction.action === action
+													}
 													loadingText="Updating..."
+													disabled={bookingActionMutation.isPending && pendingBookingAction?.bookingId === booking.id}
 													onClick={() => {
 														void bookingActionMutation.mutateAsync({ bookingId: booking.id, action });
 													}}
@@ -1186,9 +1227,24 @@ const VendorDashboardPage = () => {
 
 					<div className="mt-6">
 						{servicesQuery.isLoading ? <PageSkeleton rows={3} className="grid-cols-1" /> : null}
-						{servicesQuery.isError ? (
+						{servicesQuery.isError && !servicesQuery.data ? (
 							<ErrorState
 								description={servicesQuery.error instanceof Error ? servicesQuery.error.message : 'Unable to load services.'}
+								actionLabel="Retry"
+								onAction={() => {
+									void servicesQuery.refetch();
+								}}
+							/>
+						) : null}
+						{servicesQuery.isError && servicesQuery.data ? (
+							<ErrorState
+								className="mb-4 p-4 text-left"
+								title="Could not refresh services"
+								description={servicesQuery.error instanceof Error ? servicesQuery.error.message : 'Showing your last loaded services.'}
+								actionLabel="Retry"
+								onAction={() => {
+									void servicesQuery.refetch();
+								}}
 							/>
 						) : null}
 						{servicesQuery.isSuccess && servicesQuery.data.items.length === 0 ? (
@@ -1223,8 +1279,9 @@ const VendorDashboardPage = () => {
 												<Button
 													type="button"
 													variant="destructive"
-													loading={deleteServiceMutation.isPending}
+													loading={deleteServiceMutation.isPending && pendingServiceDeleteId === service.id}
 													loadingText="Removing..."
+													disabled={deleteServiceMutation.isPending && pendingServiceDeleteId === service.id}
 													onClick={() => {
 														void deleteServiceMutation.mutateAsync(service.id);
 													}}
