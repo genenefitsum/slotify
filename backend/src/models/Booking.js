@@ -135,6 +135,7 @@ bookingSchema.path('endsAtUtc').validate(function validateTimeWindow(value) {
 }, 'Booking end time must be later than start time.');
 
 bookingSchema.index({ vendorId: 1, startsAtUtc: 1, status: 1 });
+bookingSchema.index({ vendorId: 1, status: 1, startsAtUtc: 1, endsAtUtc: 1 });
 bookingSchema.index({ customerUserId: 1, createdAt: -1 });
 bookingSchema.index({ staffId: 1, startsAtUtc: 1, endsAtUtc: 1 });
 

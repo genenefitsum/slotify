@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
@@ -137,7 +137,10 @@ const VendorDetailPage = () => {
 				localDate: bookingDateLocal,
 			}),
 		enabled: Boolean(vendorId && selectedServiceId && bookingDateLocal && isAuthenticated && isCustomer),
-		staleTime: 10_000,
+		staleTime: 30_000,
+		gcTime: 5 * 60 * 1000,
+		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
 	});
 
 	const bookingMutation = useMutation({
@@ -338,12 +341,48 @@ const VendorDetailPage = () => {
 		setSelectedServiceId(serviceId);
 		setSelectedSlotStartUtc('');
 		setBookingFormError('');
+
+		if (!vendorId || !serviceId || !isAuthenticated || !isCustomer) {
+			return;
+		}
+
+		const nearbyDates = [bookingDateLocal, addDaysToLocalDate(bookingDateLocal, -1), addDaysToLocalDate(bookingDateLocal, 1)];
+		nearbyDates.forEach((localDate) => {
+			void queryClient.prefetchQuery({
+				queryKey: ['bookings', 'available-slots', vendorId, serviceId, localDate],
+				queryFn: () =>
+					bookingsApi.listAvailableSlots({
+						vendorId,
+						serviceId,
+						localDate,
+					}),
+				staleTime: 30_000,
+			});
+		});
 	};
 
 	const handleDateSelection = (localDate: string) => {
 		setBookingDateLocal(localDate);
 		setSelectedSlotStartUtc('');
 		setBookingFormError('');
+
+		if (!vendorId || !selectedServiceId || !isAuthenticated || !isCustomer) {
+			return;
+		}
+
+		const nearbyDates = [addDaysToLocalDate(localDate, -1), addDaysToLocalDate(localDate, 1)];
+		nearbyDates.forEach((nextDate) => {
+			void queryClient.prefetchQuery({
+				queryKey: ['bookings', 'available-slots', vendorId, selectedServiceId, nextDate],
+				queryFn: () =>
+					bookingsApi.listAvailableSlots({
+						vendorId,
+						serviceId: selectedServiceId,
+						localDate: nextDate,
+					}),
+				staleTime: 30_000,
+			});
+		});
 	};
 
 	const formatSlotLabel = (slot: BookingAvailabilitySlot) => {
@@ -356,6 +395,9 @@ const VendorDetailPage = () => {
 		const start = new Date(slot.startsAtUtc);
 		return start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 	};
+
+	const showAvailabilitySkeleton =
+		availabilityQuery.isLoading || (availabilityQuery.isFetching && !availabilityQuery.data);
 
 	const submitBooking = () => {
 		if (!ensureSignedIn()) {
@@ -758,9 +800,11 @@ const VendorDetailPage = () => {
 								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
 									Choose a service to load available slots.
 								</div>
-							) : availabilityQuery.isLoading ? (
-								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-									Loading slots...
+							) : showAvailabilitySkeleton ? (
+								<div className="grid grid-cols-2 gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-3">
+									{Array.from({ length: 8 }).map((_, index) => (
+										<div key={`slot-skeleton-${index}`} className="h-9 animate-pulse rounded-md bg-muted" />
+									))}
 								</div>
 							) : availabilityQuery.isError ? (
 								<div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-3 text-sm text-destructive">
