@@ -206,6 +206,7 @@ const CustomerBookingsPage = () => {
 											{new Date(booking.startsAtUtc).toLocaleTimeString([], {
 												hour: 'numeric',
 												minute: '2-digit',
+												hour12: true,
 											})}
 										</p>
 										<p>
@@ -213,6 +214,7 @@ const CustomerBookingsPage = () => {
 											{new Date(booking.endsAtUtc).toLocaleTimeString([], {
 												hour: 'numeric',
 												minute: '2-digit',
+												hour12: true,
 											})}
 										</p>
 										<p>

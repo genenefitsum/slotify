@@ -82,6 +82,18 @@ const buildDateOptions = (startDate: string, count: number) => {
 	});
 };
 
+const formatTime24To12 = (value: string) => {
+	const [hoursRaw, minutesRaw] = value.split(':').map(Number);
+	if (!Number.isFinite(hoursRaw) || !Number.isFinite(minutesRaw)) {
+		return value;
+	}
+
+	const period = hoursRaw >= 12 ? 'PM' : 'AM';
+	const hours12 = hoursRaw % 12 || 12;
+	const minutes = String(minutesRaw).padStart(2, '0');
+	return `${hours12}:${minutes} ${period}`;
+};
+
 const VendorDetailPage = () => {
 	const { id: vendorId } = useParams();
 	const { isAuthenticated, user } = useAuth();
@@ -285,7 +297,7 @@ const VendorDetailPage = () => {
 				.sort((left, right) => left.dayOfWeek - right.dayOfWeek)
 				.map((item) => ({
 					label: DAY_LABELS[item.dayOfWeek],
-					time: `${item.startTime} - ${item.endTime}`,
+					time: `${formatTime24To12(item.startTime)} - ${formatTime24To12(item.endTime)}`,
 				})),
 		[vendor?.workingHours]
 	);
@@ -312,6 +324,7 @@ const VendorDetailPage = () => {
 				day: 'numeric',
 				hour: 'numeric',
 				minute: '2-digit',
+				hour12: true,
 			}),
 		[]
 	);
@@ -324,6 +337,7 @@ const VendorDetailPage = () => {
 				year: 'numeric',
 				hour: 'numeric',
 				minute: '2-digit',
+				hour12: true,
 			}),
 		[]
 	);
@@ -388,12 +402,12 @@ const VendorDetailPage = () => {
 	const formatSlotLabel = (slot: BookingAvailabilitySlot) => {
 		const start = new Date(slot.startsAtUtc);
 		const end = new Date(slot.endsAtUtc);
-		return `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+		return `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - ${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`;
 	};
 
 	const formatSlotStart = (slot: BookingAvailabilitySlot) => {
 		const start = new Date(slot.startsAtUtc);
-		return start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+		return start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 	};
 
 	const showAvailabilitySkeleton =
