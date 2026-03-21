@@ -72,12 +72,9 @@ const addisLocalMinuteToUtcDate = (localDate, minuteOfDay) => {
 };
 
 const getAddisDayOfWeek = (localDate) => {
-	const localMidnight = new Date(`${localDate}T00:00:00+03:00`);
-	if (Number.isNaN(localMidnight.getTime())) {
-		throw new ApiError('Invalid localDate.', 400);
-	}
-
-	return localMidnight.getUTCDay();
+	const { year, month, day } = parseLocalDate(localDate);
+	// Day-of-week for a calendar date is timezone-independent; use UTC date parts directly.
+	return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 };
 
 const getAddisDateParts = (date) => {
