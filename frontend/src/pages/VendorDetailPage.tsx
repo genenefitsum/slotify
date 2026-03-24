@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -102,6 +102,7 @@ const VendorDetailPage = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const bookingPanelRef = useRef<HTMLDivElement | null>(null);
+	const availabilityPrefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
 	const [selectedServiceId, setSelectedServiceId] = useState('');
 	const [bookingDateLocal, setBookingDateLocal] = useState(getCurrentAddisDate);
@@ -253,6 +254,14 @@ const VendorDetailPage = () => {
 		return false;
 	};
 
+	useEffect(() => {
+		return () => {
+			if (availabilityPrefetchTimerRef.current) {
+				clearTimeout(availabilityPrefetchTimerRef.current);
+			}
+		};
+	}, []);
+
 	const vendor = vendorQuery.data;
 	const services = servicesQuery.data?.items ?? EMPTY_SERVICES;
 	const reviews = reviewsQuery.data || [];
@@ -351,28 +360,51 @@ const VendorDetailPage = () => {
 		bookingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	};
 
+	const scheduleAvailabilityPrefetch = (serviceId: string, dates: string[]) => {
+		if (!vendorId || !serviceId || !isAuthenticated || !isCustomer) {
+			return;
+		}
+
+		if (availabilityPrefetchTimerRef.current) {
+			clearTimeout(availabilityPrefetchTimerRef.current);
+		}
+
+		availabilityPrefetchTimerRef.current = setTimeout(() => {
+			dates.forEach((localDate) => {
+				const queryKey = ['bookings', 'available-slots', vendorId, serviceId, localDate] as const;
+				const queryState = queryClient.getQueryState(queryKey);
+				const isStillFresh = Boolean(
+					queryState?.dataUpdatedAt && Date.now() - queryState.dataUpdatedAt < 30_000
+				);
+
+				if (isStillFresh) {
+					return;
+				}
+
+				void queryClient.prefetchQuery({
+					queryKey,
+					queryFn: () =>
+						bookingsApi.listAvailableSlots({
+							vendorId,
+							serviceId,
+							localDate,
+						}),
+					staleTime: 30_000,
+				});
+			});
+		}, 180);
+	};
+
 	const handleServiceSelection = (serviceId: string) => {
 		setSelectedServiceId(serviceId);
 		setSelectedSlotStartUtc('');
 		setBookingFormError('');
 
-		if (!vendorId || !serviceId || !isAuthenticated || !isCustomer) {
-			return;
-		}
-
-		const nearbyDates = [bookingDateLocal, addDaysToLocalDate(bookingDateLocal, -1), addDaysToLocalDate(bookingDateLocal, 1)];
-		nearbyDates.forEach((localDate) => {
-			void queryClient.prefetchQuery({
-				queryKey: ['bookings', 'available-slots', vendorId, serviceId, localDate],
-				queryFn: () =>
-					bookingsApi.listAvailableSlots({
-						vendorId,
-						serviceId,
-						localDate,
-					}),
-				staleTime: 30_000,
-			});
-		});
+		scheduleAvailabilityPrefetch(serviceId, [
+			bookingDateLocal,
+			addDaysToLocalDate(bookingDateLocal, -1),
+			addDaysToLocalDate(bookingDateLocal, 1),
+		]);
 	};
 
 	const handleDateSelection = (localDate: string) => {
@@ -380,23 +412,14 @@ const VendorDetailPage = () => {
 		setSelectedSlotStartUtc('');
 		setBookingFormError('');
 
-		if (!vendorId || !selectedServiceId || !isAuthenticated || !isCustomer) {
+		if (!selectedServiceId) {
 			return;
 		}
 
-		const nearbyDates = [addDaysToLocalDate(localDate, -1), addDaysToLocalDate(localDate, 1)];
-		nearbyDates.forEach((nextDate) => {
-			void queryClient.prefetchQuery({
-				queryKey: ['bookings', 'available-slots', vendorId, selectedServiceId, nextDate],
-				queryFn: () =>
-					bookingsApi.listAvailableSlots({
-						vendorId,
-						serviceId: selectedServiceId,
-						localDate: nextDate,
-					}),
-				staleTime: 30_000,
-			});
-		});
+		scheduleAvailabilityPrefetch(selectedServiceId, [
+			addDaysToLocalDate(localDate, -1),
+			addDaysToLocalDate(localDate, 1),
+		]);
 	};
 
 	const formatSlotLabel = (slot: BookingAvailabilitySlot) => {

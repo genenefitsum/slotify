@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
@@ -56,6 +57,7 @@ const authLimiter = rateLimit({
 app.use(helmet());
 app.use(limiter);
 app.use(cors(corsOptions));
+app.use(compression());
 app.use((req, res, next) => {
   req.requestId = req.headers['x-request-id'] || crypto.randomUUID();
   res.setHeader('x-request-id', req.requestId);

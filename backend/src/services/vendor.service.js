@@ -21,6 +21,20 @@ const MAX_VENDOR_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_VENDOR_IMAGE_COUNT = 5;
 const GOOGLE_MAPS_REDIRECT_LIMIT = 5;
 const GOOGLE_MAPS_RESOLVE_TIMEOUT_MS = 8000;
+const VENDOR_LIST_PROJECTION = {
+  displayName: 1,
+  legalBusinessName: 1,
+  description: 1,
+  image: 1,
+  categories: 1,
+  timezone: 1,
+  location: 1,
+  averageRating: 1,
+  reviewCount: 1,
+  status: 1,
+  createdAt: 1,
+  updatedAt: 1,
+};
 
 const isAllowedGoogleMapsHostname = (hostname) => {
   const normalizedHostname = String(hostname || '').toLowerCase();
@@ -553,8 +567,13 @@ const list = async ({ city, category, page = 1, limit = 20, all = false }) => {
 
   const [items, total] = await Promise.all([
     includeAll
-      ? Vendor.find(filter).sort({ createdAt: -1 }).lean()
-      : Vendor.find(filter).sort({ createdAt: -1 }).skip(skip).limit(normalizedLimit).lean(),
+      ? Vendor.find(filter).select(VENDOR_LIST_PROJECTION).sort({ createdAt: -1 }).lean()
+      : Vendor.find(filter)
+        .select(VENDOR_LIST_PROJECTION)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(normalizedLimit)
+        .lean(),
     Vendor.countDocuments(filter),
   ]);
 

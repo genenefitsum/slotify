@@ -219,6 +219,9 @@ const vendorSchema = new mongoose.Schema(
 
 vendorSchema.index({ 'location.coordinates': '2dsphere' });
 vendorSchema.index({ status: 1, categories: 1, 'location.city': 1 });
+vendorSchema.index({ deletedAt: 1, createdAt: -1 });
+vendorSchema.index({ deletedAt: 1, 'location.city': 1, createdAt: -1 });
+vendorSchema.index({ deletedAt: 1, categories: 1, createdAt: -1 });
 
 const Vendor = mongoose.models.Vendor || mongoose.model('Vendor', vendorSchema);
 
