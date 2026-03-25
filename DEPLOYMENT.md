@@ -56,26 +56,6 @@ Examples:
 - STAGING_BACKEND_URL=https://slotify-api-staging.onrender.com
 - STAGING_FRONTEND_URL=https://slotify-staging.vercel.app
 
-## 3.1 Keep Render Awake (5-minute Cron)
-
-To reduce first-request cold-start lag on Render, this repository includes a scheduled GitHub Action:
-- Workflow file: `.github/workflows/render-keepalive.yml`
-- Target file: `.github/keepalive.targets.json`
-- Schedule: every 5 minutes
-- Backend ping: `GET /api/health`
-- Optional frontend ping: `GET /vendors`
-
-Setup steps:
-1. Open GitHub repository settings.
-2. Update `.github/keepalive.targets.json` with your deployment URLs.
-3. Set `backendUrl` to the Render backend base URL (without trailing slash).
-4. Optionally set `frontendUrl` to the frontend base URL.
-5. Open `Actions -> Render Keepalive` and run `workflow_dispatch` once to validate.
-
-Notes:
-- GitHub Actions cron timing is best-effort and may be delayed by a few minutes.
-- Keepalive jobs can consume GitHub Actions minutes over time.
-
 ## 4. Platform Configuration
 
 ### Frontend (Vercel)
