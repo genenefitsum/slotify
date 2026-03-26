@@ -18,20 +18,20 @@ const HeroSection = () => {
             Ethiopia's #1 Booking Platform
           </Badge>
           <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl lg:mx-0 lg:text-5xl">
-            Book Trusted Professionals <span className="text-primary">in Minutes</span>
+            Find The Right Professional <span className="text-primary">Without The Friction</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground sm:text-base lg:mx-0">
-            Discover, compare, and book service providers across Ethiopia. Simple,
-            fast, and reliable.
+            Compare trusted providers, confirm availability, and book in a few clear steps.
+            Built to feel calm, fast, and dependable.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-            <Button asChild size="sm" className="rounded-lg">
+            <Button asChild size="lg" className="rounded-xl px-6">
               <Link to="/vendors">
                 Browse Services
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="sm" className="rounded-lg">
+            <Button asChild variant="outline" size="lg" className="rounded-xl px-6">
               <Link to="/register">Become a Vendor</Link>
             </Button>
           </div>

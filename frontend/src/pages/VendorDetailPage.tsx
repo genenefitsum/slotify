@@ -772,9 +772,9 @@ const VendorDetailPage = () => {
 
 				<div ref={bookingPanelRef} className="xl:sticky xl:top-24">
 					<div className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm sm:p-6">
-						<p className="text-base font-semibold tracking-tight text-slate-900">Select Date and Time</p>
+						<p className="text-base font-semibold tracking-tight text-slate-900">Book Your Appointment</p>
 						<p className="mt-1 text-sm text-muted-foreground">
-							Pick a service, choose a date, then lock an available slot.
+							Follow the steps below to choose service, date, and time.
 						</p>
 
 						<div className="mt-3 grid grid-cols-3 gap-2 text-xs">
@@ -793,7 +793,7 @@ const VendorDetailPage = () => {
 						</div>
 
 						<div className="mt-3 rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-xs text-info">
-							All availability is shown in East Africa Time ({ADDIS_TIMEZONE}).
+							Times are shown in East Africa Time ({ADDIS_TIMEZONE}).
 						</div>
 
 						<div className="mt-5">
@@ -898,23 +898,23 @@ const VendorDetailPage = () => {
 							{selectedService ? (
 								<div className="space-y-1">
 									<p>
-										Service:{' '}
+										Selected service:{' '}
 										<span className="font-medium text-foreground">{selectedService.name}</span>{' '}
-										for{' '}
+										at{' '}
 										<span className="font-medium text-foreground">
 											{currencyFormatter.format(selectedService.priceAmount)}
 										</span>
 									</p>
 									{selectedSlot ? (
 										<p>
-											Slot:{' '}
+											Selected slot:{' '}
 											<span className="font-medium text-foreground">{formatSlotLabel(selectedSlot)}</span>{' '}
 											on <span className="font-medium text-foreground">{bookingDateLocal}</span>
 										</p>
 									) : null}
 								</div>
 							) : (
-								<p>Choose a service to see the booking summary.</p>
+								<p>Select a service to see a live booking summary.</p>
 							)}
 						</div>
 
@@ -950,7 +950,7 @@ const VendorDetailPage = () => {
 									loadingText="Booking..."
 									onClick={submitBooking}
 								>
-									Confirm Booking
+									Request Appointment
 								</Button>
 							)}
 
@@ -976,7 +976,7 @@ const VendorDetailPage = () => {
 										<ShieldCheck className="h-4 w-4 text-primary" />
 									</div>
 									<p className="text-xs leading-5 text-muted-foreground">
-										Review after completion to help future customers choose better.
+										You can manage or cancel upcoming bookings from your bookings page.
 									</p>
 								</div>
 							</div>

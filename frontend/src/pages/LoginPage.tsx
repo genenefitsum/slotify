@@ -85,7 +85,7 @@ const LoginPage = () => {
 
 				<div className="glass section-shell border-border/80 bg-card/90 p-6 sm:p-8">
 					<h2 className="text-2xl font-heading font-semibold">Log In</h2>
-					<p className="mt-2 text-sm text-muted-foreground">Access your account and continue where you left off.</p>
+					<p className="mt-2 text-sm text-muted-foreground">Welcome back. Pick up exactly where you left off.</p>
 
 					<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
 						<div>
@@ -113,6 +113,7 @@ const LoginPage = () => {
 								value={password}
 								onChange={(event) => setPassword(event.target.value)}
 							/>
+							<p className="mt-1 text-xs text-muted-foreground">Use at least 8 characters.</p>
 						</div>
 
 						{error ? (
@@ -122,7 +123,7 @@ const LoginPage = () => {
 						) : null}
 
 						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
-							{isSubmitting ? 'Signing in...' : 'Log In'}
+							{isSubmitting ? 'Signing you in...' : 'Continue'}
 						</Button>
 					</form>
 
@@ -165,7 +166,7 @@ const LoginPage = () => {
 					<p className="text-sm text-muted-foreground">
 						No account yet?{' '}
 						<Link to="/register" className="font-medium text-primary hover:underline">
-							Create one
+							Create an account
 						</Link>
 					</p>
 				</div>

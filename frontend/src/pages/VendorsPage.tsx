@@ -77,9 +77,9 @@ const VendorsPage = () => {
 				<div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-accent/15 blur-3xl" />
 
 				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Marketplace</p>
-				<h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Find your next trusted vendor</h1>
+				<h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Find the right vendor for your next appointment</h1>
 				<p className="mt-3 max-w-2xl text-muted-foreground">
-					Search by city and category, compare providers, and open full profiles to check services, pricing, and availability.
+					Search by city or category, compare profiles side by side, and book with confidence.
 				</p>
 
 				<div className="mt-5 flex flex-wrap gap-2">
@@ -153,7 +153,7 @@ const VendorsPage = () => {
 					</datalist>
 				</div>
 				<Button type="submit" className="h-11 self-end">
-					Apply Filters
+					Search
 				</Button>
 				<Button
 					type="button"
@@ -161,7 +161,7 @@ const VendorsPage = () => {
 					className="h-11 self-end"
 					onClick={() => setSearchParams(showAll ? { view: 'all' } : {})}
 				>
-					Clear
+					Reset
 				</Button>
 			</form>
 
@@ -197,7 +197,7 @@ const VendorsPage = () => {
 								{category ? <span> for <span className="font-semibold text-foreground">{category}</span></span> : null}
 							</p>
 							<div className="flex items-center gap-2">
-								<p className="text-muted-foreground">Tip: open profiles to compare services, ratings, and availability.</p>
+								<p className="text-muted-foreground">Compare details in profile view before you book.</p>
 								{!showAll && data.pagination.total > data.items.length ? (
 									<Button type="button" variant="outline" size="sm" onClick={() => setShowAll(true)}>
 										View all

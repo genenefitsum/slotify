@@ -96,7 +96,7 @@ const RegisterPage = () => {
 
 				<div className="glass section-shell border-border/80 bg-card/90 p-6 sm:p-8">
 					<h2 className="text-2xl font-heading font-semibold">Create Account</h2>
-					<p className="mt-2 text-sm text-muted-foreground">Set up your profile and start using Slotify today.</p>
+					<p className="mt-2 text-sm text-muted-foreground">Create your profile in under a minute and start booking right away.</p>
 
 					<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
 						<div className="grid gap-4 sm:grid-cols-2">
@@ -159,6 +159,7 @@ const RegisterPage = () => {
 								value={password}
 								onChange={(event) => setPassword(event.target.value)}
 							/>
+							<p className="mt-1 text-xs text-muted-foreground">Use 8 or more characters for better account security.</p>
 						</div>
 
 						<div>
@@ -198,7 +199,7 @@ const RegisterPage = () => {
 						) : null}
 
 						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
-							{isSubmitting ? 'Creating account...' : 'Create Account'}
+							{isSubmitting ? 'Creating your account...' : 'Create account'}
 						</Button>
 					</form>
 
@@ -234,7 +235,7 @@ const RegisterPage = () => {
 					<p className="text-sm text-muted-foreground">
 						Already have an account?{' '}
 						<Link to="/login" className="font-medium text-primary hover:underline">
-							Log in
+							Log in instead
 						</Link>
 					</p>
 				</div>
