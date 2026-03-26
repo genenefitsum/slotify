@@ -20,8 +20,8 @@ const RequireAuth = () => {
 	if (isLoading) {
 		return (
 			<section className="container mx-auto px-4 py-14">
-				<div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
-					Checking your session...
+				<div className="section-shell p-6 text-sm text-muted-foreground">
+					Checking your session and preparing your workspace...
 				</div>
 			</section>
 		);

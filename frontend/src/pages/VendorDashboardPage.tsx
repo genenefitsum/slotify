@@ -636,22 +636,23 @@ const VendorDashboardPage = () => {
 	};
 
 	return (
-		<section className="container mx-auto space-y-8 px-4 py-14">
+		<section className="container mx-auto space-y-8 px-4 py-10 lg:py-14">
 			<BackButton fallbackTo="/" />
 
 			<header>
 				<h1 className="text-3xl font-semibold">Vendor Dashboard</h1>
 				<p className="mt-2 text-muted-foreground">Manage your profile, services, and booking operations from one place.</p>
+				<p className="mt-1 text-sm text-muted-foreground">Keep details current to improve visibility and reduce booking friction for customers.</p>
 			</header>
 
 			{isSyncingDashboard ? (
-				<div className="rounded-xl border border-border bg-muted/30 px-4 py-2 text-sm text-muted-foreground">
+				<div className="rounded-xl border border-border bg-muted/30 px-4 py-2 text-sm text-muted-foreground" role="status">
 					Refreshing dashboard data...
 				</div>
 			) : null}
 
 			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-				<div className="rounded-2xl border border-border bg-card p-5">
+				<div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
 					<div className="flex items-center gap-3">
 						<div className="rounded-2xl bg-emerald-100 p-2 text-emerald-700">
 							<BriefcaseBusiness className="h-4 w-4" />
@@ -662,7 +663,7 @@ const VendorDashboardPage = () => {
 						</div>
 					</div>
 				</div>
-				<div className="rounded-2xl border border-border bg-card p-5">
+				<div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
 					<div className="flex items-center gap-3">
 						<div className="rounded-2xl bg-sky-100 p-2 text-sky-700">
 							<CalendarClock className="h-4 w-4" />
@@ -673,7 +674,7 @@ const VendorDashboardPage = () => {
 						</div>
 					</div>
 				</div>
-				<div className="rounded-2xl border border-border bg-card p-5">
+				<div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
 					<div className="flex items-center gap-3">
 						<div className="rounded-2xl bg-amber-100 p-2 text-amber-700">
 							<CircleDollarSign className="h-4 w-4" />
@@ -685,7 +686,7 @@ const VendorDashboardPage = () => {
 						</div>
 					</div>
 				</div>
-				<div className="rounded-2xl border border-border bg-card p-5">
+				<div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
 					<div className="flex items-center gap-3">
 						<div className="rounded-2xl bg-violet-100 p-2 text-violet-700">
 							<MapPin className="h-4 w-4" />
@@ -713,7 +714,7 @@ const VendorDashboardPage = () => {
 				/>
 			) : null}
 
-			<article className="rounded-[1.75rem] border border-border bg-card p-6">
+			<article className="section-shell p-6">
 				<h2 className="text-xl font-semibold">Booking Operations</h2>
 				<p className="mt-1 text-sm text-muted-foreground">Update booking statuses as customers progress through appointments.</p>
 
@@ -757,7 +758,7 @@ const VendorDashboardPage = () => {
 													{booking.vendorName || 'Your vendor profile'} • {currencyFormatter.format(booking.pricingSnapshot.servicePriceAmount)}
 												</p>
 											</div>
-											<p className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wide">
+											<p className="status-chip border-border bg-muted/30 text-foreground">
 												{bookingStatusLabelMap[booking.status]}
 											</p>
 										</div>
@@ -781,6 +782,7 @@ const VendorDashboardPage = () => {
 													}
 													loadingText="Updating..."
 													disabled={bookingActionMutation.isPending && pendingBookingAction?.bookingId === booking.id}
+													className="flex-1 sm:flex-none"
 													onClick={() => {
 														void bookingActionMutation.mutateAsync({ bookingId: booking.id, action });
 													}}
@@ -805,7 +807,7 @@ const VendorDashboardPage = () => {
 			</article>
 
 			{vendorQuery.isSuccess || isVendorMissing ? (
-				<article className="rounded-[1.75rem] border border-border bg-card p-6">
+				<article className="section-shell p-6">
 					<h2 className="text-xl font-semibold">
 						{isVendorMissing ? 'Create Vendor Profile' : 'Vendor Profile'}
 					</h2>
@@ -863,7 +865,7 @@ const VendorDashboardPage = () => {
 						</div>
 						<div>
 							<label className="mb-1 block text-sm font-medium">Timezone</label>
-							<div className="h-10 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+							<div className="h-11 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground shadow-sm">
 								{ADDIS_TIMEZONE}
 							</div>
 						</div>
@@ -945,9 +947,12 @@ const VendorDashboardPage = () => {
 										<h3 className="font-semibold">Exact location</h3>
 										<p className="text-sm text-muted-foreground">Paste a Google Maps link or enter coordinates directly.</p>
 									</div>
-									<Button asChild type="button" variant="outline">
+									<Button asChild type="button" variant="outline" className="w-full sm:w-auto">
 										<a href={googleMapsOpenUrl} target="_blank" rel="noreferrer">Open Google Maps</a>
 									</Button>
+								</div>
+								<div className="rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-xs text-info">
+									Tip: from Google Maps, copy from the URL bar or share link. You can also paste plain coordinates like 8.9950, 38.7924.
 								</div>
 								<div className="grid gap-3 md:grid-cols-[1fr_auto]">
 									<Input
@@ -1031,6 +1036,7 @@ const VendorDashboardPage = () => {
 										<label className="flex items-center gap-2 text-sm">
 											<input
 												type="checkbox"
+												className="h-4 w-4 rounded border-border accent-primary"
 												checked={hour.isEnabled}
 												onChange={(event) => updateWorkingHour(hour.dayOfWeek, { isEnabled: event.target.checked })}
 											/>
@@ -1048,7 +1054,7 @@ const VendorDashboardPage = () => {
 									<h3 className="font-semibold">Blocked times</h3>
 									<p className="text-sm text-muted-foreground">Block dates and hours when customers should not be able to book.</p>
 								</div>
-								<Button type="button" variant="outline" onClick={addBlackoutSlot}>Add blocked time</Button>
+								<Button type="button" variant="outline" className="w-full sm:w-auto" onClick={addBlackoutSlot}>Add blocked time</Button>
 							</div>
 							<div className="space-y-3">
 								{(vendorForm.blackoutSlots || []).length === 0 ? (
@@ -1062,7 +1068,7 @@ const VendorDashboardPage = () => {
 											<Input type="time" value={slot.startTime} onChange={(event) => updateBlackoutSlot(index, { startTime: event.target.value })} />
 											<Input type="time" value={slot.endTime} onChange={(event) => updateBlackoutSlot(index, { endTime: event.target.value })} />
 											<Input value={slot.label} placeholder="Reason or note" onChange={(event) => updateBlackoutSlot(index, { label: event.target.value })} />
-											<Button type="button" variant="outline" onClick={() => removeBlackoutSlot(index)}>Remove</Button>
+											<Button type="button" variant="outline" className="w-full lg:w-auto" onClick={() => removeBlackoutSlot(index)}>Remove</Button>
 										</div>
 									))
 								)}
@@ -1086,7 +1092,7 @@ const VendorDashboardPage = () => {
 			) : null}
 
 			{vendorQuery.data ? (
-				<article className="rounded-[1.75rem] border border-border bg-card p-6">
+				<article className="section-shell p-6">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<h2 className="text-xl font-semibold">Services</h2>
@@ -1140,7 +1146,7 @@ const VendorDashboardPage = () => {
 						</div>
 						<div>
 							<label className="mb-1 block text-sm font-medium">Currency</label>
-							<div className="h-10 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">ETB</div>
+							<div className="h-11 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground shadow-sm">ETB</div>
 						</div>
 						<div className="md:col-span-2">
 							<label htmlFor="serviceDescription" className="mb-1 block text-sm font-medium">Description</label>
@@ -1200,15 +1206,16 @@ const VendorDashboardPage = () => {
 							</div>
 							<p className="mt-2 text-xs text-muted-foreground">Upload up to 5 images, each 2MB or less.</p>
 						</div>
-						<div className="md:col-span-2 flex items-center justify-between gap-3">
+						<div className="md:col-span-2 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
 							<p className="text-sm text-muted-foreground">
 								Preview: {currencyFormatter.format(serviceDraft.priceAmount || 0)}
 							</p>
-							<div className="flex gap-2">
+							<div className="flex w-full gap-2 sm:w-auto">
 								{serviceEditingId ? (
 									<Button
 										type="button"
 										variant="outline"
+										className="flex-1 sm:flex-none"
 										onClick={() => {
 											setServiceEditingId(null);
 											setServiceExistingImages([]);
@@ -1218,7 +1225,7 @@ const VendorDashboardPage = () => {
 										Clear
 									</Button>
 								) : null}
-								<Button type="submit" loading={upsertServiceMutation.isPending} loadingText="Saving...">
+								<Button type="submit" className="flex-1 sm:flex-none" loading={upsertServiceMutation.isPending} loadingText="Saving...">
 									{serviceEditingId ? 'Update service' : 'Create service'}
 								</Button>
 							</div>

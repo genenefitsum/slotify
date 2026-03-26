@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 const NotFoundPage = () => {
 	return (
 		<section className="container mx-auto px-4 py-12 lg:py-16">
-			<div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border bg-card p-8 text-center shadow-card sm:p-10">
+			<div className="section-shell relative mx-auto max-w-3xl overflow-hidden p-8 text-center sm:p-10">
 				<div className="pointer-events-none absolute -left-8 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
 				<div className="pointer-events-none absolute -right-8 bottom-0 h-40 w-40 rounded-full bg-accent/15 blur-3xl" />
 

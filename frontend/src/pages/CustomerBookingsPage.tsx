@@ -34,12 +34,12 @@ const statusLabelMap: Record<BookingStatus, string> = {
 };
 
 const statusChipMap: Record<BookingStatus, string> = {
-	pending_payment: 'border-amber-500/40 bg-amber-500/10 text-amber-700',
-	confirmed: 'border-blue-500/40 bg-blue-500/10 text-blue-700',
-	in_service: 'border-indigo-500/40 bg-indigo-500/10 text-indigo-700',
-	completed: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700',
-	cancelled: 'border-destructive/40 bg-destructive/10 text-destructive',
-	no_show: 'border-slate-500/40 bg-slate-500/10 text-slate-700',
+	pending_payment: 'border-amber-600/35 bg-amber-100 text-amber-900',
+	confirmed: 'border-blue-600/35 bg-blue-100 text-blue-900',
+	in_service: 'border-indigo-600/35 bg-indigo-100 text-indigo-900',
+	completed: 'border-emerald-600/35 bg-emerald-100 text-emerald-900',
+	cancelled: 'border-destructive/40 bg-destructive/15 text-destructive',
+	no_show: 'border-slate-600/35 bg-slate-100 text-slate-900',
 };
 
 const formatDuration = (startsAtUtc: string, endsAtUtc: string) => {
@@ -120,32 +120,36 @@ const CustomerBookingsPage = () => {
 		<section className="container mx-auto px-4 py-14">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="flex flex-wrap items-center justify-between gap-3">
+			<div className="section-shell p-5 sm:p-6">
+				<div className="flex flex-wrap items-center justify-between gap-3">
 				<div>
 					<h1 className="text-3xl font-semibold">My Bookings</h1>
 					<p className="mt-2 text-muted-foreground">Track your appointments and manage upcoming bookings.</p>
 				</div>
 
-				<div>
-					<label htmlFor="statusFilter" className="mb-1 block text-sm font-medium">
+				<div className="surface-soft p-3">
+					<p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
 						Filter by status
-					</label>
-					<select
-						id="statusFilter"
-						className="h-10 rounded-md border border-border bg-background px-3 text-sm"
-						value={status}
-						onChange={(event) => {
-							setStatus(event.target.value as BookingStatus | 'all');
-							setPage(1);
-						}}
-					>
+					</p>
+					<div className="flex gap-2 overflow-x-auto pb-1">
 						{FILTER_STATUSES.map((item) => (
-							<option key={item.value} value={item.value}>
+							<Button
+								key={item.value}
+								type="button"
+								size="sm"
+								className="shrink-0"
+								variant={status === item.value ? 'default' : 'outline'}
+								onClick={() => {
+									setStatus(item.value);
+									setPage(1);
+								}}
+							>
 								{item.label}
-							</option>
+							</Button>
 						))}
-					</select>
+					</div>
 				</div>
+			</div>
 			</div>
 
 			<div className="mt-6">
@@ -184,7 +188,7 @@ const CustomerBookingsPage = () => {
 							const duration = formatDuration(booking.startsAtUtc, booking.endsAtUtc);
 
 							return (
-								<article key={booking.id} className="rounded-xl border border-border bg-card p-5">
+								<article key={booking.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
 									<div className="flex flex-wrap items-start justify-between gap-3">
 										<div>
 											<p className="text-sm font-medium text-primary">{booking.serviceName || 'Scheduled service'}</p>
@@ -194,7 +198,7 @@ const CustomerBookingsPage = () => {
 											</p>
 										</div>
 										<span
-											className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusChipMap[booking.status]}`}
+											className={`status-chip ${statusChipMap[booking.status]}`}
 										>
 											{statusLabelMap[booking.status]}
 										</span>
@@ -227,7 +231,7 @@ const CustomerBookingsPage = () => {
 										<p className="text-muted-foreground">
 											{booking.vendorName ? `Booked with ${booking.vendorName}` : 'Vendor details available on profile'}
 										</p>
-										<Button asChild type="button" variant="ghost" className="px-0 text-primary hover:bg-transparent hover:text-gray-500">
+										<Button asChild type="button" variant="ghost" className="px-0 text-primary hover:bg-transparent hover:text-primary/80">
 											<Link to={`/vendor/${booking.vendorId}`}>View vendor profile</Link>
 										</Button>
 									</div>

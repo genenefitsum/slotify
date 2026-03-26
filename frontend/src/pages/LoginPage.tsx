@@ -83,7 +83,7 @@ const LoginPage = () => {
 			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
 				<BackButton className="mb-4" fallbackTo="/" />
 
-				<div className="glass rounded-3xl border border-border/80 bg-card/90 p-6 shadow-card sm:p-8">
+				<div className="glass section-shell border-border/80 bg-card/90 p-6 sm:p-8">
 					<h2 className="text-2xl font-heading font-semibold">Log In</h2>
 					<p className="mt-2 text-sm text-muted-foreground">Access your account and continue where you left off.</p>
 
@@ -115,7 +115,11 @@ const LoginPage = () => {
 							/>
 						</div>
 
-						{error ? <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+						{error ? (
+							<p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert" aria-live="polite">
+								{error}
+							</p>
+						) : null}
 
 						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
 							{isSubmitting ? 'Signing in...' : 'Log In'}
@@ -149,7 +153,13 @@ const LoginPage = () => {
 							</Button>
 						)}
 
-						{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
+						{!googleClientId ? (
+							<p className="mt-2 text-xs text-muted-foreground">
+								Google sign-in is disabled in this environment. Use email and password to continue.
+							</p>
+						) : null}
+
+						{googleError ? <p className="mt-2 text-sm text-destructive" role="alert" aria-live="polite">{googleError}</p> : null}
 					</div>
 
 					<p className="text-sm text-muted-foreground">

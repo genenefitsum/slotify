@@ -54,7 +54,7 @@ const VendorCard = ({
             <h3 className="mt-0.5 text-lg font-semibold leading-snug">{name}</h3>
           </div>
 
-          <div className="flex items-center gap-1 rounded-lg bg-amber-100/70 px-2 py-0.5">
+          <div className="flex items-center gap-1 rounded-lg border border-amber-300/40 bg-amber-100/70 px-2 py-0.5">
             <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
             <span className="text-sm font-semibold text-foreground">{rating.toFixed(1)}</span>
             <span className="text-xs text-muted-foreground">({reviews})</span>
@@ -66,13 +66,13 @@ const VendorCard = ({
           <span className="text-sm">{location}</span>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border pt-2">
+        <div className="flex items-center justify-between border-t border-border pt-3">
           <div>
             <span className="text-xs text-muted-foreground">
               {typeof price === "number" && price > 0 ? "Starting from" : "Availability"}
             </span>
-            <p className="text-lg font-bold">
-              {typeof price === "number" && price > 0 ? `${price} ETB` : "View services"}
+            <p className="text-lg font-bold tracking-tight">
+              {typeof price === "number" && price > 0 ? `${price.toLocaleString()} ETB` : "View services"}
             </p>
           </div>
 

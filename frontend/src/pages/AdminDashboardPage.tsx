@@ -316,7 +316,7 @@ const AdminDashboardPage = () => {
 			</div>
 
 			<div className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-				<article className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+				<article className="section-shell p-5">
 					<div className="flex items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-muted-foreground">Momentum</p>
@@ -350,7 +350,7 @@ const AdminDashboardPage = () => {
 					</div>
 				</article>
 
-				<article className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+				<article className="section-shell p-5">
 					<div className="flex items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-muted-foreground">Live queues</p>
@@ -391,7 +391,7 @@ const AdminDashboardPage = () => {
 			</div>
 
 			<div className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-				<article className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+				<article className="section-shell p-5">
 					<div className="flex items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-muted-foreground">Vendor verification queue</p>
@@ -418,7 +418,7 @@ const AdminDashboardPage = () => {
 										</p>
 									</div>
 									<div className="flex items-center gap-2">
-										<span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusToneMap[vendor.status] || 'border-border bg-muted/50 text-foreground'}`}>
+										<span className={`status-chip ${statusToneMap[vendor.status] || 'border-border bg-muted/50 text-foreground'}`}>
 											{formatStatusLabel(vendor.status)}
 										</span>
 										<ArrowUpRight className="h-4 w-4 text-muted-foreground" />
@@ -431,7 +431,7 @@ const AdminDashboardPage = () => {
 					</div>
 				</article>
 
-				<article className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+				<article className="section-shell p-5">
 					<div className="flex items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-muted-foreground">Commission controls</p>
@@ -477,7 +477,7 @@ const AdminDashboardPage = () => {
 				</article>
 			</div>
 
-			<article className="mt-4 rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+			<article className="section-shell mt-4 p-5">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<p className="text-sm font-medium text-muted-foreground">Recent booking movement</p>
@@ -528,7 +528,7 @@ const AdminDashboardPage = () => {
 											{booking.pricingSnapshot.servicePriceAmount.toLocaleString()} {booking.pricingSnapshot.currency}
 										</td>
 										<td className="px-2 py-3">
-											<span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusToneMap[booking.status] || 'border-border bg-muted/50 text-foreground'}`}>
+											<span className={`status-chip ${statusToneMap[booking.status] || 'border-border bg-muted/50 text-foreground'}`}>
 												{formatStatusLabel(booking.status)}
 											</span>
 										</td>
@@ -553,7 +553,7 @@ const AdminDashboardPage = () => {
 		const pagination = vendorsQueueQuery.data?.pagination;
 
 		return (
-			<article className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+			<article className="section-shell p-5">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<p className="text-sm font-medium text-muted-foreground">Queue operations</p>
@@ -583,7 +583,7 @@ const AdminDashboardPage = () => {
 						/>
 					</div>
 					<select
-						className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+						className="h-11 rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
 						value={vendorStatus}
 						onChange={(event) => {
 							setVendorStatus(event.target.value);
@@ -596,11 +596,12 @@ const AdminDashboardPage = () => {
 						<option value="draft">Draft</option>
 						<option value="all">All statuses</option>
 					</select>
-					<div className="flex items-center gap-2">
-						<Button type="submit">Apply</Button>
+					<div className="flex w-full items-center gap-2 md:w-auto">
+						<Button type="submit" className="flex-1 md:flex-none">Apply</Button>
 						<Button
 							type="button"
 							variant="ghost"
+							className="flex-1 md:flex-none"
 							onClick={() => {
 								setVendorSearchInput('');
 								setVendorSearch('');
@@ -612,6 +613,7 @@ const AdminDashboardPage = () => {
 						</Button>
 					</div>
 				</form>
+				<p className="mt-2 text-xs text-muted-foreground">On smaller screens, swipe the table horizontally to view all columns.</p>
 
 				<div className="mt-4 overflow-x-auto">
 					<table className="w-full min-w-[860px] border-collapse text-sm">
@@ -659,7 +661,7 @@ const AdminDashboardPage = () => {
 											{vendor.city || 'Unknown city'} {vendor.countryCode ? `(${vendor.countryCode})` : ''}
 										</td>
 										<td className="px-2 py-3">
-											<span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusToneMap[vendor.status] || 'border-border bg-muted/50 text-foreground'}`}>
+											<span className={`status-chip ${statusToneMap[vendor.status] || 'border-border bg-muted/50 text-foreground'}`}>
 												{formatStatusLabel(vendor.status)}
 											</span>
 										</td>
@@ -713,7 +715,7 @@ const AdminDashboardPage = () => {
 		const pagination = usersQueueQuery.data?.pagination;
 
 		return (
-			<article className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm">
+			<article className="section-shell p-5">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<p className="text-sm font-medium text-muted-foreground">Queue operations</p>
@@ -743,7 +745,7 @@ const AdminDashboardPage = () => {
 						/>
 					</div>
 					<select
-						className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+						className="h-11 rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
 						value={userRole}
 						onChange={(event) => {
 							setUserRole(event.target.value);
@@ -757,7 +759,7 @@ const AdminDashboardPage = () => {
 						<option value="admin">Admin</option>
 					</select>
 					<select
-						className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+						className="h-11 rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
 						value={userStatus}
 						onChange={(event) => {
 							setUserStatus(event.target.value);
@@ -769,11 +771,12 @@ const AdminDashboardPage = () => {
 						<option value="suspended">Suspended</option>
 						<option value="disabled">Disabled</option>
 					</select>
-					<div className="flex items-center gap-2">
-						<Button type="submit">Apply</Button>
+					<div className="flex w-full items-center gap-2 md:w-auto">
+						<Button type="submit" className="flex-1 md:flex-none">Apply</Button>
 						<Button
 							type="button"
 							variant="ghost"
+							className="flex-1 md:flex-none"
 							onClick={() => {
 								setUserSearchInput('');
 								setUserSearch('');
@@ -786,6 +789,7 @@ const AdminDashboardPage = () => {
 						</Button>
 					</div>
 				</form>
+				<p className="mt-2 text-xs text-muted-foreground">On smaller screens, swipe the table horizontally to view all columns.</p>
 
 				<div className="mt-4 overflow-x-auto">
 					<table className="w-full min-w-[860px] border-collapse text-sm">
@@ -833,7 +837,7 @@ const AdminDashboardPage = () => {
 											</td>
 											<td className="px-2 py-3 text-muted-foreground">{formatStatusLabel(user.role)}</td>
 											<td className="px-2 py-3">
-												<span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusToneMap[user.status] || 'border-border bg-muted/50 text-foreground'}`}>
+												<span className={`status-chip ${statusToneMap[user.status] || 'border-border bg-muted/50 text-foreground'}`}>
 													{formatStatusLabel(user.status)}
 												</span>
 											</td>
@@ -867,7 +871,7 @@ const AdminDashboardPage = () => {
 														</Button>
 													) : null}
 													{isProtectedAdmin ? (
-														<span className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+														<span className="status-chip border-border bg-muted/50 text-muted-foreground">
 															Protected
 														</span>
 													) : null}
@@ -903,7 +907,7 @@ const AdminDashboardPage = () => {
 		<section className="container mx-auto px-4 py-8 lg:py-12">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-card sm:p-8 lg:p-10">
+			<div className="section-shell relative overflow-hidden p-6 sm:p-8 lg:p-10">
 				<div className="pointer-events-none absolute -left-10 top-0 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
 				<div className="pointer-events-none absolute -right-12 bottom-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 

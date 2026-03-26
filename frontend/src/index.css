@@ -98,14 +98,26 @@
     @apply border-border;
   }
 
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring/70 ring-offset-2 ring-offset-background;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-image:
+      radial-gradient(circle at 6% 0%, hsl(172 55% 60% / 0.08), transparent 32%),
+      radial-gradient(circle at 96% 8%, hsl(215 65% 45% / 0.08), transparent 28%);
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'DM Sans', sans-serif;
-    @apply font-bold tracking-tight;
+    @apply font-heading font-semibold tracking-tight;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.22);
+    color: hsl(var(--foreground));
   }
 }
 
@@ -128,6 +140,13 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-hero-float {
       animation: none;
+    }
+
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
 
@@ -162,5 +181,17 @@
     background: hsl(0 0% 100% / 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  .section-shell {
+    @apply rounded-[1.75rem] border border-border/90 bg-card/95 shadow-card;
+  }
+
+  .surface-soft {
+    @apply rounded-2xl border border-border/70 bg-muted/25;
+  }
+
+  .status-chip {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide;
   }
 }

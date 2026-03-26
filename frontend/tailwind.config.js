@@ -9,11 +9,7 @@ export default {
   	extend: {
 		fontFamily: {
 			sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			heading: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			montserrat: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			poppins: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			manrope: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			serifDisplay: ['Playfair Display', 'ui-serif', 'Georgia', 'serif']
+			heading: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
 		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -47,6 +43,18 @@ export default {
   				DEFAULT: 'hsl(var(--accent))',
   				foreground: 'hsl(var(--accent-foreground))'
   			},
+			success: {
+				DEFAULT: 'hsl(var(--success))',
+				foreground: 'hsl(var(--success-foreground))'
+			},
+			warning: {
+				DEFAULT: 'hsl(var(--warning))',
+				foreground: 'hsl(var(--warning-foreground))'
+			},
+			info: {
+				DEFAULT: 'hsl(var(--info))',
+				foreground: 'hsl(var(--info-foreground))'
+			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'

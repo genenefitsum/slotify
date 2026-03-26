@@ -11,9 +11,9 @@ type EmptyStateProps = {
 
 const EmptyState = ({ title, description, actionLabel, onAction, className }: EmptyStateProps) => {
   return (
-    <div className={cn('rounded-xl border border-dashed border-border bg-card p-8 text-center', className)}>
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+    <div className={cn('section-shell border-dashed bg-gradient-to-br from-card via-card to-muted/25 p-8 text-center', className)}>
+      <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
       {actionLabel && onAction ? (
         <Button type="button" variant="outline" className="mt-5" onClick={onAction}>
           {actionLabel}

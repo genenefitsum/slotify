@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
 	return (
-		<footer className="border-t border-border/60 bg-card">
+		<footer className="border-t border-border/60 bg-gradient-to-b from-card to-muted/20">
 			<div className="container mx-auto px-4 py-10">
 				<div className="grid gap-8 md:grid-cols-4">
 					<div>
-						<p className="text-lg font-bold">Slotify</p>
+						<p className="text-lg font-bold tracking-tight">Slotify</p>
 						<p className="mt-2 text-sm text-muted-foreground">
 							Book trusted professionals in minutes across Ethiopia.
 						</p>

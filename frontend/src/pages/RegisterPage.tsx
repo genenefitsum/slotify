@@ -94,7 +94,7 @@ const RegisterPage = () => {
 			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
 				<BackButton className="mb-4" fallbackTo="/" />
 
-				<div className="glass rounded-3xl border border-border/80 bg-card/90 p-6 shadow-card sm:p-8">
+				<div className="glass section-shell border-border/80 bg-card/90 p-6 sm:p-8">
 					<h2 className="text-2xl font-heading font-semibold">Create Account</h2>
 					<p className="mt-2 text-sm text-muted-foreground">Set up your profile and start using Slotify today.</p>
 
@@ -162,19 +162,40 @@ const RegisterPage = () => {
 						</div>
 
 						<div>
-							<label htmlFor="role" className="mb-1.5 block text-sm font-medium">Account Type</label>
-							<select
-								id="role"
-								className="h-11 w-full rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-								value={role}
-								onChange={(event) => setRole(event.target.value as 'customer' | 'vendor_owner')}
-							>
-								<option value="customer">Customer</option>
-								<option value="vendor_owner">Vendor Owner</option>
-							</select>
+							<p className="mb-1.5 block text-sm font-medium">Account Type</p>
+							<div className="grid gap-2 sm:grid-cols-2">
+								<button
+									type="button"
+									onClick={() => setRole('customer')}
+									className={`rounded-xl border px-3 py-3 text-left transition-colors ${
+										role === 'customer'
+											? 'border-primary/50 bg-primary/10'
+											: 'border-border/70 bg-background/70 hover:bg-muted/40'
+									}`}
+								>
+									<p className="text-sm font-semibold">Customer</p>
+									<p className="mt-1 text-xs text-muted-foreground">Book and manage appointments.</p>
+								</button>
+								<button
+									type="button"
+									onClick={() => setRole('vendor_owner')}
+									className={`rounded-xl border px-3 py-3 text-left transition-colors ${
+										role === 'vendor_owner'
+											? 'border-primary/50 bg-primary/10'
+											: 'border-border/70 bg-background/70 hover:bg-muted/40'
+									}`}
+								>
+									<p className="text-sm font-semibold">Vendor Owner</p>
+									<p className="mt-1 text-xs text-muted-foreground">Create services and manage bookings.</p>
+								</button>
+							</div>
 						</div>
 
-						{error ? <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+						{error ? (
+							<p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert" aria-live="polite">
+								{error}
+							</p>
+						) : null}
 
 						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
 							{isSubmitting ? 'Creating account...' : 'Create Account'}
@@ -207,7 +228,7 @@ const RegisterPage = () => {
 							</Button>
 						)}
 
-						{googleError ? <p className="mt-2 text-sm text-destructive">{googleError}</p> : null}
+						{googleError ? <p className="mt-2 text-sm text-destructive" role="alert" aria-live="polite">{googleError}</p> : null}
 					</div>
 
 					<p className="text-sm text-muted-foreground">

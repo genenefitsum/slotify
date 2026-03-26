@@ -6,7 +6,7 @@ const TestimonialsSection = () => {
   return (
     <section className="border-b bg-background">
       <div className="container mx-auto max-w-5xl px-4 py-14 lg:py-16">
-        <p className="text-center text-green-600 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-primary">
           Testimonials
         </p>
         <h2 className="mt-2 text-center text-3xl sm:text-4xl">What People Say</h2>

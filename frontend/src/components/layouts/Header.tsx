@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Menu, X } from "lucide-react";
 
@@ -17,48 +17,56 @@ const Header = () => {
                 : '/bookings';
 
     return (
-        <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:glass">
             <div className="container mx-auto flex h-14 items-center justify-between px-4">
-                <Link to="/" className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Link to="/" className="group flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-primary-glow transition-transform duration-200 group-hover:-translate-y-0.5">
                         <CalendarDays className="size-4 text-primary-foreground" />
                     </div>
-                    <span className="text-lg font-bold text-foreground">Slotify</span>
+                    <span className="text-lg font-bold tracking-tight text-foreground">Slotify</span>
                 </Link>
 
                 <nav className="hidden items-center gap-6 md:flex">
-                    <Link
+                    <NavLink
                         to="/vendors"
-                        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        className={({ isActive }) =>
+                            `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
+                        }
                     >
                         Browse Vendors
-                    </Link>
-                    <Link
+                    </NavLink>
+                    <NavLink
                         to="/about"
-                        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        className={({ isActive }) =>
+                            `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
+                        }
                     >
                         How It Works
-                    </Link>
+                    </NavLink>
                     {isAuthenticated ? (
                         <>
-                            <Link
+                            <NavLink
                                 to={roleRoute}
-                                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                                className={({ isActive }) =>
+                                    `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
+                                }
                             >
                                 Dashboard
-                            </Link>
+                            </NavLink>
                             <Button size="sm" className="rounded-lg" onClick={logout}>
                                 Log Out
                             </Button>
                         </>
                     ) : (
                         <>
-                            <Link
+                            <NavLink
                                 to="/login"
-                                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                                className={({ isActive }) =>
+                                    `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
+                                }
                             >
                                 Log In
-                            </Link>
+                            </NavLink>
                             <Button asChild size="sm" className="rounded-lg">
                                 <Link to="/register">
                                     Get Started
@@ -80,31 +88,37 @@ const Header = () => {
             </div>
 
             {mobileOpen && (
-                <div className="border-t border-border/50 bg-card md:hidden">
+                <div className="border-t border-border/50 bg-card/95 md:hidden">
                     <nav className="flex flex-col gap-2 p-3">
-                        <Link
+                        <NavLink
                             to="/vendors"
-                            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            className={({ isActive }) =>
+                                `rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`
+                            }
                             onClick={() => setMobileOpen(false)}
                         >
                             Browse Vendors
-                        </Link>
-                        <Link
+                        </NavLink>
+                        <NavLink
                             to="/about"
-                            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            className={({ isActive }) =>
+                                `rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`
+                            }
                             onClick={() => setMobileOpen(false)}
                         >
                             How It Works
-                        </Link>
+                        </NavLink>
                         {isAuthenticated ? (
                             <>
-                                <Link
+                                <NavLink
                                     to={roleRoute}
-                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    className={({ isActive }) =>
+                                        `rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`
+                                    }
                                     onClick={() => setMobileOpen(false)}
                                 >
                                     Dashboard
-                                </Link>
+                                </NavLink>
                                 <Button
                                     size="sm"
                                     className="mt-1 rounded-lg"
@@ -118,13 +132,15 @@ const Header = () => {
                             </>
                         ) : (
                             <>
-                                <Link
+                                <NavLink
                                     to="/login"
-                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    className={({ isActive }) =>
+                                        `rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`
+                                    }
                                     onClick={() => setMobileOpen(false)}
                                 >
                                     Log In
-                                </Link>
+                                </NavLink>
                                 <Button asChild size="sm" className="mt-1 rounded-lg">
                                     <Link to="/register" onClick={() => setMobileOpen(false)}>
                                         Get Started

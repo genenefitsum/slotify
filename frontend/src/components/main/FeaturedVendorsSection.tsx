@@ -34,7 +34,7 @@ const FeaturedVendorsSection = () => {
       <div className="container mx-auto max-w-6xl px-4 py-10 lg:py-12">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs text-green-600 font-semibold uppercase tracking-[0.2em]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
               Top Rated
             </p>
             <h2 className="mt-2 text-2xl sm:text-3xl">Featured Vendors</h2>

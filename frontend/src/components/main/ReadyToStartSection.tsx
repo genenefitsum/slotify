@@ -6,7 +6,9 @@ const ReadyToStartSection = () => {
   return (
     <section className="border-b bg-background">
       <div className="container mx-auto max-w-6xl px-4 py-14 lg:py-16">
-        <div className="rounded-3xl bg-primary px-6 py-14 text-center shadow-lg sm:px-10">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-primary px-6 py-14 text-center shadow-primary-glow sm:px-10">
+          <div className="pointer-events-none absolute -left-14 -top-14 h-44 w-44 rounded-full bg-white/12 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-52 w-52 rounded-full bg-accent/25 blur-3xl" />
           <h2 className="text-3xl text-primary-foreground sm:text-4xl">Ready to Get Started?</h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-primary-foreground/75">
             Join thousands of customers and vendors on Ethiopia's fastest-growing booking platform.

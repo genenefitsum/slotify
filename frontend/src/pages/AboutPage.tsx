@@ -7,7 +7,7 @@ const AboutPage = () => {
 		<section className="container mx-auto px-4 py-10 lg:py-14">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8 lg:p-10">
+			<div className="section-shell relative overflow-hidden p-6 sm:p-8 lg:p-10">
 				<div className="pointer-events-none absolute -left-10 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
 				<div className="pointer-events-none absolute -right-12 bottom-0 h-44 w-44 rounded-full bg-accent/15 blur-3xl" />
 
@@ -61,7 +61,7 @@ const AboutPage = () => {
 				</article>
 			</div>
 
-			<div className="mt-8 rounded-2xl border border-border bg-gradient-to-br from-card via-card to-muted/40 p-6">
+			<div className="section-shell mt-8 bg-gradient-to-br from-card via-card to-muted/40 p-6">
 				<h2 className="text-xl font-semibold">Trust and transparency by default</h2>
 				<div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					<p className="rounded-xl border border-border bg-background/70 px-4 py-3 text-sm text-muted-foreground">

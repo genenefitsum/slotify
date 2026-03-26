@@ -777,13 +777,32 @@ const VendorDetailPage = () => {
 							Pick a service, choose a date, then lock an available slot.
 						</p>
 
+						<div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+							<div className={`rounded-xl border px-2 py-2 text-center ${selectedServiceId ? 'border-success/35 bg-success/10 text-success' : 'border-border bg-muted/25 text-muted-foreground'}`}>
+								<span className="sm:hidden">1 Service</span>
+								<span className="hidden sm:inline">Step 1: Service</span>
+							</div>
+							<div className={`rounded-xl border px-2 py-2 text-center ${selectedServiceId ? 'border-info/35 bg-info/10 text-info' : 'border-border bg-muted/25 text-muted-foreground'}`}>
+								<span className="sm:hidden">2 Date</span>
+								<span className="hidden sm:inline">Step 2: Date</span>
+							</div>
+							<div className={`rounded-xl border px-2 py-2 text-center ${selectedSlotStartUtc ? 'border-primary/35 bg-primary/10 text-primary' : 'border-border bg-muted/25 text-muted-foreground'}`}>
+								<span className="sm:hidden">3 Confirm</span>
+								<span className="hidden sm:inline">Step 3: Confirm</span>
+							</div>
+						</div>
+
+						<div className="mt-3 rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-xs text-info">
+							All availability is shown in East Africa Time ({ADDIS_TIMEZONE}).
+						</div>
+
 						<div className="mt-5">
 							<label htmlFor="serviceId" className="mb-1 block text-sm font-medium">
 								Service
 							</label>
 							<select
 								id="serviceId"
-								className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+								className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm"
 								value={selectedServiceId}
 								onChange={(event) => handleServiceSelection(event.target.value)}
 								disabled={services.length === 0}
@@ -799,7 +818,7 @@ const VendorDetailPage = () => {
 
 						<div className="mt-5">
 							<p className="mb-2 text-sm font-medium">Select date</p>
-							<div className="grid grid-cols-4 gap-2">
+							<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
 								{dateOptions.map((item) => {
 									const isActive = bookingDateLocal === item.value;
 									return (
@@ -826,15 +845,15 @@ const VendorDetailPage = () => {
 						<div className="mt-5">
 							<p className="mb-2 text-sm font-medium">Available times</p>
 							{!isAuthenticated ? (
-								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground" role="status">
 									Sign in as a customer to view live availability.
 								</div>
 							) : !isCustomer ? (
-								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground" role="status">
 									Only customer accounts can book appointments.
 								</div>
 							) : !selectedServiceId ? (
-								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+								<div className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground" role="status">
 									Choose a service to load available slots.
 								</div>
 							) : showAvailabilitySkeleton ? (

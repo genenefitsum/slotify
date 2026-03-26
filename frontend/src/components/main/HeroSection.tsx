@@ -8,7 +8,7 @@ import { ArrowRight, CircleCheckBig } from "lucide-react";
 const HeroSection = () => {
   return (
     <section className="border-b bg-muted/30 bg-gradient-hero">
-      <div className="container mx-auto grid gap-8 px-16 py-16 lg:grid-cols-2 lg:items-center lg:px-20 lg:py-24">
+      <div className="container mx-auto grid gap-8 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-12 lg:py-24">
         <div className="text-center lg:text-left">
           <Badge
             variant="secondary"
@@ -17,7 +17,7 @@ const HeroSection = () => {
             <span className="inline-block size-1.5 rounded-full bg-accent" />
             Ethiopia's #1 Booking Platform
           </Badge>
-          <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl lg:mx-0">
+          <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl lg:mx-0 lg:text-5xl">
             Book Trusted Professionals <span className="text-primary">in Minutes</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground sm:text-base lg:mx-0">
@@ -44,6 +44,10 @@ const HeroSection = () => {
               </div>
             ))}
           </div>
+
+          <p className="mt-5 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Most booked categories: Beauty, Fitness, Photography
+          </p>
         </div>
         <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-lg">
           <img

@@ -9,6 +9,7 @@ import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
 import PageSkeleton from '@/components/ui/page-skeleton';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const PAGE_SIZE = 6;
 const POPULAR_CATEGORIES = ['Beauty', 'Fitness', 'Photography', 'Home Services', 'Tutoring', 'Events'];
@@ -30,6 +31,14 @@ const VendorsPage = () => {
 			}),
 		staleTime: 60_000,
 	});
+
+	const cityOptions = Array.from(
+		new Set((data?.items || []).map((vendor) => vendor.location.city).filter(Boolean))
+	).sort((left, right) => left.localeCompare(right));
+
+	const categoryOptions = Array.from(
+		new Set((data?.items || []).flatMap((vendor) => vendor.categories || []).filter(Boolean))
+	).sort((left, right) => left.localeCompare(right));
 
 	const handleFilterSubmit = (formData: FormData) => {
 		const nextCity = String(formData.get('city') || '').trim();
@@ -104,32 +113,52 @@ const VendorsPage = () => {
 				}}
 			>
 				<div className="relative">
-					<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<input
+					<label htmlFor="city" className="mb-1.5 block text-sm font-medium">
+						City
+					</label>
+					<Search className="pointer-events-none absolute left-3 top-[2.7rem] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<Input
+						id="city"
 						type="text"
 						name="city"
+						list="city-options"
 						defaultValue={city}
 						placeholder="City (for example Addis Ababa)"
-						className="h-10 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm"
+						className="pl-9"
 					/>
+					<datalist id="city-options">
+						{cityOptions.map((item) => (
+							<option key={item} value={item} />
+						))}
+					</datalist>
 				</div>
 				<div className="relative">
-					<SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<input
+					<label htmlFor="category" className="mb-1.5 block text-sm font-medium">
+						Category
+					</label>
+					<SlidersHorizontal className="pointer-events-none absolute left-3 top-[2.7rem] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<Input
+						id="category"
 						type="text"
 						name="category"
+						list="category-options"
 						defaultValue={category}
 						placeholder="Category (for example Beauty)"
-						className="h-10 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm"
+						className="pl-9"
 					/>
+					<datalist id="category-options">
+						{categoryOptions.map((item) => (
+							<option key={item} value={item} />
+						))}
+					</datalist>
 				</div>
-				<Button type="submit" className="h-10">
+				<Button type="submit" className="h-11 self-end">
 					Apply Filters
 				</Button>
 				<Button
 					type="button"
 					variant="ghost"
-					className="h-10"
+					className="h-11 self-end"
 					onClick={() => setSearchParams(showAll ? { view: 'all' } : {})}
 				>
 					Clear
@@ -168,7 +197,7 @@ const VendorsPage = () => {
 								{category ? <span> for <span className="font-semibold text-foreground">{category}</span></span> : null}
 							</p>
 							<div className="flex items-center gap-2">
-								<p className="text-muted-foreground">Choose a profile to review services and availability.</p>
+								<p className="text-muted-foreground">Tip: open profiles to compare services, ratings, and availability.</p>
 								{!showAll && data.pagination.total > data.items.length ? (
 									<Button type="button" variant="outline" size="sm" onClick={() => setShowAll(true)}>
 										View all
