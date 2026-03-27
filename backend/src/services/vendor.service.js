@@ -26,6 +26,7 @@ const VENDOR_LIST_PROJECTION = {
   legalBusinessName: 1,
   description: 1,
   image: 1,
+  images: 1,
   categories: 1,
   timezone: 1,
   location: 1,
