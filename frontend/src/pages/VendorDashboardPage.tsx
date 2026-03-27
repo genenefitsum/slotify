@@ -1,4 +1,4 @@
-import { type ChangeEvent, useMemo, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BriefcaseBusiness, CalendarClock, CircleDollarSign, MapPin, Upload } from 'lucide-react';
 
@@ -33,6 +33,7 @@ const MAX_IMAGE_COUNT = 5;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 type CoordinatePair = [number, number];
+type VendorSection = 'bookings' | 'profile' | 'services';
 
 const createDefaultWorkingHours = (): WorkingHour[] =>
 	DAY_LABELS.map((_, index) => ({
@@ -222,6 +223,11 @@ const VendorDashboardPage = () => {
 	const { push } = useToast();
 	const [servicePage, setServicePage] = useState(1);
 	const [bookingPage, setBookingPage] = useState(1);
+ const [activeSection, setActiveSection] = useState<VendorSection>('bookings');
+
+ const bookingSectionRef = useRef<HTMLElement | null>(null);
+ const profileSectionRef = useRef<HTMLElement | null>(null);
+ const servicesSectionRef = useRef<HTMLElement | null>(null);
 
 	const [vendorDraft, setVendorDraft] = useState<CreateVendorPayload | null>(null);
 	const [categoryInput, setCategoryInput] = useState<string | null>(null);
@@ -635,6 +641,62 @@ const VendorDashboardPage = () => {
 		});
 	};
 
+		 const sectionRefMap: Record<VendorSection, React.RefObject<HTMLElement>> = {
+		  bookings: bookingSectionRef,
+		  profile: profileSectionRef,
+		  services: servicesSectionRef,
+		 };
+
+		 const scrollToSection = (section: VendorSection) => {
+		  const target = sectionRefMap[section].current;
+		  if (!target) {
+		   return;
+		  }
+
+		  setActiveSection(section);
+
+		  const prefersReducedMotion =
+		   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		  const targetTop = target.getBoundingClientRect().top + window.scrollY - 136;
+
+		  window.scrollTo({
+		   top: Math.max(targetTop, 0),
+		   behavior: prefersReducedMotion ? 'auto' : 'smooth',
+		  });
+		 };
+
+		 useEffect(() => {
+			const sectionOrder: VendorSection[] = ['bookings', 'profile', 'services'];
+			const getSectionElement = (section: VendorSection) => {
+			 if (section === 'bookings') return bookingSectionRef.current;
+			 if (section === 'profile') return profileSectionRef.current;
+			 return servicesSectionRef.current;
+			};
+
+		  const updateActiveSection = () => {
+		   const marker = window.scrollY + 180;
+		   let nextSection: VendorSection = 'bookings';
+
+		   sectionOrder.forEach((section) => {
+				const element = getSectionElement(section);
+			if (element && element.offsetTop <= marker) {
+			 nextSection = section;
+			}
+		   });
+
+		   setActiveSection(nextSection);
+		  };
+
+		  updateActiveSection();
+
+		  window.addEventListener('scroll', updateActiveSection, { passive: true });
+		  window.addEventListener('resize', updateActiveSection);
+		  return () => {
+		   window.removeEventListener('scroll', updateActiveSection);
+		   window.removeEventListener('resize', updateActiveSection);
+		  };
+		 }, []);
+
 	return (
 		<section className="container mx-auto space-y-8 px-4 py-10 lg:py-14">
 			<BackButton fallbackTo="/" />
@@ -644,6 +706,43 @@ const VendorDashboardPage = () => {
 				<p className="mt-2 text-muted-foreground">Manage your profile, services, and booking operations from one place.</p>
 				<p className="mt-1 text-sm text-muted-foreground">Keep details current to improve visibility and reduce booking friction for customers.</p>
 			</header>
+
+				<div className="sticky top-14 z-30">
+				 <div className="rounded-2xl border border-border/80 bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/90">
+				  <nav className="flex items-center gap-2 overflow-x-auto" aria-label="Vendor dashboard sections">
+					<Button
+					 type="button"
+					 variant={activeSection === 'bookings' ? 'default' : 'ghost'}
+					 className="h-11 shrink-0 rounded-xl px-4"
+					 aria-current={activeSection === 'bookings' ? 'page' : undefined}
+					 onClick={() => scrollToSection('bookings')}
+					>
+					 <CalendarClock className="mr-2 h-4 w-4" />
+					 Bookings
+					</Button>
+					<Button
+					 type="button"
+					 variant={activeSection === 'profile' ? 'default' : 'ghost'}
+					 className="h-11 shrink-0 rounded-xl px-4"
+					 aria-current={activeSection === 'profile' ? 'page' : undefined}
+					 onClick={() => scrollToSection('profile')}
+					>
+					 <MapPin className="mr-2 h-4 w-4" />
+					 Profile
+					</Button>
+					<Button
+					 type="button"
+					 variant={activeSection === 'services' ? 'default' : 'ghost'}
+					 className="h-11 shrink-0 rounded-xl px-4"
+					 aria-current={activeSection === 'services' ? 'page' : undefined}
+					 onClick={() => scrollToSection('services')}
+					>
+					 <BriefcaseBusiness className="mr-2 h-4 w-4" />
+					 Services
+					</Button>
+				  </nav>
+				 </div>
+				</div>
 
 			{isSyncingDashboard ? (
 				<div className="rounded-xl border border-border bg-muted/30 px-4 py-2 text-sm text-muted-foreground" role="status">
@@ -714,7 +813,7 @@ const VendorDashboardPage = () => {
 				/>
 			) : null}
 
-			<article className="section-shell p-6">
+			<article id="vendor-bookings" ref={bookingSectionRef} className="section-shell scroll-mt-36 p-6">
 				<h2 className="text-xl font-semibold">Booking Operations</h2>
 				<p className="mt-1 text-sm text-muted-foreground">Update booking statuses as customers progress through appointments.</p>
 
@@ -807,7 +906,7 @@ const VendorDashboardPage = () => {
 			</article>
 
 			{vendorQuery.isSuccess || isVendorMissing ? (
-				<article className="section-shell p-6">
+			 <article id="vendor-profile" ref={profileSectionRef} className="section-shell scroll-mt-36 p-6">
 					<h2 className="text-xl font-semibold">
 						{isVendorMissing ? 'Create Vendor Profile' : 'Vendor Profile'}
 					</h2>
@@ -1092,7 +1191,7 @@ const VendorDashboardPage = () => {
 			) : null}
 
 			{vendorQuery.data ? (
-				<article className="section-shell p-6">
+			 <article id="vendor-services" ref={servicesSectionRef} className="section-shell scroll-mt-36 p-6">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<h2 className="text-xl font-semibold">Services</h2>
