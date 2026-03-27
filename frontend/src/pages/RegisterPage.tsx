@@ -94,7 +94,7 @@ const RegisterPage = () => {
 			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
 				<BackButton className="mb-4" fallbackTo="/" />
 
-				<div className="glass section-shell border-border/80 bg-card/90 p-6 sm:p-8">
+				<div className="motion-enter glass section-shell border-border/80 bg-card/90 p-6 sm:p-8">
 					<h2 className="text-2xl font-heading font-semibold">Create Account</h2>
 					<p className="mt-2 text-sm text-muted-foreground">Create your profile in under a minute and start booking right away.</p>
 

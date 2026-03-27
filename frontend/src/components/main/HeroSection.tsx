@@ -9,7 +9,7 @@ const HeroSection = () => {
   return (
     <section className="border-b bg-muted/30 bg-gradient-hero">
       <div className="container mx-auto grid gap-8 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-12 lg:py-24">
-        <div className="text-center lg:text-left">
+        <div className="motion-enter text-center lg:text-left">
           <Badge
             variant="secondary"
             className="mb-4 gap-2 rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em]"
@@ -49,12 +49,14 @@ const HeroSection = () => {
             Most booked categories: Beauty, Fitness, Photography
           </p>
         </div>
-        <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-lg">
-          <img
-            src={heroIllustration}
-            alt="Book appointments easily with Slotify"
-            className="animate-hero-float mx-auto w-full max-w-lg"
-          />
+        <div className="motion-enter motion-enter-delay-1 rounded-3xl border border-border/70 bg-card p-4 shadow-card">
+          <div className="overflow-hidden rounded-2xl bg-muted/20">
+            <img
+              src={heroIllustration}
+              alt="Book appointments easily with Slotify"
+              className="animate-hero-float mx-auto w-full max-w-lg"
+            />
+          </div>
         </div>
       </div>
     </section>

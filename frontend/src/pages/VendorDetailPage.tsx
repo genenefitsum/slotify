@@ -614,7 +614,7 @@ const VendorDetailPage = () => {
 									return (
 										<article
 											key={service.id}
-											className={`rounded-2xl border p-4 transition-colors ${
+											className={`interactive-surface rounded-2xl border p-4 transition-colors ${
 												isActive
 													? 'border-primary/45 bg-primary/5'
 													: 'border-border bg-muted/15 hover:bg-muted/30'
@@ -770,7 +770,7 @@ const VendorDetailPage = () => {
 					</div>
 				</div>
 
-				<div ref={bookingPanelRef} className="xl:sticky xl:top-24">
+				<div ref={bookingPanelRef} className="motion-enter motion-enter-delay-1 xl:sticky xl:top-24">
 					<div className="rounded-[1.75rem] border border-border bg-card p-5 shadow-sm sm:p-6">
 						<p className="text-base font-semibold tracking-tight text-slate-900">Book Your Appointment</p>
 						<p className="mt-1 text-sm text-muted-foreground">

@@ -128,23 +128,56 @@
       transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
     }
     50% {
-      transform: translate3d(0, -32px, 0) scale(1.018) rotate(-0.8deg);
+      transform: translate3d(0, -8px, 0) scale(1.005) rotate(-0.12deg);
+    }
+  }
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
     }
   }
 
   .animate-hero-float {
-    animation: hero-float 1.9s cubic-bezier(0.33, 0, 0.2, 1) infinite;
+    animation: hero-float 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     will-change: transform;
   }
 
+  .motion-enter {
+    animation: rise-in 540ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  }
+
+  .motion-enter-delay-1 {
+    animation-delay: 90ms;
+  }
+
+  .motion-enter-delay-2 {
+    animation-delay: 170ms;
+  }
+
+  .interactive-surface {
+    transition: transform 220ms cubic-bezier(0.2, 0.75, 0.2, 1), box-shadow 220ms cubic-bezier(0.2, 0.75, 0.2, 1);
+  }
+
+  .interactive-surface:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .animate-hero-float {
+    .motion-enter,
+    .motion-enter-delay-1,
+    .motion-enter-delay-2 {
       animation: none;
     }
 
     *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }

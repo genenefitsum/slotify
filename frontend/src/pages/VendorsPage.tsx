@@ -72,7 +72,7 @@ const VendorsPage = () => {
 		<section className="container mx-auto px-4 py-10 lg:py-14">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
+			<div className="motion-enter relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
 				<div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
 				<div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-accent/15 blur-3xl" />
 
@@ -106,7 +106,7 @@ const VendorsPage = () => {
 			</div>
 
 			<form
-				className="mt-6 grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm md:grid-cols-[1fr_1fr_auto_auto]"
+				className="motion-enter motion-enter-delay-1 mt-6 grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm md:grid-cols-[1fr_1fr_auto_auto]"
 				onSubmit={(event) => {
 					event.preventDefault();
 					handleFilterSubmit(new FormData(event.currentTarget));
@@ -190,7 +190,7 @@ const VendorsPage = () => {
 
 				{!isLoading && !isError && data && data.items.length > 0 ? (
 					<>
-						<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
+						<div className="motion-enter motion-enter-delay-2 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
 							<p className="text-muted-foreground">
 								Showing <span className="font-semibold text-foreground">{data.items.length}</span> of <span className="font-semibold text-foreground">{data.pagination.total}</span> vendors
 								{city ? <span> in <span className="font-semibold text-foreground">{city}</span></span> : null}
