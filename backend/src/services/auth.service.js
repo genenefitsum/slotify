@@ -40,10 +40,38 @@ const register = async ({
 }) => {
   const normalizedRole = PUBLIC_SIGNUP_ROLES.includes(role) ? role : 'customer';
   const normalizedEmail = email.toLowerCase().trim();
-  const existingUser = await User.findOne({ email: normalizedEmail }).lean();
+  const existingUser = await User.findOne({ email: normalizedEmail });
 
   if (existingUser) {
-    throw new ApiError('An account with this email already exists.', 409);
+    const isGoogleOnlyAccount =
+      existingUser.provider === 'google' && !existingUser.passwordHash;
+
+    if (!isGoogleOnlyAccount) {
+      throw new ApiError('An account with this email already exists.', 409);
+    }
+
+    existingUser.passwordHash = await bcrypt.hash(password, 12);
+    existingUser.phone = phone || existingUser.phone;
+    existingUser.firstName = firstName || existingUser.firstName;
+    existingUser.lastName = lastName || existingUser.lastName;
+
+    if (!existingUser.role || existingUser.role === 'customer') {
+      existingUser.role = normalizedRole;
+    }
+
+    if (existingUser.status !== 'active') {
+      throw new ApiError('Account is not active.', 403);
+    }
+
+    existingUser.lastLoginAt = new Date();
+    await existingUser.save();
+
+    const accessToken = signAccessToken(existingUser);
+
+    return {
+      accessToken,
+      user: sanitizeUser(existingUser),
+    };
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
