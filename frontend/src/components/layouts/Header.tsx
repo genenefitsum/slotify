@@ -18,7 +18,7 @@ const Header = () => {
                 ? '/dashboard/vendor'
                 : '/bookings';
 
-    const mobileLinkClassName = ({ isActive }) =>
+    const mobileLinkClassName = ({ isActive }: { isActive: boolean }) =>
         `min-h-11 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-all ${isActive
             ? 'border-border bg-secondary text-foreground shadow-sm'
             : 'border-transparent bg-transparent text-muted-foreground hover:border-border/70 hover:bg-secondary/75 hover:text-foreground'

@@ -641,7 +641,7 @@ const VendorDashboardPage = () => {
 		});
 	};
 
-		 const sectionRefMap: Record<VendorSection, React.RefObject<HTMLElement>> = {
+		const sectionRefMap = {
 		  bookings: bookingSectionRef,
 		  profile: profileSectionRef,
 		  services: servicesSectionRef,
