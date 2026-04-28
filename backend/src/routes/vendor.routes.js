@@ -1,6 +1,7 @@
 const express = require("express");
 const vendorController = require("../controllers/vendor.controller");
 const { requireAuth } = require('../common/middlewares/auth');
+const { requireCsrf } = require('../common/middlewares/csrf');
 const { requireRole } = require('../common/middlewares/role');
 const { validateRequest } = require('../middleware/validate.middleware');
 const {
@@ -17,6 +18,7 @@ router.post(
 	'/resolve-map-link',
 	requireAuth,
 	requireRole('vendor_owner'),
+	requireCsrf,
 	validateRequest(validateResolveMapLinkPayload),
 	vendorController.resolveMapLink
 );
@@ -24,6 +26,7 @@ router.post(
 	'/',
 	requireAuth,
 	requireRole('vendor_owner'),
+	requireCsrf,
 	validateRequest(validateCreateVendorPayload),
 	vendorController.createVendor
 );
@@ -31,6 +34,7 @@ router.patch(
 	'/me',
 	requireAuth,
 	requireRole('vendor_owner'),
+	requireCsrf,
 	validateRequest(validateUpdateVendorPayload),
 	vendorController.updateMyVendor
 );

@@ -12,5 +12,6 @@ export const authApi = {
 	register: (payload: RegisterPayload) => http.post<AuthResponse>('/auth/register', payload),
 	googleLogin: (payload: GoogleLoginPayload) =>
 		http.post<AuthResponse>('/auth/google', payload),
+	logout: () => http.post<{ success: boolean }>('/auth/logout'),
 	me: () => http.get<AuthUser>('/users/me'),
 };

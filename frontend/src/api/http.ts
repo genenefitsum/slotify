@@ -1,4 +1,4 @@
-import { clearAuthSession, getAuthToken } from '@/lib/storage';
+import { clearAuthSession, getCsrfToken } from '@/lib/storage';
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE_URL = configuredBaseUrl
@@ -100,17 +100,20 @@ const buildPathWithQuery = (path: string, query?: QueryParams): string => {
 	return `${path}?${queryString}`;
 };
 
-const createHeaders = (init?: HeadersInit) => {
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+const createHeaders = (init?: HeadersInit, method = 'GET') => {
 	const headers = new Headers(init || {});
 
 	if (!headers.has('Content-Type')) {
 		headers.set('Content-Type', 'application/json');
 	}
 
-	const token = getAuthToken();
-
-	if (token) {
-		headers.set('Authorization', `Bearer ${token}`);
+	if (!SAFE_METHODS.has(method.toUpperCase())) {
+		const csrfToken = getCsrfToken();
+		if (csrfToken) {
+			headers.set('x-csrf-token', csrfToken);
+		}
 	}
 
 	return headers;
@@ -119,7 +122,8 @@ const createHeaders = (init?: HeadersInit) => {
 const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
 	const response = await fetch(`${API_BASE_URL}${path}`, {
 		...options,
-		headers: createHeaders(options.headers),
+		credentials: 'include',
+		headers: createHeaders(options.headers, options.method),
 	});
 
 	const isJson = response.headers.get('content-type')?.includes('application/json');

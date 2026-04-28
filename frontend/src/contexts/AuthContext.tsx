@@ -13,10 +13,6 @@ import { authApi } from '@/api/auth.api';
 import { HttpError } from '@/api/http';
 import {
   clearAuthSession,
-  getAuthToken,
-  getStoredUser,
-  setAuthToken,
-  setStoredUser,
 } from '@/lib/storage';
 import type {
   AuthResponse,
@@ -38,17 +34,11 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const persistSession = (response: AuthResponse) => {
-  setAuthToken(response.accessToken);
-  setStoredUser(response.user);
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(getStoredUser());
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const finalizeAuth = useCallback((response: AuthResponse) => {
-    persistSession(response);
     setUser(response.user);
   }, []);
 
@@ -77,22 +67,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const logout = useCallback(() => {
+    void authApi.logout().catch(() => undefined);
     clearAuthSession();
     setUser(null);
   }, []);
 
   useEffect(() => {
     const hydrateSession = async () => {
-      const token = getAuthToken();
-
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const profile = await authApi.me();
-        setStoredUser(profile);
         setUser(profile);
       } catch (error) {
         if (error instanceof HttpError && error.status === 401) {

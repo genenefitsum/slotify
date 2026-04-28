@@ -38,6 +38,7 @@ const corsOptions = {
     corsError.statusCode = 403;
     callback(corsError);
   },
+  credentials: true,
 };
 
 const limiter = rateLimit({

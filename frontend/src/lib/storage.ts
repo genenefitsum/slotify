@@ -1,42 +1,20 @@
-import type { AuthUser } from '@/types/auth';
-
-const TOKEN_KEY = 'slotify_token';
-const USER_KEY = 'slotify_user';
-
-export const getAuthToken = () => localStorage.getItem(TOKEN_KEY);
-
-export const setAuthToken = (token: string) => {
-	localStorage.setItem(TOKEN_KEY, token);
-};
-
-export const clearAuthToken = () => {
-	localStorage.removeItem(TOKEN_KEY);
-};
-
-export const getStoredUser = (): AuthUser | null => {
-	const raw = localStorage.getItem(USER_KEY);
-
-	if (!raw) {
+const getCookieFromDocument = (cookieName: string) => {
+	if (typeof document === 'undefined') {
 		return null;
 	}
 
-	try {
-		return JSON.parse(raw) as AuthUser;
-	} catch {
-		localStorage.removeItem(USER_KEY);
+	const cookiePrefix = `${encodeURIComponent(cookieName)}=`;
+	const matches = document.cookie.split('; ').find((entry) => entry.startsWith(cookiePrefix));
+
+	if (!matches) {
 		return null;
 	}
+
+	return decodeURIComponent(matches.slice(cookiePrefix.length));
 };
 
-export const setStoredUser = (user: AuthUser) => {
-	localStorage.setItem(USER_KEY, JSON.stringify(user));
-};
-
-export const clearStoredUser = () => {
-	localStorage.removeItem(USER_KEY);
-};
+export const getCsrfToken = () => getCookieFromDocument('slotify_csrf_token');
 
 export const clearAuthSession = () => {
-	clearAuthToken();
-	clearStoredUser();
+	// Session cookies are cleared by the backend logout endpoint.
 };

@@ -30,6 +30,27 @@ const signAccessToken = (user) => {
   );
 };
 
+const createSessionTokens = (user) => {
+  const accessToken = signAccessToken(user);
+  const csrfToken = jwt.sign(
+    { sub: String(user._id), purpose: 'csrf' },
+    env.jwtAccessSecret,
+    { expiresIn: env.jwtAccessExpiresIn }
+  );
+
+  return { accessToken, csrfToken };
+};
+
+const buildAuthResponse = (user) => {
+  const sanitizedUser = sanitizeUser(user);
+  const sessionTokens = createSessionTokens(user);
+
+  return {
+    user: sanitizedUser,
+    sessionTokens,
+  };
+};
+
 const register = async ({
   email,
   phone,
@@ -66,12 +87,7 @@ const register = async ({
     existingUser.lastLoginAt = new Date();
     await existingUser.save();
 
-    const accessToken = signAccessToken(existingUser);
-
-    return {
-      accessToken,
-      user: sanitizeUser(existingUser),
-    };
+    return buildAuthResponse(existingUser);
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -86,12 +102,7 @@ const register = async ({
     role: normalizedRole,
   });
 
-  const accessToken = signAccessToken(createdUser);
-
-  return {
-    accessToken,
-    user: sanitizeUser(createdUser),
-  };
+  return buildAuthResponse(createdUser);
 };
 
 const login = async ({ email, password }) => {
@@ -119,12 +130,7 @@ const login = async ({ email, password }) => {
   user.lastLoginAt = new Date();
   await user.save();
 
-  const accessToken = signAccessToken(user);
-
-  return {
-    accessToken,
-    user: sanitizeUser(user),
-  };
+  return buildAuthResponse(user);
 };
 
 const verifyGoogleCredential = async (credential) => {
@@ -188,16 +194,12 @@ const loginWithGoogle = async ({ credential, role = 'customer' }) => {
   user.lastLoginAt = new Date();
   await user.save();
 
-  const accessToken = signAccessToken(user);
-
-  return {
-    accessToken,
-    user: sanitizeUser(user),
-  };
+  return buildAuthResponse(user);
 };
 
 module.exports = {
   register,
   login,
   loginWithGoogle,
+  createSessionTokens,
 };

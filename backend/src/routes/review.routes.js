@@ -1,6 +1,7 @@
 const express = require("express");
 const reviewController = require("../controllers/review.controller");
 const { requireAuth } = require('../common/middlewares/auth');
+const { requireCsrf } = require('../common/middlewares/csrf');
 const { requireRole } = require('../common/middlewares/role');
 const { validateRequest } = require('../middleware/validate.middleware');
 const { validateCreateReviewPayload } = require('../validators/review.validators');
@@ -12,6 +13,7 @@ router.post(
 	'/vendor/:vendorId',
 	requireAuth,
 	requireRole('customer', 'admin'),
+	requireCsrf,
 	validateRequest(validateCreateReviewPayload),
 	reviewController.createReview
 );
