@@ -1,177 +1,131 @@
-# 🚀 Slotify
+# Slotify
 
-**Slotify** is a multi-vendor booking marketplace built with **React** and **Node.js** that allows customers to discover, compare, and book service providers seamlessly.
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?logo=mongodb&logoColor=white)
 
-Vendors can manage services, availability, and bookings through a dedicated dashboard, while admins oversee the entire platform.
+Slotify is a multi-vendor booking marketplace for customers, vendors, and admins. It helps people discover trusted service providers, compare offerings, and book appointments, while giving vendors a clean dashboard to manage services, availability, and bookings.
 
-Slotify is designed with **scalability**, **clean architecture**, and **real-world SaaS principles** in mind.
+The project is built with a practical SaaS layout in mind: a React frontend, an Express + MongoDB backend, role-based access, and deployment-ready environment checks.
 
----
+## Table of Contents
 
-## 🌍 Vision
+- [Overview](#overview)
+- [What Slotify Does](#what-slotify-does)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Seed Data](#seed-data)
+- [Deployment](#deployment)
+- [Security Notes](#security-notes)
+- [Roadmap](#roadmap)
 
-Slotify aims to simplify appointment scheduling in Ethiopia by providing a centralized marketplace where customers can book trusted professionals efficiently while vendors manage their business digitally.
+## Overview
 
----
+Slotify focuses on appointment scheduling in Ethiopia. The product is designed so customers can find service providers quickly, vendors can manage their business digitally, and administrators can keep the platform organized and safe.
 
-## 🧠 Core Features
+## What Slotify Does
 
-### 👤 Authentication & Authorization
-- JWT-based authentication
-- Role-based access control (**Customer**, **Vendor**, **Admin**)
-- Secure password hashing
-- Protected routes
+| Audience | Capabilities |
+| --- | --- |
+| Customers | Browse vendors, search and filter services, book appointments, and review booking history |
+| Vendors | Create and manage services, control availability, review incoming bookings, and track basic performance |
+| Admins | Manage vendors and users, monitor bookings, and oversee platform activity |
 
-### 🔎 Marketplace
-- Vendor listing page
-- Search & filter functionality
-- Vendor profile pages
-- Service display
+### Core Product Areas
 
-### 📅 Booking System
-- Dynamic time slot generation
-- Conflict prevention (no double bookings)
-- Booking status management (**Pending**, **Confirmed**, **Cancelled**, **Completed**)
-- Booking history
+- Authentication and authorization with JWT and role-based access control
+- Vendor discovery, profiles, and service listings
+- Booking flow with time-slot generation and conflict prevention
+- Vendor dashboard for service and availability management
+- Admin dashboard for platform-level operations
 
-### 🧑‍💼 Vendor Dashboard
-- Add / edit / delete services
-- Manage availability schedule
-- View and manage bookings
-- Basic earnings overview
+## Architecture
 
-### 🛠 Admin Dashboard
-- Manage vendors and users
-- Approve or suspend vendors
-- Monitor bookings
-- Platform analytics overview
+```mermaid
+flowchart LR
+	Customer[Customer] --> Frontend[Frontend: React + Vite]
+	Vendor[Vendor] --> Frontend
+	Admin[Admin] --> Frontend
 
----
+	Frontend --> API[Backend API: Node.js + Express]
+	API --> DB[(MongoDB Atlas)]
+	API --> Auth[JWT + Google auth support]
+	API --> Media[Cloudinary for vendor images]
+```
 
-## 🏗 Tech Stack
+## Tech Stack
 
-### Frontend
-- React
-- Tailwind CSS
-- Axios
-- React Router
+| Layer | Tools |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Tailwind CSS, React Router, React Query |
+| Backend | Node.js, Express, Mongoose, JWT, bcryptjs, Helmet, CORS |
+| Media | Cloudinary |
+| Validation | Zod and custom validators |
+| Deployment | Vercel, Render or Railway, MongoDB Atlas |
 
-### Backend
-- Node.js
-- Express.js
-- MongoDB (Mongoose)
-- JWT Authentication
-- Bcrypt
-- Cloudinary for vendor image hosting
+## Project Structure
 
----
-
-## 📁 Project Structure
-
-```bash
-slotify/
-│
-├── frontend/      # React + Vite frontend app
-│   ├── src/
-│   ├── public/
-│   └── package.json
-│
-├── backend/       # Node.js + Express backend API
-│   ├── src/
-│   │   └── server.js
-│   └── package.json
-│
+```text
+Slotify/
+├── frontend/   React + Vite client application
+├── backend/    Express API and database logic
+├── DEPLOYMENT.md
 └── README.md
 ```
 
----
+## Getting Started
 
-## 🎯 MVP Scope
+### Prerequisites
 
-- User authentication
-- Vendor profile management
-- Service management
-- Availability scheduling
-- Appointment booking with conflict prevention
-- Basic dashboards
+- Node.js 20 or newer
+- npm 10 or newer
+- MongoDB connection string for local or hosted development
 
-### Future Phases
-- Online payments
-- Reviews & ratings
-- Email notifications
-- Advanced analytics
-- SMS reminders
+### Install and run locally
 
----
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-## 🔐 Security Considerations
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- Password hashing using bcrypt
-- JWT access tokens
-- Role-based middleware
-- Input validation
-- Proper error handling
-- Rate limiting (planned)
-
----
-
-## 🧪 Local Seed Data
-
-To quickly test authentication roles and vendor discovery/detail flows with realistic data:
+If you want realistic local data, seed the backend first:
 
 ```bash
 cd backend
 npm run seed:local
 ```
 
-This command inserts or refreshes deterministic local fixtures for:
-- Users (admin, customer, vendor owners)
-- Vendors (active and non-active)
-- Services (for active vendors)
-- Reviews (for active vendors)
+### Useful scripts
 
-Default local test credentials:
-- `admin@slotify.local` / `SlotifyPass123!`
-- `customer@slotify.local` / `SlotifyPass123!`
-- `owner.one@slotify.local` / `SlotifyPass123!`
-- `owner.two@slotify.local` / `SlotifyPass123!`
+| Location | Script | Purpose |
+| --- | --- | --- |
+| backend | `npm run dev` | Start the API in watch mode |
+| backend | `npm test` | Run backend tests |
+| backend | `npm run verify:deploy-env` | Validate backend deployment variables |
+| backend | `npm run seed:local` | Load local fixture data |
+| frontend | `npm run dev` | Start the Vite dev server |
+| frontend | `npm run lint` | Run ESLint |
+| frontend | `npm run build` | Type-check and build the app |
+| frontend | `npm run verify:deploy-env` | Validate frontend deployment variables |
 
-## Image Storage
+## Environment Variables
 
-Vendor images support two storage modes:
+Use the example environment files in the repository as the starting point for local, staging, and production setups.
 
-- Default fallback: stored in MongoDB and returned as inline data URLs.
-- Recommended deployment mode: uploaded to Cloudinary and returned as hosted URLs.
+### Backend
 
-To enable Cloudinary in `backend/.env`:
-
-```bash
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-CLOUDINARY_VENDOR_FOLDER=slotify/vendors
-```
-
----
-
-## Deployment Baseline
-
-Target hosting:
-- Frontend: Vercel
-- Backend: Render or Railway
-- Database: MongoDB Atlas
-
-Detailed rollout and rollback steps are documented in `DEPLOYMENT.md`.
-
-Environment templates:
-- `backend/.env.staging.example`
-- `backend/.env.production.example`
-- `frontend/.env.staging.example`
-- `frontend/.env.production.example`
-
-### Required Backend Environment Variables
-
-Set these in staging and production:
+Required:
 
 ```bash
 NODE_ENV=production
@@ -186,7 +140,7 @@ RATE_LIMIT_MAX_REQUESTS=300
 RATE_LIMIT_AUTH_MAX_REQUESTS=30
 ```
 
-Optional (recommended for hosted images):
+Optional, recommended for hosted vendor images:
 
 ```bash
 CLOUDINARY_CLOUD_NAME=...
@@ -195,16 +149,42 @@ CLOUDINARY_API_SECRET=...
 CLOUDINARY_VENDOR_FOLDER=slotify/vendors
 ```
 
-### Required Frontend Environment Variables
+### Frontend
 
 ```bash
 VITE_API_BASE_URL=https://your-backend-domain/api
 VITE_GOOGLE_CLIENT_ID=...
 ```
 
-### Build and Smoke Checks
+## Seed Data
 
-Backend:
+The backend includes deterministic local fixtures for faster development and testing.
+
+```bash
+cd backend
+npm run seed:local
+```
+
+This command seeds users, vendors, services, and reviews for a realistic local flow.
+
+Default local test credentials:
+
+- admin@slotify.local / SlotifyPass123!
+- customer@slotify.local / SlotifyPass123!
+- owner.one@slotify.local / SlotifyPass123!
+- owner.two@slotify.local / SlotifyPass123!
+
+## Deployment
+
+Recommended platform setup:
+
+- Frontend: Vercel
+- Backend: Render or Railway
+- Database: MongoDB Atlas
+
+Deployment and rollback steps are documented in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+High-level checks before shipping:
 
 ```bash
 cd backend
@@ -214,22 +194,38 @@ npm test
 npm run start:prod
 ```
 
-Frontend:
-
 ```bash
 cd frontend
 npm ci
-VITE_API_BASE_URL=https://your-backend-domain/api VITE_GOOGLE_CLIENT_ID=... npm run verify:deploy-env
+VITE_API_BASE_URL=https://your-backend-domain/api VITE_GOOGLE_CLIENT_ID=placeholder npm run verify:deploy-env
 npm run lint
 npm run build
 ```
 
-After deployment, verify:
+After deployment, confirm the backend responds at `/api/health` and `/api/ready`.
 
-```bash
-curl https://your-backend-domain/api/health
-curl https://your-backend-domain/api/ready
-```
+## Security Notes
 
----
+- Passwords are hashed with bcryptjs
+- Authentication uses JWT access tokens
+- Protected routes rely on role-aware middleware
+- Input is validated before reaching business logic
+- Production deployments should define explicit CORS origins and rate limits
+
+## Roadmap
+
+Planned or future-facing areas include:
+
+- Online payments
+- Reviews and ratings expansion
+- Email notifications
+- Advanced analytics
+- SMS reminders
+
+## Image Storage
+
+Vendor images support two storage modes:
+
+- Default fallback: stored in MongoDB and returned as inline data URLs
+- Recommended deployment mode: uploaded to Cloudinary and returned as hosted URLs
 
