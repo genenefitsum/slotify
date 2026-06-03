@@ -33,11 +33,11 @@ const Footer = () => {
 							<Link to="/about" className="hover:text-foreground">
 								About
 							</Link>
-							<a href="#" className="hover:text-foreground">
-								Contact
+							<a href="mailto:slotifyethiopia@outlook.com" className="hover:text-foreground">
+								slotifyethiopia@outlook.com
 							</a>
-							<a href="#" className="hover:text-foreground">
-								Careers
+							<a href="tel:+251987184647" className="hover:text-foreground">
+								+251 987 184 647
 							</a>
 						</div>
 					</div>
