@@ -33,7 +33,7 @@ const Footer = () => {
 							<Link to="/about" className="hover:text-foreground">
 								About
 							</Link>
-							<a href="mailto:slotifyethiopia@outlook.com" className="hover:text-foreground">
+							<a href="mailto:slotifyethiopia@outlook.com?subject=Slotify%20Support" className="hover:text-foreground">
 								slotifyethiopia@outlook.com
 							</a>
 							<a href="tel:+251987184647" className="hover:text-foreground">

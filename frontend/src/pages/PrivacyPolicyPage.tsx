@@ -127,7 +127,7 @@ const PrivacyPolicyPage = () => {
 					<h2 className="mt-2 text-lg font-semibold">How to reach us</h2>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
 						For privacy questions or requests, contact Slotify at{' '}
-						<a href="mailto:slotifyethiopia@outlook.com" className="font-medium text-foreground hover:underline">
+						<a href="mailto:slotifyethiopia@outlook.com?subject=Slotify%20Privacy%20Inquiry" className="font-medium text-foreground hover:underline">
 							slotifyethiopia@outlook.com
 						</a>{' '}
 						or write to Addis Ababa, Addis Ababa, Ethiopia.

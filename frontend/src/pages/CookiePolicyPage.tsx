@@ -95,7 +95,7 @@ const CookiePolicyPage = () => {
 					<p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">Contact</p>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
 						Questions about our cookie use can be sent to{' '}
-						<a href="mailto:slotifyethiopia@outlook.com" className="font-medium text-foreground hover:underline">
+						<a href="mailto:slotifyethiopia@outlook.com?subject=Slotify%20Cookie%20Inquiry" className="font-medium text-foreground hover:underline">
 							slotifyethiopia@outlook.com
 						</a>{' '}
 						or Addis Ababa, Addis Ababa, Ethiopia.
