@@ -201,6 +201,21 @@ const RegisterPage = () => {
 						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
 							{isSubmitting ? 'Creating your account...' : 'Create account'}
 						</Button>
+						<p className="text-xs leading-5 text-muted-foreground">
+							By creating an account, you agree to the{' '}
+							<Link to="/terms" className="font-medium text-foreground hover:underline">
+								Terms of Service
+							</Link>
+							,{' '}
+							<Link to="/privacy" className="font-medium text-foreground hover:underline">
+								Privacy Policy
+							</Link>
+							, and{' '}
+							<Link to="/cookies" className="font-medium text-foreground hover:underline">
+								Cookie Policy
+							</Link>
+							.
+						</p>
 					</form>
 
 					<div className="my-5 border-t border-border/70 pt-5">

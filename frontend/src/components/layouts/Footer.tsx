@@ -4,7 +4,7 @@ const Footer = () => {
 	return (
 		<footer className="border-t border-border/60 bg-gradient-to-b from-card to-muted/20">
 			<div className="container mx-auto px-4 py-10">
-				<div className="grid gap-8 md:grid-cols-4">
+				<div className="grid gap-8 md:grid-cols-5">
 					<div>
 						<p className="text-lg font-bold tracking-tight">Slotify</p>
 						<p className="mt-2 text-sm text-muted-foreground">
@@ -50,6 +50,21 @@ const Footer = () => {
 							</Link>
 							<Link to="/register" className="hover:text-foreground">
 								Create Account
+							</Link>
+						</div>
+					</div>
+
+					<div>
+						<p className="text-sm font-semibold text-foreground">Legal</p>
+						<div className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
+							<Link to="/privacy" className="hover:text-foreground">
+								Privacy Policy
+							</Link>
+							<Link to="/terms" className="hover:text-foreground">
+								Terms of Service
+							</Link>
+							<Link to="/cookies" className="hover:text-foreground">
+								Cookie Policy
 							</Link>
 						</div>
 					</div>

@@ -2,11 +2,14 @@ import MainLayout from "@/components/layouts/MainLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import AboutPage from "@/pages/AboutPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import CookiePolicyPage from "@/pages/CookiePolicyPage";
 import CustomerBookingsPage from "@/pages/CustomerBookingsPage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import RegisterPage from "@/pages/RegisterPage";
+import TermsOfServicePage from "@/pages/TermsOfServicePage";
 import VendorDashboardPage from "@/pages/VendorDashboardPage";
 import VendorDetailPage from "@/pages/VendorDetailPage";
 import VendorsPage from "@/pages/VendorsPage";
@@ -56,6 +59,9 @@ const AppRoutes = () => {
 				<Route path="/vendors" element={<VendorsPage />} />
 				<Route path="/vendor/:id" element={<VendorDetailPage />} />
 				<Route path="/about" element={<AboutPage />} />
+				<Route path="/privacy" element={<PrivacyPolicyPage />} />
+				<Route path="/terms" element={<TermsOfServicePage />} />
+				<Route path="/cookies" element={<CookiePolicyPage />} />
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/register" element={<RegisterPage />} />
 

@@ -204,6 +204,8 @@ npm run build
 
 After deployment, confirm the backend responds at `/api/health` and `/api/ready`.
 
+Public legal pages are available at `/privacy`, `/terms`, and `/cookies`.
+
 ## Security Notes
 
 - Passwords are hashed with bcryptjs
