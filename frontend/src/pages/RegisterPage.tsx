@@ -19,6 +19,7 @@ const RegisterPage = () => {
 	const [phone, setPhone] = useState('');
 	const [password, setPassword] = useState('');
 	const [role, setRole] = useState<'customer' | 'vendor_owner'>('customer');
+	const [agreedToTerms, setAgreedToTerms] = useState(false);
 	const [error, setError] = useState('');
 	const [googleError, setGoogleError] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,6 +33,12 @@ const RegisterPage = () => {
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError('');
+
+		if (!agreedToTerms) {
+			setError('You must agree to the terms and conditions before creating an account.');
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
@@ -198,24 +205,38 @@ const RegisterPage = () => {
 							</p>
 						) : null}
 
-						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
+						<label className="flex items-start gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/30">
+							<input
+								type="checkbox"
+								checked={agreedToTerms}
+								onChange={(event) => {
+									setAgreedToTerms(event.target.checked);
+									if (event.target.checked) {
+										setError('');
+									}
+								}}
+								className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+							/>
+							<span className="leading-6">
+								I agree to the{' '}
+								<Link to="/terms" className="font-medium text-foreground hover:underline">
+									terms and conditions
+								</Link>
+								,{' '}
+								<Link to="/privacy" className="font-medium text-foreground hover:underline">
+									privacy policy
+								</Link>
+								, and{' '}
+								<Link to="/cookies" className="font-medium text-foreground hover:underline">
+									cookie policy
+								</Link>
+								.
+							</span>
+						</label>
+
+						<Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting || !agreedToTerms}>
 							{isSubmitting ? 'Creating your account...' : 'Create account'}
 						</Button>
-						<p className="text-xs leading-5 text-muted-foreground">
-							By creating an account, you agree to the{' '}
-							<Link to="/terms" className="font-medium text-foreground hover:underline">
-								Terms of Service
-							</Link>
-							,{' '}
-							<Link to="/privacy" className="font-medium text-foreground hover:underline">
-								Privacy Policy
-							</Link>
-							, and{' '}
-							<Link to="/cookies" className="font-medium text-foreground hover:underline">
-								Cookie Policy
-							</Link>
-							.
-						</p>
 					</form>
 
 					<div className="my-5 border-t border-border/70 pt-5">
