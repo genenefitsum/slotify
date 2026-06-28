@@ -13,6 +13,7 @@ import { authApi } from '@/api/auth.api';
 import { HttpError } from '@/api/http';
 import {
   clearAuthSession,
+  setCsrfToken,
 } from '@/lib/storage';
 import type {
   AuthResponse,
@@ -39,6 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const finalizeAuth = useCallback((response: AuthResponse) => {
+    if (response.csrfToken) {
+      setCsrfToken(response.csrfToken);
+    }
     setUser(response.user);
   }, []);
 
@@ -76,6 +80,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const hydrateSession = async () => {
       try {
         const profile = await authApi.me();
+        if (profile.csrfToken) {
+          setCsrfToken(profile.csrfToken);
+        }
         setUser(profile);
       } catch (error) {
         if (error instanceof HttpError && error.status === 401) {

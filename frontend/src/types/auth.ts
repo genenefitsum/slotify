@@ -11,6 +11,11 @@ export type AuthUser = {
 
 export type AuthResponse = {
 	user: AuthUser;
+	csrfToken?: string;
+};
+
+export type CurrentUserResponse = AuthUser & {
+	csrfToken?: string;
 };
 
 export type LoginPayload = {

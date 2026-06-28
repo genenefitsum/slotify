@@ -108,7 +108,7 @@ test('validateUploadPayload rejects unsafe upload payloads', () => {
 	);
 });
 
-test('auth controller sets http-only cookies and returns only the user payload', async () => {
+test('auth controller sets http-only cookies and returns the user payload with csrf token', async () => {
 	const originalLogin = authService.login;
 	authService.login = async () => ({
 		user: {
@@ -137,6 +137,7 @@ test('auth controller sets http-only cookies and returns only the user payload',
 				role: 'customer',
 				status: 'active',
 			},
+			csrfToken: 'csrf-token',
 		});
 		assert.equal(res.cookies.length, 2);
 		assert.equal(res.cookies[0].name, ACCESS_TOKEN_COOKIE_NAME);

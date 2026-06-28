@@ -60,4 +60,5 @@ module.exports = {
   setCsrfCookie,
   requireCsrf,
   parseCookies,
+  getCookieToken,
 };

@@ -1,3 +1,7 @@
+const CSRF_COOKIE_NAME = 'slotify_csrf_token';
+
+let storedCsrfToken: string | null = null;
+
 const getCookieFromDocument = (cookieName: string) => {
 	if (typeof document === 'undefined') {
 		return null;
@@ -13,8 +17,12 @@ const getCookieFromDocument = (cookieName: string) => {
 	return decodeURIComponent(matches.slice(cookiePrefix.length));
 };
 
-export const getCsrfToken = () => getCookieFromDocument('slotify_csrf_token');
+export const setCsrfToken = (token: string | null) => {
+	storedCsrfToken = token;
+};
+
+export const getCsrfToken = () => storedCsrfToken || getCookieFromDocument(CSRF_COOKIE_NAME);
 
 export const clearAuthSession = () => {
-	// Session cookies are cleared by the backend logout endpoint.
+	storedCsrfToken = null;
 };

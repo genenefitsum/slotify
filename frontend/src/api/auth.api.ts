@@ -1,7 +1,7 @@
 import { http } from '@/api/http';
 import type {
 	AuthResponse,
-	AuthUser,
+	CurrentUserResponse,
 	GoogleLoginPayload,
 	LoginPayload,
 	RegisterPayload,
@@ -13,5 +13,5 @@ export const authApi = {
 	googleLogin: (payload: GoogleLoginPayload) =>
 		http.post<AuthResponse>('/auth/google', payload),
 	logout: () => http.post<{ success: boolean }>('/auth/logout'),
-	me: () => http.get<AuthUser>('/users/me'),
+	me: () => http.get<CurrentUserResponse>('/users/me'),
 };

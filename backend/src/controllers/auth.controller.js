@@ -54,7 +54,10 @@ const register = async (req, res, next) => {
 
     const result = await authService.register(req.body);
 		setAuthCookies(res, result.sessionTokens);
-		res.status(201).json({ user: result.user });
+		res.status(201).json({
+			user: result.user,
+			csrfToken: result.sessionTokens.csrfToken,
+		});
   } catch (error) {
     next(error);
   }
@@ -66,7 +69,10 @@ const login = async (req, res, next) => {
 
     const result = await authService.login(req.body);
   setAuthCookies(res, result.sessionTokens);
-	res.status(200).json({ user: result.user });
+	res.status(200).json({
+		user: result.user,
+		csrfToken: result.sessionTokens.csrfToken,
+	});
   } catch (error) {
     next(error);
   }
@@ -78,7 +84,10 @@ const googleLogin = async (req, res, next) => {
 
     const result = await authService.loginWithGoogle(req.body);
   setAuthCookies(res, result.sessionTokens);
-	res.status(200).json({ user: result.user });
+	res.status(200).json({
+		user: result.user,
+		csrfToken: result.sessionTokens.csrfToken,
+	});
   } catch (error) {
     next(error);
   }

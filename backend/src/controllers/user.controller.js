@@ -1,5 +1,11 @@
 const ApiError = require('../utils/apiError');
 const { User } = require('../models/User');
+const {
+  getCookieToken,
+  issueCsrfToken,
+  setCsrfCookie,
+  CSRF_COOKIE_NAME,
+} = require('../common/middlewares/csrf');
 
 const getCurrentUser = async (req, res, next) => {
   try {
@@ -11,6 +17,12 @@ const getCurrentUser = async (req, res, next) => {
 
     if (!user || user.deletedAt) {
       throw new ApiError('User account not found.', 404);
+    }
+
+    let csrfToken = getCookieToken(req, CSRF_COOKIE_NAME);
+    if (!csrfToken) {
+      csrfToken = issueCsrfToken();
+      setCsrfCookie(res, csrfToken);
     }
 
     res.json({
@@ -26,6 +38,7 @@ const getCurrentUser = async (req, res, next) => {
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      csrfToken,
     });
   } catch (error) {
     next(error);
