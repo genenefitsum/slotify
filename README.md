@@ -176,10 +176,8 @@ Default local test credentials:
 
 ## Deployment
 
-Recommended platform setup:
-
 - Frontend: Vercel
-- Backend: Render or Railway
+- Backend: Render 
 - Database: MongoDB Atlas
 
 Deployment and rollback steps are documented in [DEPLOYMENT.md](DEPLOYMENT.md).

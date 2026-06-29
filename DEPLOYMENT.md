@@ -2,7 +2,7 @@
 
 This runbook covers staging and production deployment for Slotify using:
 - Frontend: Vercel
-- Backend: Render or Railway
+- Backend: Render 
 - Database: MongoDB Atlas
 
 ## 1. Environments
