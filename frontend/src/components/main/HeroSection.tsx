@@ -15,7 +15,7 @@ const HeroSection = () => {
             className="mb-4 gap-2 rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em]"
           >
             <span className="inline-block size-1.5 rounded-full bg-accent" />
-            Ethiopia's #1 Booking Platform
+            Ethiopia's Booking Platform
           </Badge>
           <h1 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl lg:mx-0 lg:text-5xl">
             Find The Right Professional <span className="text-primary">Without The Friction</span>

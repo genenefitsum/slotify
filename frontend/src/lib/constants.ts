@@ -22,9 +22,9 @@ export const NAV_LINKS: NavLinkItem[] = [
 ];
 
 export const HERO_STATS = [
-	"500+ Vendors",
-	"10K+ Bookings",
-	"4.8 Rating",
+	"Trust",
+	"Convenience",
+	"Reliability",
 ];
 
 export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
