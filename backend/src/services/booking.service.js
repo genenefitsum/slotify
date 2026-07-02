@@ -6,6 +6,7 @@ const { BookingEvent } = require('../models/BookingEvent');
 const { Service } = require('../models/Service');
 const { Vendor } = require('../models/Vendor');
 const { Staff } = require('../models/Staff');
+const { User } = require('../models/User');
 const {
   ADDIS_TIMEZONE,
   ACTIVE_BOOKING_CONFLICT_STATUSES,
@@ -52,6 +53,8 @@ const toBookingDto = (doc, details = {}) => ({
   id: String(doc._id),
   bookingNumber: doc.bookingNumber,
   customerUserId: String(doc.customerUserId),
+  customerName: details.customerName || null,
+  customerEmail: details.customerEmail || null,
   vendorId: String(doc.vendorId),
   vendorName: details.vendorName || null,
   staffId: doc.staffId ? String(doc.staffId) : null,
@@ -76,25 +79,33 @@ const enrichBookings = async (docs) => {
 
   const vendorIds = [...new Set(docs.map((doc) => String(doc.vendorId)))];
   const serviceIds = [...new Set(docs.map((doc) => String(doc.serviceId)))];
+  const customerIds = [...new Set(docs.map((doc) => String(doc.customerUserId)))];
 
-  const [vendors, services] = await Promise.all([
+  const [vendors, services, customers] = await Promise.all([
     Vendor.find({ _id: { $in: vendorIds }, deletedAt: null }).select({ displayName: 1 }).lean(),
     Service.find({ _id: { $in: serviceIds }, deletedAt: null })
       .select({ name: 1, durationMinutes: 1 })
+      .lean(),
+    User.find({ _id: { $in: customerIds } })
+      .select({ firstName: 1, lastName: 1, email: 1 })
       .lean(),
   ]);
 
   const vendorMap = new Map(vendors.map((vendor) => [String(vendor._id), vendor]));
   const serviceMap = new Map(services.map((service) => [String(service._id), service]));
+  const customerMap = new Map(customers.map((customer) => [String(customer._id), customer]));
 
   return docs.map((doc) => {
     const vendor = vendorMap.get(String(doc.vendorId));
     const service = serviceMap.get(String(doc.serviceId));
+    const customer = customerMap.get(String(doc.customerUserId));
 
     return toBookingDto(doc, {
       vendorName: vendor?.displayName || null,
       serviceName: service?.name || null,
       serviceDurationMinutes: service?.durationMinutes ?? null,
+      customerName: customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : null,
+      customerEmail: customer?.email || null,
     });
   });
 };
