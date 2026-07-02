@@ -27,6 +27,8 @@ export type Booking = {
 	id: string;
 	bookingNumber: string;
 	customerUserId: string;
+	customerName: string | null;
+	customerEmail: string | null;
 	vendorId: string;
 	vendorName: string | null;
 	staffId: string | null;
