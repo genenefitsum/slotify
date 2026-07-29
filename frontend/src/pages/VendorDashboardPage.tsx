@@ -856,6 +856,12 @@ const VendorDashboardPage = () => {
 												<p className="text-sm text-muted-foreground">
 													{booking.vendorName || 'Your vendor profile'} • {currencyFormatter.format(booking.pricingSnapshot.servicePriceAmount)}
 												</p>
+												<p className="mt-2 text-sm font-medium text-foreground">
+													{booking.customerName || 'Unknown customer'}
+												</p>
+												<p className="text-xs text-muted-foreground">
+													{booking.customerEmail || 'No email available'}
+												</p>
 											</div>
 											<p className="status-chip border-border bg-muted/30 text-foreground">
 												{bookingStatusLabelMap[booking.status]}
