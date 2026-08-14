@@ -8,6 +8,7 @@ import BackButton from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { getRoleRedirectPath } from '@/lib/authRedirect';
 
 const LoginPage = () => {
 	const { login, loginWithGoogle } = useAuth();
@@ -22,7 +23,7 @@ const LoginPage = () => {
 
 	const redirectTo = useMemo(() => {
 		const state = location.state as { from?: { pathname?: string } } | null;
-		return state?.from?.pathname || '/';
+		return state?.from?.pathname || '';
 	}, [location.state]);
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -31,8 +32,11 @@ const LoginPage = () => {
 		setIsSubmitting(true);
 
 		try {
-			await login({ email, password });
-			navigate(redirectTo, { replace: true });
+			const authenticatedUser = await login({ email, password });
+			const target = (redirectTo && redirectTo !== '/' && redirectTo !== '/login')
+				? redirectTo
+				: getRoleRedirectPath(authenticatedUser.role);
+			navigate(target, { replace: true });
 		} catch (submitError) {
 			if (submitError instanceof HttpError) {
 				setError(submitError.message);
@@ -56,8 +60,11 @@ const LoginPage = () => {
 		setIsGoogleSubmitting(true);
 
 		try {
-			await loginWithGoogle({ credential });
-			navigate(redirectTo, { replace: true });
+			const authenticatedUser = await loginWithGoogle({ credential });
+			const target = (redirectTo && redirectTo !== '/' && redirectTo !== '/login')
+				? redirectTo
+				: getRoleRedirectPath(authenticatedUser.role);
+			navigate(target, { replace: true });
 		} catch (googleSignInError) {
 			if (googleSignInError instanceof HttpError) {
 				setGoogleError(googleSignInError.message);

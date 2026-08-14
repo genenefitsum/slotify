@@ -27,9 +27,9 @@ type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
-  loginWithGoogle: (payload: GoogleLoginPayload) => Promise<void>;
+  login: (payload: LoginPayload) => Promise<AuthUser>;
+  register: (payload: RegisterPayload) => Promise<AuthUser>;
+  loginWithGoogle: (payload: GoogleLoginPayload) => Promise<AuthUser>;
   logout: () => void;
 };
 
@@ -44,12 +44,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCsrfToken(response.csrfToken);
     }
     setUser(response.user);
+    return response.user;
   }, []);
 
   const login = useCallback(
     async (payload: LoginPayload) => {
       const response = await authApi.login(payload);
-      finalizeAuth(response);
+      return finalizeAuth(response);
     },
     [finalizeAuth]
   );
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = useCallback(
     async (payload: RegisterPayload) => {
       const response = await authApi.register(payload);
-      finalizeAuth(response);
+      return finalizeAuth(response);
     },
     [finalizeAuth]
   );
@@ -65,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithGoogle = useCallback(
     async (payload: GoogleLoginPayload) => {
       const response = await authApi.googleLogin(payload);
-      finalizeAuth(response);
+      return finalizeAuth(response);
     },
     [finalizeAuth]
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, NavLink } from "react-router-dom";
 import { CalendarCheck, Menu, X } from "lucide-react";
+import { getRoleRedirectPath } from "@/lib/authRedirect";
 
 const NAV_ITEMS = [
     { label: "Browse Vendors", to: "/vendors" },
@@ -49,7 +50,7 @@ const Header = () => {
             <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6">
                 {/* Logo (Left) */}
                 <div className="flex items-center">
-                    <Link to="/" className="flex items-center gap-2.5">
+                    <Link to={isAuthenticated ? getRoleRedirectPath(user?.role) : "/"} className="flex items-center gap-2.5">
                         <span className="flex size-8 items-center justify-center bg-ink clip-tag-r">
                             <CalendarCheck className="size-4 text-canvas" />
                         </span>
