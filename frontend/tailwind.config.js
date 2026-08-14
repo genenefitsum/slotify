@@ -9,7 +9,7 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-  			heading: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			heading: ['Archivo', 'Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
   			display: ['Archivo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
   			mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
   		},
