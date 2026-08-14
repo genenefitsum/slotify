@@ -55,7 +55,7 @@ const HeroSection = () => {
           {/* Subtitle */}
           <p className="mt-5 max-w-md text-base leading-relaxed text-ink/70">
             Real availability, verified vendors, no back-and-forth DMs. Compare, confirm and
-            show up — that's the whole thing.
+            show up, that's the whole thing.
           </p>
 
           {/* CTAs */}
