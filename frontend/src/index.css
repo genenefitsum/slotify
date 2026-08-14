@@ -111,7 +111,12 @@
     background-attachment: fixed;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading font-semibold tracking-tight;
   }
 
@@ -123,10 +128,12 @@
 
 @layer utilities {
   @keyframes hero-float {
+
     0%,
     100% {
       transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
     }
+
     50% {
       transform: translate3d(0, -8px, 0) scale(1.005) rotate(-0.12deg);
     }
@@ -171,13 +178,16 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+
     .motion-enter,
     .motion-enter-delay-1,
     .motion-enter-delay-2 {
       animation: none;
     }
 
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }

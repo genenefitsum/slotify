@@ -7,8 +7,11 @@ import { ArrowRight, CircleCheckBig } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <section className="border-b bg-muted/30 bg-gradient-hero">
-      <div className="container mx-auto grid gap-8 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-12 lg:py-24">
+    <section
+      style={{ minHeight: "calc(100dvh - 3.5rem)" }}
+      className="flex items-center border-b bg-muted/30 bg-gradient-hero"
+    >
+      <div className="container mx-auto grid gap-8 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-12">
         <div className="motion-enter text-center lg:text-left">
           <Badge
             variant="secondary"
