@@ -72,11 +72,8 @@ const VendorsPage = () => {
 		<section className="container mx-auto px-4 py-10 lg:py-14">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="motion-enter relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
-				<div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
-				<div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-accent/15 blur-3xl" />
-
-				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Marketplace</p>
+			<div className="motion-enter rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
+				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Marketplace</p>
 				<h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Find the right vendor for your next appointment</h1>
 				<p className="mt-3 max-w-2xl text-muted-foreground">
 					Search by city or category, compare profiles side by side, and book with confidence.

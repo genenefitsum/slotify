@@ -9,11 +9,8 @@ const CookiePolicyPage = () => {
 		<section className="container mx-auto px-4 py-10 lg:py-14">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="section-shell relative overflow-hidden p-6 sm:p-8 lg:p-10">
-				<div className="pointer-events-none absolute -left-10 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-				<div className="pointer-events-none absolute -right-12 bottom-0 h-44 w-44 rounded-full bg-accent/15 blur-3xl" />
-
-				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Cookie Policy</p>
+			<div className="section-shell p-6 sm:p-8 lg:p-10">
+				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Cookie Policy</p>
 				<h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
 					How Slotify uses cookies and similar technologies
 				</h1>

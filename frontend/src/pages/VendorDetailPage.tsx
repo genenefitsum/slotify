@@ -503,9 +503,7 @@ const VendorDetailPage = () => {
 			<BackButton className="mb-4" fallbackTo="/vendors" />
 
 			<div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
-				<div className="relative h-44 bg-gradient-primary sm:h-56">
-					<div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_10%,rgba(255,255,255,0.24),transparent_40%)]" />
-				</div>
+				<div className="relative h-44 bg-slate-900 sm:h-56" />
 
 				<div className="relative z-10 px-5 pb-6 sm:px-8 sm:pb-8">
 					<div className="-mt-16 flex flex-wrap items-end justify-between gap-5 sm:-mt-20">

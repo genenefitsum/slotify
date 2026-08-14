@@ -101,10 +101,7 @@ const RegisterPage = () => {
 	};
 
 	return (
-		<section className="relative isolate overflow-hidden border-b bg-gradient-hero">
-			<div className="pointer-events-none absolute left-0 top-12 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
-			<div className="pointer-events-none absolute -right-16 bottom-12 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-
+		<section className="border-b bg-background">
 			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
 				<BackButton className="mb-4" fallbackTo="/" />
 

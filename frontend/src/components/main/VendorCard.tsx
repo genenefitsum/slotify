@@ -34,11 +34,8 @@ const VendorCard = ({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-end bg-gradient-to-br from-ink/10 via-canvas to-acid/20 p-5">
+          <div className="flex h-full w-full items-end bg-muted/40 p-5">
             <div>
-              <span className="bg-acid px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-acid-foreground">
-                {category}
-              </span>
               <p className="mt-2 font-display text-xl font-black text-ink">{name}</p>
             </div>
           </div>
