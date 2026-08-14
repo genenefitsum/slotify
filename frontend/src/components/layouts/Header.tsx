@@ -45,7 +45,7 @@ const Header = () => {
     }, [mobileOpen]);
 
     return (
-        <header className="sticky top-0 z-50 border-b border-rule bg-canvas/85 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-rule bg-canvas">
             <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-10 px-6">
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-2.5">

@@ -18,7 +18,7 @@ const MainLayout = () => {
 	}, [location.hash, location.pathname, location.search]);
 
 	return (
-		<div className="min-h-screen bg-background text-foreground">
+		<div className="min-h-screen bg-canvas text-ink">
 			<Header />
 			<main className="relative">
 				<Outlet />
