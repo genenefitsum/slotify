@@ -21,7 +21,7 @@ const HeroSection = () => {
         {/* Left column — copy */}
         <div className="relative z-10 flex flex-col justify-center pb-6 lg:pb-8">
           {/* Badge */}
-          <div className="mb-8 inline-flex items-center gap-2 border border-ink/20 bg-canvas px-3 py-1.5">
+          <div className="mb-8 inline-flex w-fit self-start items-center gap-2 border border-ink/20 bg-canvas px-3 py-1.5">
             <span className="size-1.5 animate-pulse rounded-full bg-acid" />
             <span className="font-mono text-[10px] uppercase tracking-[0.20em] text-ink/70">
               Ethiopia's booking platform
@@ -66,7 +66,7 @@ const HeroSection = () => {
           {/* Subtle link */}
           <Link
             to="/about"
-            className="mt-6 inline-block font-mono text-xs text-ink/60 underline underline-offset-4 transition-colors hover:text-ink"
+            className="mt-6 inline-block w-fit font-mono text-xs text-ink/60 underline underline-offset-4 transition-colors hover:text-ink"
           >
             see how booking works →
           </Link>
