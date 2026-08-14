@@ -10,23 +10,26 @@ const STATS = [
 
 const HeroSection = () => {
   return (
-    <section className="relative overflow-hidden border-b border-rule bg-canvas">
+    <section
+      style={{ minHeight: "calc(100dvh - 4rem)" }}
+      className="relative flex flex-col justify-between overflow-hidden border-b border-rule bg-canvas"
+    >
       {/* Acid glow */}
       <div className="pointer-events-none absolute -left-24 top-1/3 hidden h-[420px] w-[420px] rounded-full bg-acid/25 blur-[120px] lg:block" />
 
-      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-6 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:pt-24">
+      <div className="mx-auto grid w-full max-w-[1400px] flex-1 grid-cols-1 gap-6 px-6 pt-6 sm:pt-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-8">
         {/* Left column — copy */}
-        <div className="relative z-10 pb-16">
+        <div className="relative z-10 flex flex-col justify-center pb-6 lg:pb-8">
           {/* Badge */}
           <div className="mb-8 inline-flex items-center gap-2 border border-ink/20 bg-canvas px-3 py-1.5">
             <span className="size-1.5 animate-pulse rounded-full bg-acid" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/70">
+            <span className="font-mono text-[10px] uppercase tracking-[0.20em] text-ink/70">
               Ethiopia's booking platform
             </span>
           </div>
 
           {/* Heading */}
-          <h1 className="font-display text-[clamp(3rem,8.5vw,7rem)] font-black uppercase leading-[0.86] tracking-[-0.045em] text-ink">
+          <h1 className="font-display text-[clamp(2.5rem,7vw,5.5rem)] font-black uppercase leading-[0.88] tracking-[-0.045em] text-ink">
             Book the
             <br />
             right pro
@@ -38,13 +41,13 @@ const HeroSection = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-8 max-w-md text-lg leading-relaxed text-ink/70">
+          <p className="mt-5 max-w-md text-base leading-relaxed text-ink/70">
             Real availability, verified vendors, no back-and-forth DMs. Compare, confirm and
             show up — that's the whole thing.
           </p>
 
           {/* CTAs */}
-          <div className="mt-9 flex flex-wrap items-center">
+          <div className="mt-6 flex flex-wrap items-center">
             <Link
               to="/vendors"
               className="group flex items-center gap-2 bg-ink px-7 py-4 font-display text-sm font-bold uppercase tracking-wide text-canvas clip-tag-l"
@@ -69,10 +72,10 @@ const HeroSection = () => {
           </Link>
 
           {/* Stats */}
-          <dl className="mt-14 grid max-w-lg grid-cols-3 border-t border-ink/15 pt-6">
+          <dl className="mt-8 grid max-w-lg grid-cols-3 border-t border-ink/15 pt-5">
             {STATS.map(({ value, label }) => (
               <div key={label}>
-                <dt className="font-display text-3xl font-black tracking-tight text-ink">{value}</dt>
+                <dt className="font-display text-2xl font-black tracking-tight text-ink">{value}</dt>
                 <dd className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ink/50">
                   {label}
                 </dd>
@@ -110,7 +113,7 @@ const HeroSection = () => {
             alt="Hairstylist confirming an appointment on her phone"
             width={1104}
             height={1408}
-            className="relative z-10 max-h-[620px] w-auto object-contain"
+            className="relative z-10 max-h-[560px] lg:max-h-[calc(100dvh-6.5rem)] w-auto object-contain object-bottom"
           />
         </div>
       </div>
