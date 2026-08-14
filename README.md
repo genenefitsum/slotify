@@ -97,7 +97,7 @@ docker compose up --build -d
 Access the applications:
 - **Frontend**: http://localhost:5175
 - **Backend API**: http://localhost:5001/api/health
-- **MongoDB**: `localhost:27017`
+- **MongoDB**: `localhost:27018`
 
 To seed initial fixture data inside the running backend container:
 
