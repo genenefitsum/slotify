@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from "react-router-dom";
 import { vendorsApi } from '@/api/vendors.api';
-import { Button } from "@/components/ui/button";
 import VendorCard from "@/components/main/VendorCard";
 import EmptyState from '@/components/ui/empty-state';
 import ErrorState from '@/components/ui/error-state';
 import PageSkeleton from '@/components/ui/page-skeleton';
+import { ArrowRight } from "lucide-react";
 
 const FeaturedVendorsSection = () => {
   const featuredVendorsQuery = useQuery({
@@ -30,21 +30,31 @@ const FeaturedVendorsSection = () => {
   );
 
   return (
-    <section className="border-b bg-muted/20">
-      <div className="container mx-auto max-w-6xl px-4 py-10 lg:py-12">
-        <div className="flex items-end justify-between gap-4">
+    <section className="border-b border-rule bg-canvas py-16 lg:py-24">
+      <div className="mx-auto max-w-[1400px] px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              Top Rated
-            </p>
-            <h2 className="mt-2 text-2xl sm:text-3xl">Featured Vendors</h2>
+            <div className="mb-4 inline-flex items-center gap-2 border border-ink/20 bg-canvas px-3 py-1">
+              <span className="size-1.5 rounded-full bg-acid" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/70">
+                Top Rated
+              </span>
+            </div>
+            <h2 className="font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl lg:text-5xl">
+              Featured Vendors
+            </h2>
           </div>
-          <Button asChild variant="outline" size="sm" className="rounded-full px-4">
-            <Link to="/vendors?view=all">View more</Link>
-          </Button>
+
+          <Link
+            to="/vendors?view=all"
+            className="group flex w-fit items-center gap-2 bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-r transition-colors hover:bg-acid hover:text-acid-foreground"
+          >
+            View all vendors
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+          </Link>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-10">
           {featuredVendorsQuery.isLoading ? <PageSkeleton rows={3} /> : null}
 
           {featuredVendorsQuery.isError ? (
@@ -65,7 +75,7 @@ const FeaturedVendorsSection = () => {
           ) : null}
 
           {featuredVendors.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
               {featuredVendors.map((vendor) => (
                 <VendorCard
                   key={vendor.id}

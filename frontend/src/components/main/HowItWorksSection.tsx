@@ -5,33 +5,44 @@ const STEP_ICONS = [Search, CalendarClock, CheckCircle2];
 
 const HowItWorksSection = () => {
   return (
-    <section className="border-b bg-background">
-      <div className="container mx-auto max-w-6xl px-4 py-12 lg:py-16">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          Simple Process
-        </p>
-        <h2 className="mt-2 text-center text-2xl sm:text-3xl">How It Works</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground sm:text-base">
-          Booking a professional has never been easier. Just three simple steps.
-        </p>
+    <section className="border-b border-rule bg-canvas py-16 lg:py-24">
+      <div className="mx-auto max-w-[1400px] px-6">
+        <div className="mb-12 text-center">
+          <div className="mb-4 inline-flex items-center gap-2 border border-ink/20 bg-canvas px-3 py-1">
+            <span className="size-1.5 rounded-full bg-acid" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/70">
+              Simple Process
+            </span>
+          </div>
+          <h2 className="font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl lg:text-5xl">
+            How It Works
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-base text-ink/70">
+            Booking a professional has never been easier. Just three simple steps.
+          </p>
+        </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-7">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
           {HOW_IT_WORKS_STEPS.map((step, index) => {
             const Icon = STEP_ICONS[index] ?? Search;
 
             return (
               <article
                 key={step.id}
-                className={index === HOW_IT_WORKS_STEPS.length - 1 ? "section-shell col-span-2 mx-auto w-full max-w-xs p-5 text-center md:col-span-1 md:max-w-none" : "section-shell p-5 text-center"}
+                className="group relative border border-ink bg-canvas p-8 shadow-[4px_4px_0_0_var(--ink)] transition-all duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--ink)]"
               >
-                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-primary-glow">
-                  <Icon className="size-[18px]" />
+                <div className="flex items-center justify-between">
+                  <span className="flex size-12 items-center justify-center bg-ink text-canvas clip-tag-r">
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="bg-acid px-2.5 py-1 font-mono text-xs font-bold text-acid-foreground">
+                    0{step.id}
+                  </span>
                 </div>
-                <h3 className="mt-4 flex items-center justify-center gap-2">
-                  <span className="text-sm font-semibold text-accent">0{step.id}</span>
-                  <span className="text-2xl leading-none">{step.title}</span>
+                <h3 className="mt-6 font-display text-2xl font-black uppercase tracking-tight text-ink">
+                  {step.title}
                 </h3>
-                <p className="mx-auto mt-4 max-w-xs text-sm leading-7 text-muted-foreground">
+                <p className="mt-3 text-sm leading-relaxed text-ink/70">
                   {step.description}
                 </p>
               </article>

@@ -8,6 +8,7 @@ import BackButton from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { getRoleRedirectPath } from '@/lib/authRedirect';
 
 const RegisterPage = () => {
 	const { register, loginWithGoogle } = useAuth();
@@ -27,7 +28,7 @@ const RegisterPage = () => {
 
 	const redirectTo = useMemo(() => {
 		const state = location.state as { from?: { pathname?: string } } | null;
-		return state?.from?.pathname || '/';
+		return state?.from?.pathname || '';
 	}, [location.state]);
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -42,7 +43,7 @@ const RegisterPage = () => {
 		setIsSubmitting(true);
 
 		try {
-			await register({
+			const newUser = await register({
 				firstName,
 				lastName,
 				email,
@@ -50,7 +51,10 @@ const RegisterPage = () => {
 				password,
 				role,
 			});
-			navigate(redirectTo, { replace: true });
+			const target = (redirectTo && redirectTo !== '/' && redirectTo !== '/register')
+				? redirectTo
+				: getRoleRedirectPath(newUser.role);
+			navigate(target, { replace: true });
 		} catch (submitError) {
 			if (submitError instanceof HttpError) {
 				setError(submitError.message);
@@ -74,8 +78,11 @@ const RegisterPage = () => {
 		setIsGoogleSubmitting(true);
 
 		try {
-			await loginWithGoogle({ credential, role });
-			navigate(redirectTo, { replace: true });
+			const newUser = await loginWithGoogle({ credential, role });
+			const target = (redirectTo && redirectTo !== '/' && redirectTo !== '/register')
+				? redirectTo
+				: getRoleRedirectPath(newUser.role);
+			navigate(target, { replace: true });
 		} catch (googleSignInError) {
 			if (googleSignInError instanceof HttpError) {
 				setGoogleError(googleSignInError.message);
@@ -94,10 +101,7 @@ const RegisterPage = () => {
 	};
 
 	return (
-		<section className="relative isolate overflow-hidden border-b bg-gradient-hero">
-			<div className="pointer-events-none absolute left-0 top-12 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
-			<div className="pointer-events-none absolute -right-16 bottom-12 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-
+		<section className="border-b bg-background">
 			<div className="container mx-auto max-w-xl px-4 py-10 sm:px-6 lg:py-16">
 				<BackButton className="mb-4" fallbackTo="/" />
 

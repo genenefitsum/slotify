@@ -3,11 +3,8 @@ import { Link } from 'react-router-dom';
 const NotFoundPage = () => {
 	return (
 		<section className="container mx-auto px-4 py-12 lg:py-16">
-			<div className="section-shell relative mx-auto max-w-3xl overflow-hidden p-8 text-center sm:p-10">
-				<div className="pointer-events-none absolute -left-8 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
-				<div className="pointer-events-none absolute -right-8 bottom-0 h-40 w-40 rounded-full bg-accent/15 blur-3xl" />
-
-				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">404 Error</p>
+			<div className="section-shell mx-auto max-w-3xl p-8 text-center sm:p-10">
+				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">404 Error</p>
 				<h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">This page took a wrong turn</h1>
 				<p className="mx-auto mt-4 max-w-xl text-muted-foreground">
 					The page you are looking for does not exist, may have moved, or might only be available to a different account role.

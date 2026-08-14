@@ -1,5 +1,6 @@
 import MainLayout from "@/components/layouts/MainLayout";
 import { useAuth } from '@/contexts/AuthContext';
+import { getRoleRedirectPath } from '@/lib/authRedirect';
 import AboutPage from "@/pages/AboutPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import CookiePolicyPage from "@/pages/CookiePolicyPage";
@@ -15,6 +16,49 @@ import VendorDetailPage from "@/pages/VendorDetailPage";
 import VendorsPage from "@/pages/VendorsPage";
 import type { UserRole } from '@/types/auth';
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+
+/**
+ * Root index route handler:
+ * - Unauthenticated visitors see the public marketing landing page (HomePage).
+ * - Authenticated users are automatically redirected to their dedicated workspace/dashboard based on role.
+ */
+const RootRoute = () => {
+	const { isAuthenticated, user, isLoading } = useAuth();
+
+	if (isLoading) {
+		return (
+			<section className="container mx-auto px-4 py-14">
+				<div className="section-shell p-6 text-sm text-muted-foreground">
+					Loading your workspace...
+				</div>
+			</section>
+		);
+	}
+
+	if (isAuthenticated && user) {
+		return <Navigate to={getRoleRedirectPath(user.role)} replace />;
+	}
+
+	return <HomePage />;
+};
+
+/**
+ * Public-only routes guard (e.g. /login, /register):
+ * - If already authenticated, redirect to role destination.
+ */
+const PublicOnlyRoute = () => {
+	const { isAuthenticated, user, isLoading } = useAuth();
+
+	if (isLoading) {
+		return null;
+	}
+
+	if (isAuthenticated && user) {
+		return <Navigate to={getRoleRedirectPath(user.role)} replace />;
+	}
+
+	return <Outlet />;
+};
 
 const RequireAuth = () => {
 	const { isAuthenticated, isLoading } = useAuth();
@@ -45,7 +89,7 @@ const RequireRole = ({ allowed }: { allowed: UserRole[] }) => {
 	}
 
 	if (!allowed.includes(user.role)) {
-		return <Navigate to="/" replace />;
+		return <Navigate to={getRoleRedirectPath(user.role)} replace />;
 	}
 
 	return <Outlet />;
@@ -55,15 +99,18 @@ const AppRoutes = () => {
 	return (
 		<Routes>
 			<Route element={<MainLayout />}>
-				<Route path="/" element={<HomePage />} />
+				<Route path="/" element={<RootRoute />} />
 				<Route path="/vendors" element={<VendorsPage />} />
 				<Route path="/vendor/:id" element={<VendorDetailPage />} />
 				<Route path="/about" element={<AboutPage />} />
 				<Route path="/privacy" element={<PrivacyPolicyPage />} />
 				<Route path="/terms" element={<TermsOfServicePage />} />
 				<Route path="/cookies" element={<CookiePolicyPage />} />
-				<Route path="/login" element={<LoginPage />} />
-				<Route path="/register" element={<RegisterPage />} />
+
+				<Route element={<PublicOnlyRoute />}>
+					<Route path="/login" element={<LoginPage />} />
+					<Route path="/register" element={<RegisterPage />} />
+				</Route>
 
 				<Route element={<RequireAuth />}>
 					<Route element={<RequireRole allowed={['vendor_owner', 'vendor_staff']} />}>

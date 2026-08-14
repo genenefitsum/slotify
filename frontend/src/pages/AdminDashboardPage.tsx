@@ -907,11 +907,8 @@ const AdminDashboardPage = () => {
 		<section className="container mx-auto px-4 py-8 lg:py-12">
 			<BackButton className="mb-4" fallbackTo="/" />
 
-			<div className="section-shell relative overflow-hidden p-6 sm:p-8 lg:p-10">
-				<div className="pointer-events-none absolute -left-10 top-0 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-				<div className="pointer-events-none absolute -right-12 bottom-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
-
-				<div className="relative flex flex-wrap items-start justify-between gap-6">
+			<div className="section-shell p-6 sm:p-8 lg:p-10">
+				<div className="flex flex-wrap items-start justify-between gap-6">
 					<div className="max-w-3xl">
 						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Admin Control Tower</p>
 						<h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
