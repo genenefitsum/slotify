@@ -46,46 +46,74 @@ const Header = () => {
 
     return (
         <header className="sticky top-0 z-50 border-b border-rule bg-canvas">
-            <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-10 px-6">
-                {/* Logo */}
-                <Link to="/" className="flex items-center gap-2.5">
-                    <span className="flex size-8 items-center justify-center bg-ink clip-tag-r">
-                        <CalendarCheck className="size-4 text-canvas" />
-                    </span>
-                    <span className="font-display text-lg font-black tracking-tight text-ink">slotify</span>
-                </Link>
+            <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6">
+                {/* Logo (Left) */}
+                <div className="flex items-center">
+                    <Link to="/" className="flex items-center gap-2.5">
+                        <span className="flex size-8 items-center justify-center bg-ink clip-tag-r">
+                            <CalendarCheck className="size-4 text-canvas" />
+                        </span>
+                        <span className="font-display text-lg font-black tracking-tight text-ink">slotify</span>
+                    </Link>
+                </div>
 
-                {/* Desktop nav */}
-                <nav className="hidden items-center gap-8 md:flex">
+                {/* Desktop Nav (Center) */}
+                <nav className="hidden items-center justify-center gap-6 md:flex lg:gap-8">
                     {NAV_ITEMS.map((item) => (
                         <NavLink
                             key={item.label}
                             to={item.to}
                             className={({ isActive }) =>
-                                `font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${isActive ? 'text-ink' : 'text-ink/60 hover:text-ink'}`
+                                `group relative px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors duration-150 ${
+                                    isActive ? 'text-ink font-bold' : 'text-ink/65 hover:text-ink'
+                                }`
                             }
                         >
-                            {item.label}
+                            {({ isActive }) => (
+                                <>
+                                    <span>{item.label}</span>
+                                    <span
+                                        className={`absolute inset-x-1.5 bottom-0 h-0.5 bg-acid transition-all duration-200 ease-out ${
+                                            isActive
+                                                ? 'scale-x-100 opacity-100'
+                                                : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                                        }`}
+                                    />
+                                </>
+                            )}
                         </NavLink>
                     ))}
                     {isAuthenticated && (
                         <NavLink
                             to={roleRoute}
                             className={({ isActive }) =>
-                                `font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${isActive ? 'text-ink' : 'text-ink/60 hover:text-ink'}`
+                                `group relative px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors duration-150 ${
+                                    isActive ? 'text-ink font-bold' : 'text-ink/65 hover:text-ink'
+                                }`
                             }
                         >
-                            Dashboard
+                            {({ isActive }) => (
+                                <>
+                                    <span>Dashboard</span>
+                                    <span
+                                        className={`absolute inset-x-1.5 bottom-0 h-0.5 bg-acid transition-all duration-200 ease-out ${
+                                            isActive
+                                                ? 'scale-x-100 opacity-100'
+                                                : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                                        }`}
+                                    />
+                                </>
+                            )}
                         </NavLink>
                     )}
                 </nav>
 
-                {/* Desktop auth */}
-                <div className="ml-auto hidden items-center md:flex">
+                {/* Desktop Auth (Right) */}
+                <div className="hidden items-center md:flex">
                     {isAuthenticated ? (
                         <button
                             onClick={logout}
-                            className="bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-r cursor-pointer"
+                            className="bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-r cursor-pointer transition-colors hover:bg-ink/90"
                         >
                             Log out
                         </button>
@@ -93,13 +121,13 @@ const Header = () => {
                         <>
                             <Link
                                 to="/login"
-                                className="bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-l"
+                                className="bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-l transition-colors hover:bg-ink/90"
                             >
                                 Log in
                             </Link>
                             <Link
                                 to="/register"
-                                className="-ml-3 bg-acid px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-acid-foreground clip-tag-r"
+                                className="-ml-3 bg-acid px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-acid-foreground clip-tag-r transition-transform hover:-translate-y-0.5"
                             >
                                 Get started
                             </Link>
@@ -110,7 +138,7 @@ const Header = () => {
                 {/* Mobile toggle */}
                 <button
                     ref={mobileToggleRef}
-                    className={`ml-auto flex h-8 w-8 items-center justify-center border transition-all md:hidden ${mobileOpen ? 'border-ink bg-ink text-canvas' : 'border-transparent text-ink'}`}
+                    className={`flex h-8 w-8 items-center justify-center border transition-all md:hidden ${mobileOpen ? 'border-ink bg-ink text-canvas' : 'border-transparent text-ink'}`}
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label="Toggle mobile navigation"
                 >
