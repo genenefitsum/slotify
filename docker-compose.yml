@@ -1,0 +1,53 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: slotify-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: slotify-backend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/slotify
+      - JWT_ACCESS_SECRET=slotify-docker-dev-jwt-secret-key-987654321
+      - JWT_ACCESS_EXPIRES_IN=7d
+      - CORS_ORIGINS=http://localhost:5175,http://localhost:5001
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=300
+      - RATE_LIMIT_AUTH_MAX_REQUESTS=30
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:5001/api
+    container_name: slotify-frontend
+    restart: always
+    ports:
+      - "5175:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
