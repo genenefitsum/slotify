@@ -1,11 +1,23 @@
 import { Link } from "react-router-dom";
 import heroPro from "@/assets/hero-pro.png";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarCheck, ShieldCheck, Zap } from "lucide-react";
 
-const STATS = [
-  { value: "1,200+", label: "Verified vendors" },
-  { value: "38k", label: "Slots booked" },
-  { value: "4.9", label: "Average rating" },
+const PILLARS = [
+  {
+    icon: ShieldCheck,
+    title: "Trust",
+    subtitle: "Verified pros",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Reliable",
+    subtitle: "Real-time slots",
+  },
+  {
+    icon: Zap,
+    title: "Fast",
+    subtitle: "3-tap booking",
+  },
 ];
 
 const HeroSection = () => {
@@ -71,17 +83,20 @@ const HeroSection = () => {
             see how booking works →
           </Link>
 
-          {/* Stats */}
-          <dl className="mt-8 grid max-w-lg grid-cols-3 border-t border-ink/15 pt-5">
-            {STATS.map(({ value, label }) => (
-              <div key={label}>
-                <dt className="font-display text-2xl font-black tracking-tight text-ink">{value}</dt>
-                <dd className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ink/50">
-                  {label}
-                </dd>
+          {/* Pillars */}
+          <div className="mt-8 grid max-w-lg grid-cols-3 border-t border-ink/15 pt-5">
+            {PILLARS.map(({ icon: Icon, title, subtitle }) => (
+              <div key={title}>
+                <div className="flex items-center gap-1.5 text-ink">
+                  <Icon className="size-4 text-ink" />
+                  <span className="font-display text-base font-black uppercase tracking-tight">{title}</span>
+                </div>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink/50">
+                  {subtitle}
+                </p>
               </div>
             ))}
-          </dl>
+          </div>
         </div>
 
         {/* Right column — hero image + floating cards */}
