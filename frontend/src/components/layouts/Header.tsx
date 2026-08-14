@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, NavLink } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { CalendarDays, Menu, X } from "lucide-react";
+import { CalendarCheck, Menu, X } from "lucide-react";
 
+const NAV_ITEMS = [
+    { label: "Browse Vendors", to: "/vendors" },
+    { label: "How It Works", to: "/about" },
+];
 
 const Header = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,12 +20,6 @@ const Header = () => {
             : user?.role === 'vendor_owner' || user?.role === 'vendor_staff'
                 ? '/dashboard/vendor'
                 : '/bookings';
-
-    const mobileLinkClassName = ({ isActive }: { isActive: boolean }) =>
-        `min-h-11 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-all ${isActive
-            ? 'border-border bg-secondary text-foreground shadow-sm'
-            : 'border-transparent bg-transparent text-muted-foreground hover:border-border/70 hover:bg-secondary/75 hover:text-foreground'
-        }`;
 
     useEffect(() => {
         if (!mobileOpen) return;
@@ -48,147 +45,162 @@ const Header = () => {
     }, [mobileOpen]);
 
     return (
-        <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:glass">
-            <div className="container mx-auto flex h-14 items-center justify-between px-4">
-                <Link to="/" className="group flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-primary-glow transition-transform duration-200 group-hover:-translate-y-0.5">
-                        <CalendarDays className="size-4 text-primary-foreground" />
-                    </div>
-                    <span className="text-lg font-bold tracking-tight text-foreground">Slotify</span>
+        <header className="sticky top-0 z-50 border-b border-rule bg-canvas/85 backdrop-blur">
+            <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-10 px-6">
+                {/* Logo */}
+                <Link to="/" className="flex items-center gap-2.5">
+                    <span className="flex size-8 items-center justify-center bg-ink clip-tag-r">
+                        <CalendarCheck className="size-4 text-canvas" />
+                    </span>
+                    <span className="font-display text-lg font-black tracking-tight text-ink">slotify</span>
                 </Link>
 
-                <nav className="hidden items-center gap-6 md:flex">
-                    <NavLink
-                        to="/vendors"
-                        className={({ isActive }) =>
-                            `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
-                        }
-                    >
-                        Browse Vendors
-                    </NavLink>
-                    <NavLink
-                        to="/about"
-                        className={({ isActive }) =>
-                            `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
-                        }
-                    >
-                        How It Works
-                    </NavLink>
-                    {isAuthenticated ? (
-                        <>
-                            <NavLink
-                                to={roleRoute}
-                                className={({ isActive }) =>
-                                    `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
-                                }
-                            >
-                                Dashboard
-                            </NavLink>
-                            <Button size="sm" className="rounded-lg" onClick={logout}>
-                                Log Out
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <NavLink
-                                to="/login"
-                                className={({ isActive }) =>
-                                    `relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-all ${isActive ? 'text-foreground after:w-full' : 'text-muted-foreground after:w-0 hover:text-foreground hover:after:w-full'}`
-                                }
-                            >
-                                Log In
-                            </NavLink>
-                            <Button asChild size="sm" className="rounded-lg">
-                                <Link to="/register">
-                                    Get Started
-                                </Link>
-                            </Button>
-                        </>
+                {/* Desktop nav */}
+                <nav className="hidden items-center gap-8 md:flex">
+                    {NAV_ITEMS.map((item) => (
+                        <NavLink
+                            key={item.label}
+                            to={item.to}
+                            className={({ isActive }) =>
+                                `font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${isActive ? 'text-ink' : 'text-ink/60 hover:text-ink'}`
+                            }
+                        >
+                            {item.label}
+                        </NavLink>
+                    ))}
+                    {isAuthenticated && (
+                        <NavLink
+                            to={roleRoute}
+                            className={({ isActive }) =>
+                                `font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${isActive ? 'text-ink' : 'text-ink/60 hover:text-ink'}`
+                            }
+                        >
+                            Dashboard
+                        </NavLink>
                     )}
                 </nav>
 
-                <Button
+                {/* Desktop auth */}
+                <div className="ml-auto hidden items-center md:flex">
+                    {isAuthenticated ? (
+                        <button
+                            onClick={logout}
+                            className="bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-r cursor-pointer"
+                        >
+                            Log out
+                        </button>
+                    ) : (
+                        <>
+                            <Link
+                                to="/login"
+                                className="bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-l"
+                            >
+                                Log in
+                            </Link>
+                            <Link
+                                to="/register"
+                                className="-ml-3 bg-acid px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-acid-foreground clip-tag-r"
+                            >
+                                Get started
+                            </Link>
+                        </>
+                    )}
+                </div>
+
+                {/* Mobile toggle */}
+                <button
                     ref={mobileToggleRef}
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 rounded-xl border transition-all md:hidden ${mobileOpen ? 'border-border bg-card shadow-sm' : 'border-transparent'}`}
+                    className={`ml-auto flex h-8 w-8 items-center justify-center border transition-all md:hidden ${mobileOpen ? 'border-ink bg-ink text-canvas' : 'border-transparent text-ink'}`}
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label="Toggle mobile navigation"
                 >
                     {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
-                </Button>
+                </button>
             </div>
 
+            {/* Mobile menu */}
             {mobileOpen && (
                 <div className="relative md:hidden">
                     <button
                         type="button"
-                        className="fixed inset-0 top-14 z-40 bg-foreground/28"
+                        className="fixed inset-0 top-16 z-40 bg-ink/30"
                         aria-label="Close mobile navigation"
                         onClick={() => setMobileOpen(false)}
                     />
 
                     <div className="absolute inset-x-0 top-full z-50 px-3 pt-2">
-                        <div ref={mobileMenuRef} className="motion-enter relative mx-auto max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card shadow-[0_28px_45px_-30px_rgba(15,23,42,0.55)] ring-1 ring-foreground/5">
+                        <div ref={mobileMenuRef} className="motion-enter relative mx-auto max-w-md overflow-hidden border border-rule bg-canvas shadow-[6px_6px_0_0_var(--ink)]">
                             <div className="flex justify-center pb-1 pt-2">
-                                <span className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+                                <span className="h-1 w-10 bg-ink/20" />
                             </div>
-                            <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                            <div className="px-3 pb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ink/50">
                                 Quick Navigation
                             </div>
 
                             <nav className="relative flex flex-col gap-1.5 p-2.5">
-                        <NavLink
-                            to="/vendors"
-                            className={mobileLinkClassName}
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            Browse Vendors
-                        </NavLink>
-                        <NavLink
-                            to="/about"
-                            className={mobileLinkClassName}
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            How It Works
-                        </NavLink>
-                        {isAuthenticated ? (
-                            <>
-                                <NavLink
-                                    to={roleRoute}
-                                    className={mobileLinkClassName}
-                                    onClick={() => setMobileOpen(false)}
-                                >
-                                    Dashboard
-                                </NavLink>
-                                <div className="my-1.5 border-t border-border/70" />
-                                <Button
-                                    size="sm"
-                                    className="h-10 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                                    onClick={() => {
-                                        logout();
-                                        setMobileOpen(false);
-                                    }}
-                                >
-                                    Log Out
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <NavLink
-                                    to="/login"
-                                    className={mobileLinkClassName}
-                                    onClick={() => setMobileOpen(false)}
-                                >
-                                    Log In
-                                </NavLink>
-                                <Button asChild size="sm" className="h-10 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90">
-                                    <Link to="/register" onClick={() => setMobileOpen(false)}>
-                                        Get Started
-                                    </Link>
-                                </Button>
-                            </>
-                        )}
+                                {NAV_ITEMS.map((item) => (
+                                    <NavLink
+                                        key={item.label}
+                                        to={item.to}
+                                        className={({ isActive }) =>
+                                            `min-h-11 border px-3.5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-all ${isActive
+                                                ? 'border-ink bg-ink text-canvas'
+                                                : 'border-transparent text-ink/60 hover:border-rule hover:text-ink'
+                                            }`
+                                        }
+                                        onClick={() => setMobileOpen(false)}
+                                    >
+                                        {item.label}
+                                    </NavLink>
+                                ))}
+                                {isAuthenticated ? (
+                                    <>
+                                        <NavLink
+                                            to={roleRoute}
+                                            className={({ isActive }) =>
+                                                `min-h-11 border px-3.5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-all ${isActive
+                                                    ? 'border-ink bg-ink text-canvas'
+                                                    : 'border-transparent text-ink/60 hover:border-rule hover:text-ink'
+                                                }`
+                                            }
+                                            onClick={() => setMobileOpen(false)}
+                                        >
+                                            Dashboard
+                                        </NavLink>
+                                        <div className="my-1.5 border-t border-rule" />
+                                        <button
+                                            className="h-10 bg-ink font-mono text-[11px] uppercase tracking-[0.14em] text-canvas clip-tag-r"
+                                            onClick={() => {
+                                                logout();
+                                                setMobileOpen(false);
+                                            }}
+                                        >
+                                            Log Out
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <NavLink
+                                            to="/login"
+                                            className={({ isActive }) =>
+                                                `min-h-11 border px-3.5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-all ${isActive
+                                                    ? 'border-ink bg-ink text-canvas'
+                                                    : 'border-transparent text-ink/60 hover:border-rule hover:text-ink'
+                                                }`
+                                            }
+                                            onClick={() => setMobileOpen(false)}
+                                        >
+                                            Log In
+                                        </NavLink>
+                                        <Link
+                                            to="/register"
+                                            className="flex h-10 items-center justify-center bg-acid font-mono text-[11px] uppercase tracking-[0.14em] text-acid-foreground clip-tag-r"
+                                            onClick={() => setMobileOpen(false)}
+                                        >
+                                            Get Started
+                                        </Link>
+                                    </>
+                                )}
                             </nav>
                         </div>
                     </div>

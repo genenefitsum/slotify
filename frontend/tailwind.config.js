@@ -7,10 +7,12 @@ export default {
   ],
   theme: {
   	extend: {
-		fontFamily: {
-			sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			heading: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
-		},
+  		fontFamily: {
+  			sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			heading: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			display: ['Archivo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
@@ -19,6 +21,13 @@ export default {
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
+  			ink: 'var(--ink)',
+  			canvas: 'var(--canvas)',
+  			acid: {
+  				DEFAULT: 'var(--acid)',
+  				foreground: 'var(--acid-foreground)',
+  			},
+  			rule: 'var(--rule)',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
