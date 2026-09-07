@@ -56,6 +56,7 @@ const register = async (req, res, next) => {
 		setAuthCookies(res, result.sessionTokens);
 		res.status(201).json({
 			user: result.user,
+			accessToken: result.sessionTokens.accessToken,
 			csrfToken: result.sessionTokens.csrfToken,
 		});
   } catch (error) {
@@ -71,6 +72,7 @@ const login = async (req, res, next) => {
   setAuthCookies(res, result.sessionTokens);
 	res.status(200).json({
 		user: result.user,
+		accessToken: result.sessionTokens.accessToken,
 		csrfToken: result.sessionTokens.csrfToken,
 	});
   } catch (error) {
@@ -86,6 +88,7 @@ const googleLogin = async (req, res, next) => {
   setAuthCookies(res, result.sessionTokens);
 	res.status(200).json({
 		user: result.user,
+		accessToken: result.sessionTokens.accessToken,
 		csrfToken: result.sessionTokens.csrfToken,
 	});
   } catch (error) {

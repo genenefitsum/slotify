@@ -96,6 +96,21 @@ test('requireCsrf blocks unsafe requests without a matching token', () => {
 	assert.equal(errorSeen.message, 'Invalid CSRF token.');
 });
 
+test('requireCsrf allows requests with Bearer authorization header', () => {
+	const req = createReq({
+		method: 'POST',
+		headers: { authorization: 'Bearer some-jwt-token' },
+	});
+
+	let nextCalled = false;
+	requireCsrf(req, createRes(), (error) => {
+		assert.equal(error, undefined);
+		nextCalled = true;
+	});
+
+	assert.equal(nextCalled, true);
+});
+
 test('validateUploadPayload rejects unsafe upload payloads', () => {
 	assert.throws(
 		() => validateUploadPayload({ dataUrl: 'not-a-data-url', fileName: 'vendor.png' }),
@@ -108,7 +123,7 @@ test('validateUploadPayload rejects unsafe upload payloads', () => {
 	);
 });
 
-test('auth controller sets http-only cookies and returns the user payload with csrf token', async () => {
+test('auth controller sets http-only cookies and returns the user payload with csrf token and accessToken', async () => {
 	const originalLogin = authService.login;
 	authService.login = async () => ({
 		user: {
@@ -137,6 +152,7 @@ test('auth controller sets http-only cookies and returns the user payload with c
 				role: 'customer',
 				status: 'active',
 			},
+			accessToken: 'cookie-token',
 			csrfToken: 'csrf-token',
 		});
 		assert.equal(res.cookies.length, 2);

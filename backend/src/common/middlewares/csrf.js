@@ -40,7 +40,17 @@ const requireCsrf = (req, res, next) => {
     return next();
   }
 
-  if (req.path && req.path.startsWith('/auth/')) {
+  const authHeader = req.get('authorization') || req.headers?.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const isAuthRoute =
+    (req.path && req.path.startsWith('/auth/')) ||
+    (req.baseUrl && req.baseUrl.includes('/auth')) ||
+    (req.originalUrl && req.originalUrl.includes('/auth/'));
+
+  if (isAuthRoute) {
     return next();
   }
 
