@@ -1,4 +1,4 @@
-import { clearAuthSession, getCsrfToken } from '@/lib/storage';
+import { clearAuthSession, getAccessToken, getCsrfToken } from '@/lib/storage';
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE_URL = configuredBaseUrl
@@ -107,6 +107,11 @@ const createHeaders = (init?: HeadersInit, method = 'GET') => {
 
 	if (!headers.has('Content-Type')) {
 		headers.set('Content-Type', 'application/json');
+	}
+
+	const accessToken = getAccessToken();
+	if (accessToken && !headers.has('Authorization')) {
+		headers.set('Authorization', `Bearer ${accessToken}`);
 	}
 
 	if (!SAFE_METHODS.has(method.toUpperCase())) {

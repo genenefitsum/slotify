@@ -13,6 +13,7 @@ import { authApi } from '@/api/auth.api';
 import { HttpError } from '@/api/http';
 import {
   clearAuthSession,
+  setAccessToken,
   setCsrfToken,
 } from '@/lib/storage';
 import type {
@@ -40,6 +41,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const finalizeAuth = useCallback((response: AuthResponse) => {
+    if (response.accessToken) {
+      setAccessToken(response.accessToken);
+    }
     if (response.csrfToken) {
       setCsrfToken(response.csrfToken);
     }
