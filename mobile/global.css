@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens ported from the Slotify web app (frontend/src/index.css).
+   Values are HSL channels (no hsl() wrapper) so Tailwind can apply alpha. */
+@layer base {
+  :root {
+    --background: 48 14% 96%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 222 47% 12%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 48 12% 92%;
+    --secondary-foreground: 222 47% 12%;
+
+    --muted: 48 12% 92%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 158 75% 42%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 48 10% 86%;
+    --input: 48 10% 86%;
+    --ring: 222 47% 12%;
+
+    --success: 158 75% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 90% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 210 90% 52%;
+    --info-foreground: 0 0% 100%;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: 222 47% 8%;
+      --foreground: 48 12% 94%;
+
+      --card: 222 47% 10%;
+      --card-foreground: 48 12% 94%;
+
+      --popover: 222 47% 10%;
+      --popover-foreground: 48 12% 94%;
+
+      --primary: 158 75% 48%;
+      --primary-foreground: 222 47% 8%;
+
+      --secondary: 222 30% 16%;
+      --secondary-foreground: 48 12% 94%;
+
+      --muted: 222 30% 16%;
+      --muted-foreground: 215 16% 60%;
+
+      --accent: 158 75% 48%;
+      --accent-foreground: 222 47% 8%;
+
+      --destructive: 0 60% 45%;
+      --destructive-foreground: 0 0% 100%;
+
+      --border: 222 30% 18%;
+      --input: 222 30% 18%;
+      --ring: 158 75% 48%;
+    }
+  }
+}
