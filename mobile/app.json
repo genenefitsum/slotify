@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "slotify",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.slotify.app"
@@ -33,7 +32,9 @@
         {
           "photosPermission": "Slotify needs access to your photos so you can upload service and venue images."
         }
-      ]
+      ],
+      "expo-splash-screen",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

@@ -64,11 +64,18 @@ module.exports = {
         ring: 'hsl(var(--ring) / <alpha-value>)',
       },
       fontFamily: {
-        // Loaded via expo-font during feature work; fall back to system until then.
-        sans: ['Manrope', 'System'],
-        heading: ['Archivo', 'Manrope', 'System'],
-        display: ['Archivo', 'System'],
-        mono: ['JetBrainsMono', 'monospace'],
+        // Exact family names loaded in src/theme/fonts.ts. RN resolves fonts by
+        // family (not numeric weight), so each weight is its own utility.
+        sans: ['Manrope_400Regular', 'System'],
+        'sans-medium': ['Manrope_500Medium', 'System'],
+        'sans-semibold': ['Manrope_600SemiBold', 'System'],
+        'sans-bold': ['Manrope_700Bold', 'System'],
+        'sans-extrabold': ['Manrope_800ExtraBold', 'System'],
+        heading: ['Archivo_700Bold', 'System'],
+        'heading-extrabold': ['Archivo_800ExtraBold', 'System'],
+        display: ['Archivo_900Black', 'System'],
+        mono: ['JetBrainsMono_500Medium', 'monospace'],
+        'mono-bold': ['JetBrainsMono_700Bold', 'monospace'],
       },
       borderRadius: {
         sm: 8,
