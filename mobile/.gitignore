@@ -38,6 +38,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# local planning docs
+IMPLEMENTATION_PLAN.md
+
 # generated native folders
 /ios
 /android
