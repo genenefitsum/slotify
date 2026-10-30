@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+import Constants, { AppOwnership, ExecutionEnvironment } from 'expo-constants';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
@@ -11,7 +11,10 @@ type Role = 'customer' | 'vendor_owner';
 
 // Native Google Sign-In can't run in Expo Go (it ships native code). Detect that
 // so the app still works in Expo Go — the button just explains the requirement.
-const isExpoGo = Constants.executionEnvironment === 'storeClient';
+// appOwnership is the most reliable Expo Go signal; keep executionEnvironment too.
+const isExpoGo =
+  Constants.appOwnership === AppOwnership.Expo ||
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 let configured = false;
 
@@ -74,7 +77,17 @@ export function useGoogleSignIn() {
 
         return await loginWithGoogle({ credential: idToken, role });
       } catch (error) {
-        Alert.alert('Google sign-in failed', getErrorMessage(error));
+        const message = getErrorMessage(error);
+        // If the native module isn't present (e.g. running in Expo Go), steer the
+        // user to a development build rather than surfacing a cryptic error.
+        if (/RNGoogleSign|native module|TurboModule|not.*found|is not available/i.test(message)) {
+          Alert.alert(
+            'Development build required',
+            'Google sign-in needs a native development build (npx expo run:ios / run:android), not Expo Go.'
+          );
+        } else {
+          Alert.alert('Google sign-in failed', message);
+        }
         return null;
       } finally {
         setInProgress(false);
