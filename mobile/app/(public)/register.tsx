@@ -6,10 +6,15 @@ import { Controller, useForm } from 'react-hook-form';
 import { Alert, Pressable, Text, type TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
+import { getErrorMessage } from '@/api/http';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
+import { GoogleButton } from '@/components/ui/GoogleButton';
+import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { useHaptics } from '@/hooks/useHaptics';
 import { cn } from '@/lib/cn';
 import { type RegisterForm, registerSchema } from '@/lib/validation';
@@ -18,6 +23,8 @@ type Role = 'customer' | 'vendor_owner';
 
 export default function Register() {
   const haptics = useHaptics();
+  const { register } = useAuth();
+  const { signInWithGoogle, inProgress: googleLoading } = useGoogleSignIn();
   const params = useLocalSearchParams<{ role?: string }>();
   const initialRole: Role = params.role === 'vendor_owner' ? 'vendor_owner' : 'customer';
   const [submitting, setSubmitting] = useState(false);
@@ -30,6 +37,7 @@ export default function Register() {
   const {
     control,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -43,13 +51,26 @@ export default function Register() {
     },
   });
 
-  const onSubmit = async (_values: RegisterForm) => {
+  const onSubmit = async (values: RegisterForm) => {
     setSubmitting(true);
-    // TODO(auth): call authApi.register + AuthContext once the networking phase lands.
-    await new Promise((resolve) => setTimeout(resolve, 650));
-    setSubmitting(false);
-    haptics.success();
-    Alert.alert('Account UI ready', 'Sign-up is wired. Backend auth comes in the next phase.');
+    try {
+      const user = await register(values);
+      haptics.success();
+      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+    } catch (error) {
+      haptics.error();
+      Alert.alert('Sign up failed', getErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    const user = await signInWithGoogle(getValues('role'));
+    if (user) {
+      haptics.success();
+      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+    }
   };
 
   return (
@@ -98,7 +119,12 @@ export default function Register() {
         />
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(180).springify().damping(18)} className="mt-7 gap-5">
+      <Animated.View entering={FadeInDown.delay(170).springify().damping(18)} className="mt-6">
+        <GoogleButton loading={googleLoading} onPress={() => void onGoogle()} />
+        <OrDivider label="or sign up with email" className="mt-5" />
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(230).springify().damping(18)} className="mt-6 gap-5">
         <View className="flex-row gap-3">
           <Controller
             control={control}

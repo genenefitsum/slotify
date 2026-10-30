@@ -6,16 +6,23 @@ import { Controller, useForm } from 'react-hook-form';
 import { Alert, Pressable, Text, type TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
+import { getErrorMessage } from '@/api/http';
 import { Badge } from '@/components/ui/Badge';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
+import { GoogleButton } from '@/components/ui/GoogleButton';
+import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { useHaptics } from '@/hooks/useHaptics';
 import { type LoginForm, loginSchema } from '@/lib/validation';
 
 export default function Login() {
   const haptics = useHaptics();
+  const { login } = useAuth();
+  const { signInWithGoogle, inProgress: googleLoading } = useGoogleSignIn();
   const [submitting, setSubmitting] = useState(false);
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -28,13 +35,26 @@ export default function Login() {
     defaultValues: { email: '', password: '' },
   });
 
-  const onSubmit = async (_values: LoginForm) => {
+  const onSubmit = async (values: LoginForm) => {
     setSubmitting(true);
-    // TODO(auth): call authApi.login + AuthContext once the networking phase lands.
-    await new Promise((resolve) => setTimeout(resolve, 650));
-    setSubmitting(false);
-    haptics.success();
-    Alert.alert('Sign-in ready', 'The login UI is wired. Backend auth comes in the next phase.');
+    try {
+      const user = await login(values);
+      haptics.success();
+      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+    } catch (error) {
+      haptics.error();
+      Alert.alert('Sign in failed', getErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    const user = await signInWithGoogle();
+    if (user) {
+      haptics.success();
+      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+    }
   };
 
   return (
@@ -53,7 +73,12 @@ export default function Login() {
         </Text>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(140).springify().damping(18)} className="mt-10 gap-5">
+      <Animated.View entering={FadeInDown.delay(130).springify().damping(18)} className="mt-9">
+        <GoogleButton loading={googleLoading} onPress={() => void onGoogle()} />
+        <OrDivider label="or continue with email" className="mt-5" />
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(200).springify().damping(18)} className="mt-6 gap-5">
         <Controller
           control={control}
           name="email"
@@ -97,7 +122,7 @@ export default function Login() {
         />
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(220).springify().damping(18)} className="mt-9">
+      <Animated.View entering={FadeInDown.delay(270).springify().damping(18)} className="mt-8">
         <Button
           label="Log in"
           icon={ArrowRight}
