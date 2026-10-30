@@ -1,13 +1,14 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Clock, MapPin, Star, WifiOff } from 'lucide-react-native';
-import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/Button';
+import { ReviewItem } from '@/components/reviews/ReviewItem';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useVendorReviews } from '@/hooks/useReviews';
 import { useVendorServices } from '@/hooks/useServices';
 import { useVendor } from '@/hooks/useVendors';
 import { formatDuration, formatPrice, formatRating } from '@/lib/format';
@@ -23,8 +24,10 @@ export default function VendorDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: vendor, isLoading, isError, refetch } = useVendor(id);
   const { data: servicesData } = useVendorServices(id);
+  const { data: reviews } = useVendorReviews(id);
 
   const services = servicesData?.items ?? [];
+  const reviewList = reviews ?? [];
 
   if (isLoading) {
     return (
@@ -54,7 +57,6 @@ export default function VendorDetail() {
     );
   }
 
-  const price = formatPrice(vendor.startingPrice);
   const openInMaps = () => {
     const [lng, lat] = vendor.location.coordinates?.coordinates ?? [];
     const query =
@@ -142,7 +144,10 @@ export default function VendorDetail() {
                   service={service}
                   onBook={() => {
                     haptics.light();
-                    Alert.alert('Booking coming soon', 'The booking flow lands in the next phase.');
+                    router.push({
+                      pathname: '/explore/book/[serviceId]',
+                      params: { serviceId: service.id, vendorId: vendor.id },
+                    });
                   }}
                 />
               ))}
@@ -161,17 +166,17 @@ export default function VendorDetail() {
             )}
           </View>
 
-          {price ? (
-            <View className="mt-8">
-              <Button
-                label={`Book from ${price}`}
-                onPress={() => {
-                  haptics.light();
-                  Alert.alert('Booking coming soon', 'The booking flow lands in the next phase.');
-                }}
-              />
+          {/* Reviews */}
+          <SectionTitle label="Reviews" />
+          {reviewList.length ? (
+            <View className="gap-3">
+              {reviewList.map((review) => (
+                <ReviewItem key={review.id} review={review} />
+              ))}
             </View>
-          ) : null}
+          ) : (
+            <Text className="font-sans text-sm text-ink/50">No reviews yet.</Text>
+          )}
         </View>
       </ScrollView>
     </View>
