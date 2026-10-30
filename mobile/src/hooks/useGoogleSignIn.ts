@@ -1,38 +1,87 @@
-import { useCallback } from 'react';
+import Constants from 'expo-constants';
+import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
+
+import { getErrorMessage } from '@/api/http';
+import { useAuth } from '@/contexts/AuthContext';
+import { env } from '@/lib/env';
+import type { AuthUser } from '@/types/auth';
 
 type Role = 'customer' | 'vendor_owner';
 
+// Native Google Sign-In can't run in Expo Go (it ships native code). Detect that
+// so the app still works in Expo Go — the button just explains the requirement.
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+
+let configured = false;
+
 /**
- * Single integration point for "Continue with Google".
- *
- * Reuses the web app's Google setup: the backend verifies the ID token against
- * its Web OAuth client ID (auth.service.js → `audience: env.googleClientId`).
- * So on mobile we obtain an ID token whose audience is that *same* Web client
- * ID — passed as `webClientId` to @react-native-google-signin — and POST it to
- * `/auth/google`. No backend changes.
- *
- * Native Google Sign-In needs a development build (not Expo Go) plus iOS/Android
- * OAuth client IDs in the same Google project. Once those exist and AuthContext
- * is wired, replace the guard below with:
- *
- *   GoogleSignin.configure({ webClientId, iosClientId });
- *   await GoogleSignin.hasPlayServices();
- *   const { data } = await GoogleSignin.signIn();
- *   return authApi.googleLogin({ credential: data.idToken, role });
+ * "Continue with Google". Reuses the web app's setup: we obtain a Google ID
+ * token whose audience is the shared Web client ID (passed as `webClientId`)
+ * and hand it to AuthContext.loginWithGoogle → POST /auth/google, which the
+ * backend verifies against that same Web client ID. No backend changes.
  */
 export function useGoogleSignIn() {
-  const signInWithGoogle = useCallback(async (_role?: Role) => {
-    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+  const { loginWithGoogle } = useAuth();
+  const [inProgress, setInProgress] = useState(false);
 
-    Alert.alert(
-      'Finish Google setup',
-      webClientId
-        ? 'Google is configured. Run a development build with @react-native-google-signin installed to enable native sign-in (it does not run in Expo Go).'
-        : 'Set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (reuse the web client ID), add iOS/Android client IDs in the same Google project, then run a development build.'
-    );
-    return null;
-  }, []);
+  const signInWithGoogle = useCallback(
+    async (role?: Role): Promise<AuthUser | null> => {
+      if (isExpoGo) {
+        Alert.alert(
+          'Development build required',
+          'Google sign-in uses native code and cannot run in Expo Go. Run a development build (npx expo run:ios / run:android).'
+        );
+        return null;
+      }
+      if (!env.googleWebClientId) {
+        Alert.alert(
+          'Google not configured',
+          'Set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (and the iOS client ID), then rebuild the app.'
+        );
+        return null;
+      }
 
-  return { signInWithGoogle };
+      setInProgress(true);
+      try {
+        // Loaded lazily so the native module is never touched in Expo Go.
+        const { GoogleSignin, isSuccessResponse } = await import(
+          '@react-native-google-signin/google-signin'
+        );
+
+        if (!configured) {
+          GoogleSignin.configure({
+            webClientId: env.googleWebClientId,
+            iosClientId: env.googleIosClientId || undefined,
+            offlineAccess: false,
+          });
+          configured = true;
+        }
+
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+        const response = await GoogleSignin.signIn();
+
+        // Non-success (e.g. the user cancelled) — bail quietly.
+        if (!isSuccessResponse(response)) {
+          return null;
+        }
+
+        const idToken = response.data.idToken;
+        if (!idToken) {
+          Alert.alert('Google sign-in failed', 'No ID token returned. Check the Web client ID.');
+          return null;
+        }
+
+        return await loginWithGoogle({ credential: idToken, role });
+      } catch (error) {
+        Alert.alert('Google sign-in failed', getErrorMessage(error));
+        return null;
+      } finally {
+        setInProgress(false);
+      }
+    },
+    [loginWithGoogle]
+  );
+
+  return { signInWithGoogle, inProgress };
 }
