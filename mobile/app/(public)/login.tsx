@@ -22,7 +22,7 @@ import { type LoginForm, loginSchema } from '@/lib/validation';
 export default function Login() {
   const haptics = useHaptics();
   const { login } = useAuth();
-  const { signInWithGoogle } = useGoogleSignIn();
+  const { signInWithGoogle, inProgress: googleLoading } = useGoogleSignIn();
   const [submitting, setSubmitting] = useState(false);
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -49,6 +49,14 @@ export default function Login() {
     }
   };
 
+  const onGoogle = async () => {
+    const user = await signInWithGoogle();
+    if (user) {
+      haptics.success();
+      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+    }
+  };
+
   return (
     <Screen scroll keyboardAware contentClassName="px-6 pb-8 pt-2">
       <Animated.View entering={FadeIn.duration(300)}>
@@ -66,7 +74,7 @@ export default function Login() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(130).springify().damping(18)} className="mt-9">
-        <GoogleButton onPress={() => void signInWithGoogle()} />
+        <GoogleButton loading={googleLoading} onPress={() => void onGoogle()} />
         <OrDivider label="or continue with email" className="mt-5" />
       </Animated.View>
 
