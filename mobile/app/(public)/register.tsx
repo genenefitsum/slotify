@@ -24,7 +24,7 @@ type Role = 'customer' | 'vendor_owner';
 export default function Register() {
   const haptics = useHaptics();
   const { register } = useAuth();
-  const { signInWithGoogle } = useGoogleSignIn();
+  const { signInWithGoogle, inProgress: googleLoading } = useGoogleSignIn();
   const params = useLocalSearchParams<{ role?: string }>();
   const initialRole: Role = params.role === 'vendor_owner' ? 'vendor_owner' : 'customer';
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +62,14 @@ export default function Register() {
       Alert.alert('Sign up failed', getErrorMessage(error));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    const user = await signInWithGoogle(getValues('role'));
+    if (user) {
+      haptics.success();
+      router.replace(user.role === 'customer' ? '/explore' : '/landing');
     }
   };
 
@@ -112,7 +120,7 @@ export default function Register() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(170).springify().damping(18)} className="mt-6">
-        <GoogleButton onPress={() => void signInWithGoogle(getValues('role'))} />
+        <GoogleButton loading={googleLoading} onPress={() => void onGoogle()} />
         <OrDivider label="or sign up with email" className="mt-5" />
       </Animated.View>
 
