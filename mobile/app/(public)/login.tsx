@@ -9,13 +9,17 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Badge } from '@/components/ui/Badge';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
+import { GoogleButton } from '@/components/ui/GoogleButton';
+import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
+import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { useHaptics } from '@/hooks/useHaptics';
 import { type LoginForm, loginSchema } from '@/lib/validation';
 
 export default function Login() {
   const haptics = useHaptics();
+  const { signInWithGoogle } = useGoogleSignIn();
   const [submitting, setSubmitting] = useState(false);
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -53,7 +57,12 @@ export default function Login() {
         </Text>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(140).springify().damping(18)} className="mt-10 gap-5">
+      <Animated.View entering={FadeInDown.delay(130).springify().damping(18)} className="mt-9">
+        <GoogleButton onPress={() => void signInWithGoogle()} />
+        <OrDivider label="or continue with email" className="mt-5" />
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(200).springify().damping(18)} className="mt-6 gap-5">
         <Controller
           control={control}
           name="email"
@@ -97,7 +106,7 @@ export default function Login() {
         />
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(220).springify().damping(18)} className="mt-9">
+      <Animated.View entering={FadeInDown.delay(270).springify().damping(18)} className="mt-8">
         <Button
           label="Log in"
           icon={ArrowRight}

@@ -8,8 +8,11 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
+import { GoogleButton } from '@/components/ui/GoogleButton';
+import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
+import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { useHaptics } from '@/hooks/useHaptics';
 import { cn } from '@/lib/cn';
 import { type RegisterForm, registerSchema } from '@/lib/validation';
@@ -18,6 +21,7 @@ type Role = 'customer' | 'vendor_owner';
 
 export default function Register() {
   const haptics = useHaptics();
+  const { signInWithGoogle } = useGoogleSignIn();
   const params = useLocalSearchParams<{ role?: string }>();
   const initialRole: Role = params.role === 'vendor_owner' ? 'vendor_owner' : 'customer';
   const [submitting, setSubmitting] = useState(false);
@@ -30,6 +34,7 @@ export default function Register() {
   const {
     control,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -98,7 +103,12 @@ export default function Register() {
         />
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(180).springify().damping(18)} className="mt-7 gap-5">
+      <Animated.View entering={FadeInDown.delay(170).springify().damping(18)} className="mt-6">
+        <GoogleButton onPress={() => void signInWithGoogle(getValues('role'))} />
+        <OrDivider label="or sign up with email" className="mt-5" />
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(230).springify().damping(18)} className="mt-6 gap-5">
         <View className="flex-row gap-3">
           <Controller
             control={control}
