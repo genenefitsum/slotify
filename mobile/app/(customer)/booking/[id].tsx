@@ -23,7 +23,7 @@ export default function BookingDetail() {
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading } = useBookings();
+  const { data, isLoading, isFetching } = useBookings();
   const booking = data?.items.find((b) => b.id === id);
 
   const cancelBooking = useCancelBooking();
@@ -34,7 +34,9 @@ export default function BookingDetail() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
-  if (isLoading) {
+  // Show the skeleton while the list is still loading/refetching — only fall
+  // through to "not found" once the query has settled without the booking.
+  if (isLoading || (!booking && isFetching)) {
     return (
       <View className="flex-1 bg-canvas" style={{ paddingTop: insets.top }}>
         <View className="px-6 pt-2">
