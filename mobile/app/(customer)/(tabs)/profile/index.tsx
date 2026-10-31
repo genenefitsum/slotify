@@ -7,6 +7,7 @@ import {
   LifeBuoy,
   LogOut,
   ShieldCheck,
+  SquarePen,
 } from 'lucide-react-native';
 import { Alert, Linking, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,14 +35,9 @@ export default function Profile() {
     `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || 'U';
   const status = user?.status ? user.status[0].toUpperCase() + user.status.slice(1) : '—';
   const version = Constants.expoConfig?.version ?? '1.0.0';
-
-  const openWeb = (path: string, label: string) => {
-    if (!env.webUrl) {
-      Alert.alert(label, 'This link isn’t configured yet.');
-      return;
-    }
-    void Linking.openURL(`${env.webUrl}${path}`);
-  };
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+    : null;
 
   const contactSupport = () => {
     void Linking.openURL(`mailto:${env.supportEmail}`);
@@ -102,9 +98,16 @@ export default function Profile() {
 
         {/* Account details */}
         <SettingsGroup title="Account">
+          <SettingsRow
+            icon={SquarePen}
+            label="Edit profile"
+            onPress={() => router.push('/account/edit')}
+          />
           <SettingsRow label="Email" value={user?.email ?? '—'} />
+          {user?.phone ? <SettingsRow label="Phone" value={user.phone} /> : null}
           <SettingsRow label="Role" value={ROLE_LABEL[user?.role ?? 'customer'] ?? 'Customer'} />
-          <SettingsRow label="Status" value={status} last />
+          <SettingsRow label="Status" value={status} />
+          <SettingsRow label="Member since" value={memberSince ?? '—'} last />
         </SettingsGroup>
 
         {/* Activity */}
@@ -123,17 +126,17 @@ export default function Profile() {
           <SettingsRow
             icon={FileText}
             label="Terms of service"
-            onPress={() => openWeb('/terms', 'Terms of service')}
+            onPress={() => router.push('/legal/terms')}
           />
           <SettingsRow
             icon={ShieldCheck}
             label="Privacy policy"
-            onPress={() => openWeb('/privacy', 'Privacy policy')}
+            onPress={() => router.push('/legal/privacy')}
           />
           <SettingsRow
             icon={Cookie}
             label="Cookie policy"
-            onPress={() => openWeb('/cookies', 'Cookie policy')}
+            onPress={() => router.push('/legal/cookies')}
             last
           />
         </SettingsGroup>
