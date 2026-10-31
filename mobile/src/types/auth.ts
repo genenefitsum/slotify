@@ -7,6 +7,13 @@ export type AuthUser = {
   lastName: string;
   role: UserRole;
   status: 'active' | 'suspended' | 'disabled';
+  phone?: string | null;
+  createdAt?: string;
+};
+
+export type UpdateProfilePayload = {
+  firstName?: string;
+  lastName?: string;
 };
 
 export type AuthResponse = {

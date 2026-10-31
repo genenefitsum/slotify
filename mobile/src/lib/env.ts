@@ -10,4 +10,6 @@ export const env = {
   ),
   googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '',
   googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim() ?? '',
+  // Support contact for the profile "Help & support" action.
+  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim() || 'slotifyethiopia@outlook.com',
 } as const;

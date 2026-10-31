@@ -145,7 +145,7 @@ export default function VendorDetail() {
                   onBook={() => {
                     haptics.light();
                     router.push({
-                      pathname: '/explore/book/[serviceId]',
+                      pathname: '/book/[serviceId]',
                       params: { serviceId: service.id, vendorId: vendor.id },
                     });
                   }}

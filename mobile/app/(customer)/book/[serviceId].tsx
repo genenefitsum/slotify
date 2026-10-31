@@ -63,7 +63,7 @@ export default function BookService() {
       {
         onSuccess: (booking) => {
           haptics.success();
-          router.replace(`/bookings/${booking.id}`);
+          router.replace(`/booking/${booking.id}`);
         },
         onError: (error) => {
           haptics.error();

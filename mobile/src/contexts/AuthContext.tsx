@@ -16,6 +16,7 @@ import type {
   GoogleLoginPayload,
   LoginPayload,
   RegisterPayload,
+  UpdateProfilePayload,
 } from '@/types/auth';
 
 type AuthContextValue = {
@@ -25,6 +26,7 @@ type AuthContextValue = {
   login: (payload: LoginPayload) => Promise<AuthUser>;
   register: (payload: RegisterPayload) => Promise<AuthUser>;
   loginWithGoogle: (payload: GoogleLoginPayload) => Promise<AuthUser>;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<AuthUser>;
   logout: () => void;
 };
 
@@ -79,6 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [finalizeAuth]
   );
 
+  const updateProfile = useCallback(async (payload: UpdateProfilePayload) => {
+    const updated = await authApi.updateMe(payload);
+    setUser(updated);
+    return updated;
+  }, []);
+
   const logout = useCallback(() => {
     void authApi.logout().catch(() => undefined);
     void clearAuthSession();
@@ -93,9 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       loginWithGoogle,
+      updateProfile,
       logout,
     }),
-    [user, isLoading, login, register, loginWithGoogle, logout]
+    [user, isLoading, login, register, loginWithGoogle, updateProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

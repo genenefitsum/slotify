@@ -5,6 +5,7 @@ import { bookingsApi } from '@/api/bookings.api';
 import type {
   BookingAvailabilityQuery,
   BookingListQuery,
+  BookingListResponse,
   CancelBookingPayload,
   CreateBookingPayload,
 } from '@/types/booking';
@@ -31,7 +32,21 @@ export function useCreateBooking() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateBookingPayload) => bookingsApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (booking) => {
+      // Prime the list cache so the detail screen finds the new booking
+      // immediately (no "not found" flash), then refetch for server truth.
+      qc.setQueryData<BookingListResponse>(queryKeys.bookings.list(), (old) => {
+        const items = (old?.items ?? []).filter((b) => b.id !== booking.id);
+        return {
+          items: [booking, ...items],
+          pagination: old?.pagination ?? {
+            page: 1,
+            limit: 20,
+            total: items.length + 1,
+            totalPages: 1,
+          },
+        };
+      });
       void qc.invalidateQueries({ queryKey: ['bookings', 'list'] });
     },
   });
