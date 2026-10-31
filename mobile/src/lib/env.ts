@@ -10,7 +10,6 @@ export const env = {
   ),
   googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '',
   googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim() ?? '',
-  // Marketing/legal site (for Terms/Privacy/Cookies links) and support contact.
-  webUrl: (process.env.EXPO_PUBLIC_WEB_URL ?? '').trim().replace(/\/$/, ''),
-  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim() || 'support@slotify.app',
+  // Support contact for the profile "Help & support" action.
+  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim() || 'slotifyethiopia@outlook.com',
 } as const;
