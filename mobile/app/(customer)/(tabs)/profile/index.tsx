@@ -45,7 +45,7 @@ export default function Profile() {
         </View>
       </View>
 
-      <View className="mt-auto pb-10">
+      <View className="mt-auto" style={{ paddingBottom: insets.bottom + 90 }}>
         <Button label="Log out" variant="outline" icon={LogOut} iconPosition="leading" onPress={onLogout} />
       </View>
     </View>

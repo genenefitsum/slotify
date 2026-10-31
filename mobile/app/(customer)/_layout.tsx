@@ -1,59 +1,18 @@
-import { BlurView } from 'expo-blur';
-import { Tabs } from 'expo-router';
-import { CalendarCheck, Compass, User } from 'lucide-react-native';
-import { Platform, StyleSheet } from 'react-native';
+import { Stack } from 'expo-router';
 
-import { colors } from '@/theme/colors';
-
-// Customer tab shell. iOS gets a frosted (blurred) tab bar; Android uses a solid
-// canvas bar (blur over content is costly there).
+// Outer customer stack: the tab navigator is one screen, and detail/flow
+// screens (vendor, booking flow, booking detail) push *over* it — so they're
+// full-screen with no tab bar overlapping their content.
 export default function CustomerLayout() {
   return (
-    <Tabs
+    <Stack
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.inkSubtle,
-        tabBarStyle: {
-          position: 'absolute',
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.inkFaint,
-          backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.canvas,
-          elevation: 0,
-        },
-        tabBarBackground:
-          Platform.OS === 'ios'
-            ? () => <BlurView tint="light" intensity={40} style={StyleSheet.absoluteFill} />
-            : undefined,
-        tabBarLabelStyle: {
-          fontFamily: 'JetBrainsMono_500Medium',
-          fontSize: 10,
-          letterSpacing: 1,
-          textTransform: 'uppercase',
-        },
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: '#f4f4ee' },
       }}
     >
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, size }) => <Compass color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="bookings"
-        options={{
-          title: 'Bookings',
-          tabBarIcon: ({ color, size }) => <CalendarCheck color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
-        }}
-      />
-    </Tabs>
+      <Stack.Screen name="(tabs)" />
+    </Stack>
   );
 }

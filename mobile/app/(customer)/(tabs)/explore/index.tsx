@@ -142,7 +142,7 @@ export default function Explore() {
           data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <VendorCard vendor={item} onPress={() => router.push(`/explore/vendor/${item.id}`)} />
+            <VendorCard vendor={item} onPress={() => router.push(`/vendor/${item.id}`)} />
           )}
           ItemSeparatorComponent={() => <View className="h-4" />}
           contentContainerStyle={{

@@ -80,7 +80,7 @@ export default function Bookings() {
           data={bookings}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <BookingCard booking={item} onPress={() => router.push(`/bookings/${item.id}`)} />
+            <BookingCard booking={item} onPress={() => router.push(`/booking/${item.id}`)} />
           )}
           ItemSeparatorComponent={() => <View className="h-3" />}
           contentContainerStyle={{
