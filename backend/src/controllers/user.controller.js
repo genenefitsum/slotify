@@ -7,6 +7,21 @@ const {
   CSRF_COOKIE_NAME,
 } = require('../common/middlewares/csrf');
 
+const serializeUser = (user) => ({
+  id: String(user._id),
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName || '',
+  role: user.role,
+  status: user.status,
+  phone: user.phone || null,
+  emailVerifiedAt: user.emailVerifiedAt,
+  phoneVerifiedAt: user.phoneVerifiedAt,
+  lastLoginAt: user.lastLoginAt,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
+
 const getCurrentUser = async (req, res, next) => {
   try {
     if (!req.user?.id) {
@@ -25,24 +40,59 @@ const getCurrentUser = async (req, res, next) => {
       setCsrfCookie(res, csrfToken);
     }
 
-    res.json({
-      id: String(user._id),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName || '',
-      role: user.role,
-      status: user.status,
-      phone: user.phone || null,
-      emailVerifiedAt: user.emailVerifiedAt,
-      phoneVerifiedAt: user.phoneVerifiedAt,
-      lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      csrfToken,
-    });
+    res.json({ ...serializeUser(user), csrfToken });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { getCurrentUser };
+// Update the signed-in user's editable profile fields (name).
+const updateCurrentUser = async (req, res, next) => {
+  try {
+    if (!req.user?.id) {
+      throw new ApiError('Authentication required.', 401);
+    }
+
+    const { firstName, lastName } = req.body ?? {};
+    const updates = {};
+
+    if (firstName !== undefined) {
+      const trimmed = String(firstName).trim();
+      if (!trimmed) {
+        throw new ApiError('First name is required.', 400);
+      }
+      if (trimmed.length > 80) {
+        throw new ApiError('First name is too long.', 400);
+      }
+      updates.firstName = trimmed;
+    }
+
+    if (lastName !== undefined) {
+      const trimmed = String(lastName).trim();
+      if (trimmed.length > 80) {
+        throw new ApiError('Last name is too long.', 400);
+      }
+      updates.lastName = trimmed;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      throw new ApiError('No changes provided.', 400);
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!user || user.deletedAt) {
+      throw new ApiError('User account not found.', 404);
+    }
+
+    res.json(serializeUser(user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getCurrentUser, updateCurrentUser };
