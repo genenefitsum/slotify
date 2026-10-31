@@ -6,6 +6,7 @@ const {
   setCsrfCookie,
   CSRF_COOKIE_NAME,
 } = require('../common/middlewares/csrf');
+const { uploadAvatarImage, isCloudinaryConfigured } = require('../services/cloudinary.service');
 
 const serializeUser = (user) => ({
   id: String(user._id),
@@ -14,6 +15,7 @@ const serializeUser = (user) => ({
   lastName: user.lastName || '',
   role: user.role,
   status: user.status,
+  avatarUrl: user.avatarUrl || null,
   phone: user.phone || null,
   emailVerifiedAt: user.emailVerifiedAt,
   phoneVerifiedAt: user.phoneVerifiedAt,
@@ -53,7 +55,7 @@ const updateCurrentUser = async (req, res, next) => {
       throw new ApiError('Authentication required.', 401);
     }
 
-    const { firstName, lastName } = req.body ?? {};
+    const { firstName, lastName, avatar } = req.body ?? {};
     const updates = {};
 
     if (firstName !== undefined) {
@@ -73,6 +75,23 @@ const updateCurrentUser = async (req, res, next) => {
         throw new ApiError('Last name is too long.', 400);
       }
       updates.lastName = trimmed;
+    }
+
+    // Profile picture: `null` clears it; an object uploads a new one to Cloudinary.
+    if (avatar === null) {
+      updates.avatarUrl = '';
+    } else if (avatar !== undefined) {
+      if (typeof avatar !== 'object' || typeof avatar.data !== 'string') {
+        throw new ApiError('Invalid avatar payload.', 400);
+      }
+      if (!isCloudinaryConfigured()) {
+        throw new ApiError('Image uploads are not configured.', 500);
+      }
+      const uploaded = await uploadAvatarImage({
+        dataUrl: avatar.data,
+        fileName: `avatar-${req.user.id}`,
+      });
+      updates.avatarUrl = uploaded.secureUrl;
     }
 
     if (Object.keys(updates).length === 0) {
