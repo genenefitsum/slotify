@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -86,9 +87,9 @@ export default function Explore() {
           accessibilityRole="button"
           accessibilityLabel="Profile"
           onPress={() => router.push('/profile')}
-          className="h-12 w-12 items-center justify-center bg-ink active:opacity-80"
+          className="active:opacity-80"
         >
-          <Text className="font-display text-base text-canvas">{initials}</Text>
+          <Avatar uri={user?.avatarUrl} initials={initials} size={48} />
         </Pressable>
       </View>
 
