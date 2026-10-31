@@ -1,17 +1,25 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Clock, MapPin, Star, WifiOff } from 'lucide-react-native';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { getErrorMessage } from '@/api/http';
 import { ReviewItem } from '@/components/reviews/ReviewItem';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Sheet } from '@/components/ui/Sheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { StarRating } from '@/components/ui/StarRating';
+import { VendorGallery } from '@/components/vendors/VendorGallery';
+import { useBookings } from '@/hooks/useBookings';
 import { useHaptics } from '@/hooks/useHaptics';
-import { useVendorReviews } from '@/hooks/useReviews';
+import { useCreateReview, useVendorReviews } from '@/hooks/useReviews';
 import { useVendorServices } from '@/hooks/useServices';
 import { useVendor } from '@/hooks/useVendors';
-import { formatDuration, formatPrice, formatRating } from '@/lib/format';
+import { canReview } from '@/lib/bookingStatus';
+import { formatBookingDate, formatDuration, formatPrice, formatRating } from '@/lib/format';
 import { colors } from '@/theme/colors';
 import type { Service } from '@/types/service';
 import type { WorkingHour } from '@/types/vendor';
@@ -25,9 +33,20 @@ export default function VendorDetail() {
   const { data: vendor, isLoading, isError, refetch } = useVendor(id);
   const { data: servicesData } = useVendorServices(id);
   const { data: reviews } = useVendorReviews(id);
+  const { data: bookingsData } = useBookings();
+  const createReview = useCreateReview(id);
+
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [pickedBookingId, setPickedBookingId] = useState<string | null>(null);
 
   const services = servicesData?.items ?? [];
   const reviewList = reviews ?? [];
+  // Bookings the signed-in customer completed with this vendor → eligible to review.
+  const eligibleBookings = (bookingsData?.items ?? []).filter(
+    (b) => b.vendorId === id && canReview(b.status)
+  );
 
   if (isLoading) {
     return (
@@ -57,6 +76,12 @@ export default function VendorDetail() {
     );
   }
 
+  const galleryImages = vendor.images?.length
+    ? vendor.images
+    : vendor.imageUrl
+      ? [vendor.imageUrl]
+      : [];
+
   const openInMaps = () => {
     const [lng, lat] = vendor.location.coordinates?.coordinates ?? [];
     const query =
@@ -66,29 +91,34 @@ export default function VendorDetail() {
     void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
+  const submitReview = () => {
+    const bookingId = pickedBookingId ?? eligibleBookings[0]?.id;
+    if (!bookingId) return;
+    createReview.mutate(
+      { bookingId, rating, comment: comment.trim() || undefined },
+      {
+        onSuccess: () => {
+          haptics.success();
+          setReviewOpen(false);
+          setComment('');
+          Alert.alert('Thanks!', 'Your review has been submitted.');
+        },
+        onError: (error) => {
+          haptics.error();
+          Alert.alert('Could not submit review', getErrorMessage(error));
+        },
+      }
+    );
+  };
+
   return (
     <View className="flex-1 bg-canvas">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       >
-        {/* Hero */}
-        <View className="aspect-[4/3] w-full bg-ink/5">
-          {vendor.imageUrl ? (
-            <Image
-              source={{ uri: vendor.imageUrl }}
-              style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center">
-              <View className="h-14 w-14 items-center justify-center bg-ink">
-                <View className="h-4 w-4 bg-acid" />
-              </View>
-            </View>
-          )}
-        </View>
+        {/* Hero gallery */}
+        <VendorGallery images={galleryImages} />
         <FloatingBack top={insets.top} />
 
         {/* Body */}
@@ -168,6 +198,19 @@ export default function VendorDetail() {
 
           {/* Reviews */}
           <SectionTitle label="Reviews" />
+          {eligibleBookings.length > 0 ? (
+            <View className="mb-4">
+              <Button
+                label="Leave a review"
+                variant="outline"
+                size="md"
+                onPress={() => {
+                  haptics.light();
+                  setReviewOpen(true);
+                }}
+              />
+            </View>
+          ) : null}
           {reviewList.length ? (
             <View className="gap-3">
               {reviewList.map((review) => (
@@ -179,6 +222,51 @@ export default function VendorDetail() {
           )}
         </View>
       </ScrollView>
+
+      {/* Review sheet — pick a completed visit, rate, comment */}
+      <Sheet visible={reviewOpen} onClose={() => setReviewOpen(false)} title="Leave a review">
+        <Text className="font-sans text-base text-ink/60">How was your experience?</Text>
+        <View className="mt-4">
+          <StarRating value={rating} onChange={setRating} size={32} />
+        </View>
+
+        {eligibleBookings.length > 1 ? (
+          <>
+            <Text className="mb-2 mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink/60">
+              For which visit
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="-mx-6"
+              contentContainerClassName="gap-2 px-6"
+            >
+              {eligibleBookings.map((b) => (
+                <Chip
+                  key={b.id}
+                  label={formatBookingDate(b.startsAtUtc)}
+                  active={(pickedBookingId ?? eligibleBookings[0]?.id) === b.id}
+                  onPress={() => setPickedBookingId(b.id)}
+                />
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
+
+        <TextInput
+          value={comment}
+          onChangeText={setComment}
+          placeholder="Share the details (optional)"
+          placeholderTextColor={colors.inkSubtle}
+          selectionColor={colors.ink}
+          multiline
+          className="mt-5 min-h-[96px] border border-ink/15 bg-white p-4 font-sans text-base text-ink"
+          style={{ textAlignVertical: 'top' }}
+        />
+        <View className="mt-5">
+          <Button label="Submit review" loading={createReview.isPending} onPress={submitReview} />
+        </View>
+      </Sheet>
     </View>
   );
 }

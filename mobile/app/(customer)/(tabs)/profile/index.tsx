@@ -9,14 +9,17 @@ import {
   ShieldCheck,
   SquarePen,
 } from 'lucide-react-native';
-import { Alert, Linking, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { SettingsGroup, SettingsRow } from '@/components/ui/SettingsRow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { env } from '@/lib/env';
+import { colors } from '@/theme/colors';
 
 const ROLE_LABEL: Record<string, string> = {
   customer: 'Customer',
@@ -76,9 +79,7 @@ export default function Profile() {
 
         {/* Identity card */}
         <View className="mt-5 flex-row items-center gap-4 border border-ink bg-white p-4">
-          <View className="h-16 w-16 items-center justify-center bg-ink">
-            <Text className="font-display text-2xl text-canvas">{initials}</Text>
-          </View>
+          <Avatar uri={user?.avatarUrl} initials={initials} size={64} />
           <View className="flex-1">
             <Text numberOfLines={1} className="font-display text-2xl uppercase tracking-tight text-ink">
               {fullName}

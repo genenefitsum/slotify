@@ -48,6 +48,7 @@ const env = {
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
   cloudinaryVendorFolder: process.env.CLOUDINARY_VENDOR_FOLDER || 'slotify/vendors',
+  cloudinaryAvatarFolder: process.env.CLOUDINARY_AVATAR_FOLDER || 'slotify/avatars',
   corsOrigins,
   rateLimitWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000, 'RATE_LIMIT_WINDOW_MS'),
   rateLimitMaxRequests: parsePositiveNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 300, 'RATE_LIMIT_MAX_REQUESTS'),

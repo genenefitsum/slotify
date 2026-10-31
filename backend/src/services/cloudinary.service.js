@@ -57,11 +57,11 @@ const validateUploadPayload = ({ dataUrl, fileName }) => {
   return { contentType, buffer };
 };
 
-const uploadVendorImage = async ({ dataUrl, fileName }) => {
+const uploadToFolder = async ({ dataUrl, fileName, folder }) => {
   validateUploadPayload({ dataUrl, fileName });
 
   const result = await cloudinary.uploader.upload(dataUrl, {
-    folder: env.cloudinaryVendorFolder,
+    folder,
     resource_type: 'image',
     overwrite: true,
     unique_filename: true,
@@ -74,6 +74,12 @@ const uploadVendorImage = async ({ dataUrl, fileName }) => {
   };
 };
 
+const uploadVendorImage = ({ dataUrl, fileName }) =>
+  uploadToFolder({ dataUrl, fileName, folder: env.cloudinaryVendorFolder });
+
+const uploadAvatarImage = ({ dataUrl, fileName }) =>
+  uploadToFolder({ dataUrl, fileName, folder: env.cloudinaryAvatarFolder });
+
 const deleteVendorImage = async (publicId) => {
   if (!publicId) {
     return;
@@ -85,6 +91,7 @@ const deleteVendorImage = async (publicId) => {
 module.exports = {
   isCloudinaryConfigured: isConfigured,
   uploadVendorImage,
+  uploadAvatarImage,
   deleteVendorImage,
   validateUploadPayload,
 };
