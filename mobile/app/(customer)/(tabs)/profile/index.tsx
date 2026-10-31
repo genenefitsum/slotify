@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   SquarePen,
 } from 'lucide-react-native';
-import { Alert, Linking, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -18,6 +19,7 @@ import { SettingsGroup, SettingsRow } from '@/components/ui/SettingsRow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { env } from '@/lib/env';
+import { colors } from '@/theme/colors';
 
 const ROLE_LABEL: Record<string, string> = {
   customer: 'Customer',

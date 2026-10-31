@@ -40,6 +40,7 @@ yarn-error.*
 
 # local planning docs
 IMPLEMENTATION_PLAN.md
+HELP_CENTER_BOT_PLAN.md
 
 # generated native folders
 /ios

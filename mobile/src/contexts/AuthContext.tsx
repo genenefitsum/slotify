@@ -27,6 +27,8 @@ type AuthContextValue = {
   register: (payload: RegisterPayload) => Promise<AuthUser>;
   loginWithGoogle: (payload: GoogleLoginPayload) => Promise<AuthUser>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<AuthUser>;
+  /** Re-fetch the signed-in user from the server (pull-to-refresh). */
+  refreshUser: () => Promise<AuthUser | null>;
   logout: () => void;
 };
 
@@ -87,6 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return updated;
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const me = await authApi.me();
+      setUser(me);
+      return me;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const logout = useCallback(() => {
     void authApi.logout().catch(() => undefined);
     void clearAuthSession();
@@ -102,9 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       loginWithGoogle,
       updateProfile,
+      refreshUser,
       logout,
     }),
-    [user, isLoading, login, register, loginWithGoogle, updateProfile, logout]
+    [user, isLoading, login, register, loginWithGoogle, updateProfile, refreshUser, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
