@@ -50,6 +50,8 @@ export type BookingListQuery = {
   status?: BookingStatus;
   page?: number;
   limit?: number;
+  /** Fetch every booking (no pagination) for complete client-side filtering. */
+  all?: boolean;
 };
 
 export type BookingListResponse = PaginatedResponse<Booking>;

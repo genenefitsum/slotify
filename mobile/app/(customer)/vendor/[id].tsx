@@ -33,7 +33,9 @@ export default function VendorDetail() {
   const { data: vendor, isLoading, isError, refetch } = useVendor(id);
   const { data: servicesData } = useVendorServices(id);
   const { data: reviews } = useVendorReviews(id);
-  const { data: bookingsData } = useBookings();
+  // Need every booking (not just page one) to know which completed visits with
+  // this vendor are still eligible to review.
+  const { data: bookingsData } = useBookings({ all: true });
   const createReview = useCreateReview(id);
 
   const [reviewOpen, setReviewOpen] = useState(false);

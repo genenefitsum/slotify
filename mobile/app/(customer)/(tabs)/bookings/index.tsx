@@ -25,7 +25,9 @@ const GROUP: Record<Exclude<Filter, 'All'>, BookingStatus[]> = {
 export default function Bookings() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { data, isLoading, isError, refetch, isRefetching } = useBookings();
+  // Fetch the full set so the status segments reflect every booking, not just
+  // the first page (parity with the explore screen's "show all").
+  const { data, isLoading, isError, refetch, isRefetching } = useBookings({ all: true });
   const [filter, setFilter] = useState<Filter>('All');
 
   const bookings = useMemo(() => {
