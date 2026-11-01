@@ -84,6 +84,7 @@ export default function BookService() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         {/* Service header */}
         <Text className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink/50">
