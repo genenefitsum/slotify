@@ -31,7 +31,17 @@ const ROLE_LABEL: Record<string, string> = {
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Guest';
   const initials =
@@ -66,6 +76,9 @@ export default function Profile() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />
+        }
       >
         {/* Title */}
         <View className="pb-2 pt-2">
