@@ -25,10 +25,16 @@ export default function EditProfile() {
 
   const [avatar, setAvatar] = useState<ImagePayload | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [removed, setRemoved] = useState(false);
   const [picking, setPicking] = useState(false);
 
   const initials =
     `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || 'U';
+
+  // What the avatar should display right now: a freshly picked preview, else the
+  // saved photo — unless the user chose to remove it, in which case show initials.
+  const displayUri = removed ? undefined : (preview ?? user?.avatarUrl ?? undefined);
+  const hasPhoto = Boolean(displayUri);
 
   const onPickAvatar = async () => {
     haptics.light();
@@ -42,6 +48,7 @@ export default function EditProfile() {
       if (image) {
         setAvatar(image);
         setPreview(image.data);
+        setRemoved(false);
       }
     } catch (error) {
       Alert.alert(
@@ -51,6 +58,13 @@ export default function EditProfile() {
     } finally {
       setPicking(false);
     }
+  };
+
+  const onRemoveAvatar = () => {
+    haptics.light();
+    setAvatar(null);
+    setPreview(null);
+    setRemoved(true);
   };
 
   const {
@@ -70,7 +84,8 @@ export default function EditProfile() {
       await updateProfile({
         firstName: values.firstName,
         lastName: values.lastName ?? '',
-        avatar: avatar ?? undefined,
+        // A new pick uploads; an explicit removal clears; otherwise leave as-is.
+        avatar: avatar ? avatar : removed ? null : undefined,
       });
       haptics.success();
       router.back();
@@ -104,16 +119,23 @@ export default function EditProfile() {
           onPress={onPickAvatar}
           className="active:opacity-80"
         >
-          <Avatar uri={preview ?? user?.avatarUrl} initials={initials} size={96} />
+          <Avatar uri={displayUri} initials={initials} size={96} />
           <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center border-2 border-canvas bg-acid">
             <Camera size={15} color={colors.ink} strokeWidth={2.5} />
           </View>
         </Pressable>
-        <Pressable onPress={onPickAvatar} hitSlop={8} className="mt-3">
-          <Text className="font-sans-bold text-sm text-ink underline">
-            {picking ? 'Opening…' : 'Change photo'}
-          </Text>
-        </Pressable>
+        <View className="mt-3 flex-row items-center gap-4">
+          <Pressable onPress={onPickAvatar} hitSlop={8}>
+            <Text className="font-sans-bold text-sm text-ink underline">
+              {picking ? 'Opening…' : hasPhoto ? 'Change photo' : 'Add photo'}
+            </Text>
+          </Pressable>
+          {hasPhoto && (
+            <Pressable onPress={onRemoveAvatar} hitSlop={8}>
+              <Text className="font-sans-bold text-sm text-ink/50 underline">Remove</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <View className="mt-10 gap-5">
