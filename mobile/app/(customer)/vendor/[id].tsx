@@ -342,29 +342,42 @@ function SectionTitle({ label }: { label: string }) {
 
 function ServiceRow({ service, onBook }: { service: Service; onBook: () => void }) {
   return (
-    <View className="flex-row items-center justify-between border border-ink/15 bg-white p-4">
-      <View className="flex-1 pr-3">
-        <Text numberOfLines={1} className="font-sans-bold text-base text-ink">
+    <View className="border border-ink/15 bg-white p-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <Text numberOfLines={1} className="flex-1 font-sans-bold text-base text-ink">
           {service.name}
         </Text>
-        <View className="mt-1 flex-row items-center gap-1.5">
-          <Clock size={13} color={colors.inkMuted} strokeWidth={2} />
-          <Text className="font-mono text-[11px] uppercase tracking-wide text-ink/50">
-            {formatDuration(service.durationMinutes)}
-          </Text>
-          <Text className="font-sans-bold text-sm text-ink">
-            · {formatPrice(service.priceAmount, service.currency)}
-          </Text>
-        </View>
+        <Text className="font-display text-base text-ink">
+          {formatPrice(service.priceAmount, service.currency)}
+        </Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Book ${service.name}`}
-        onPress={onBook}
-        className="bg-ink px-4 py-2.5 active:opacity-80"
-      >
-        <Text className="font-display text-xs uppercase tracking-wide text-canvas">Book</Text>
-      </Pressable>
+
+      <View className="mt-1 flex-row items-center gap-1.5">
+        <Clock size={13} color={colors.inkMuted} strokeWidth={2} />
+        <Text className="font-mono text-[11px] uppercase tracking-wide text-ink/50">
+          {formatDuration(service.durationMinutes)}
+        </Text>
+        <Text className="font-mono text-[11px] uppercase tracking-wide text-ink/40">
+          · {service.depositType === 'none' ? 'No deposit' : 'Deposit required'}
+        </Text>
+      </View>
+
+      {service.description ? (
+        <Text numberOfLines={2} className="mt-2.5 font-sans text-sm leading-relaxed text-ink/60">
+          {service.description}
+        </Text>
+      ) : null}
+
+      <View className="mt-3 flex-row justify-end">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Book ${service.name}`}
+          onPress={onBook}
+          className="bg-ink px-5 py-2.5 active:opacity-80"
+        >
+          <Text className="font-display text-xs uppercase tracking-wide text-canvas">Book</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

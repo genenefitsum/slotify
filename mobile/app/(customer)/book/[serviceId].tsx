@@ -94,10 +94,18 @@ export default function BookService() {
           {service?.name ?? 'Service'}
         </Text>
         {service ? (
-          <Text className="mt-2 font-sans text-base text-ink/60">
-            {formatDuration(service.durationMinutes)} ·{' '}
-            {formatPrice(service.priceAmount, service.currency)}
-          </Text>
+          <>
+            <Text className="mt-2 font-sans text-base text-ink/60">
+              {formatDuration(service.durationMinutes)} ·{' '}
+              {formatPrice(service.priceAmount, service.currency)} ·{' '}
+              {service.depositType === 'none' ? 'No deposit' : 'Deposit required'}
+            </Text>
+            {service.description ? (
+              <Text className="mt-3 font-sans text-sm leading-relaxed text-ink/70">
+                {service.description}
+              </Text>
+            ) : null}
+          </>
         ) : null}
 
         {/* Date */}
