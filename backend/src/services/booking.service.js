@@ -164,10 +164,11 @@ const ensureBookingAccess = async (booking, user) => {
   }
 };
 
-const list = async (user, { status, page = 1, limit = 20 }) => {
+const list = async (user, { status, page = 1, limit = 20, all = false }) => {
+  const includeAll = all === true || all === 'true';
   const normalizedPage = Math.max(Number(page) || 1, 1);
-  const normalizedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
-  const skip = (normalizedPage - 1) * normalizedLimit;
+  const normalizedLimit = includeAll ? 0 : Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const skip = includeAll ? 0 : (normalizedPage - 1) * normalizedLimit;
 
   const filter = {};
   if (status) {
@@ -203,9 +204,9 @@ const list = async (user, { status, page = 1, limit = 20 }) => {
     items: await enrichBookings(items),
     pagination: {
       page: normalizedPage,
-      limit: normalizedLimit,
+      limit: includeAll ? total : normalizedLimit,
       total,
-      totalPages: Math.max(Math.ceil(total / normalizedLimit), 1),
+      totalPages: includeAll ? 1 : Math.max(Math.ceil(total / normalizedLimit), 1),
     },
   };
 };
