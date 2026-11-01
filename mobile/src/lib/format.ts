@@ -42,6 +42,42 @@ export function toLocalDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * YYYY-MM-DD for an instant in a given IANA timezone (falls back to the device
+ * timezone when none is provided). `en-CA` formats as YYYY-MM-DD.
+ */
+export function localDateKeyInTz(date: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: timeZone || undefined,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+/** Today's YYYY-MM-DD in the given timezone. */
+export function todayInTz(timeZone?: string): string {
+  return localDateKeyInTz(new Date(), timeZone);
+}
+
+/** Add N calendar days to a YYYY-MM-DD key (timezone-agnostic). */
+export function addDaysToDateKey(dateKey: string, days: number): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return localDateKeyInTz(dt, 'UTC');
+}
+
+/** Weekday label + day number for a YYYY-MM-DD key, rendered stably in UTC. */
+export function dateKeyParts(dateKey: string): { weekday: string; day: number } {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  const weekday = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC', weekday: 'short' }).format(
+    dt
+  );
+  return { weekday, day: dt.getUTCDate() };
+}
+
 export function formatBookingDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
     weekday: 'short',

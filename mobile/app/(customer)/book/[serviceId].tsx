@@ -12,10 +12,15 @@ import { useHaptics } from '@/hooks/useHaptics';
 import { useVendorServices } from '@/hooks/useServices';
 import { useVendor } from '@/hooks/useVendors';
 import { cn } from '@/lib/cn';
-import { computeDepositAmount, formatDuration, formatPrice, toLocalDateKey } from '@/lib/format';
+import {
+  addDaysToDateKey,
+  computeDepositAmount,
+  dateKeyParts,
+  formatDuration,
+  formatPrice,
+  todayInTz,
+} from '@/lib/format';
 import { colors } from '@/theme/colors';
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function BookService() {
   const insets = useSafeAreaInsets();
@@ -26,20 +31,21 @@ export default function BookService() {
   const { data: servicesData } = useVendorServices(vendorId);
   const service = servicesData?.items.find((s) => s.id === serviceId);
 
-  const days = useMemo(() => {
-    return Array.from({ length: 14 }, (_, i) => {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + i);
-      return d;
-    });
-  }, []);
+  // Anchor the date strip to the vendor's timezone so "today" and slots line up
+  // with how the vendor operates, regardless of the device's timezone.
+  const vendorTz = vendor?.timezone || undefined;
+  const dayKeys = useMemo(() => {
+    const start = todayInTz(vendorTz);
+    return Array.from({ length: 14 }, (_, i) => addDaysToDateKey(start, i));
+  }, [vendorTz]);
 
-  const [selectedDate, setSelectedDate] = useState(days[0]);
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
 
-  const localDate = toLocalDateKey(selectedDate);
+  const localDate = pickedDate ?? dayKeys[0];
+  const tzLabel =
+    vendor?.location.city || vendorTz?.split('/').pop()?.replace(/_/g, ' ') || null;
   const availabilityQuery =
     vendorId && serviceId ? { vendorId, serviceId, localDate } : null;
   const { data: availability, isLoading: slotsLoading } = useAvailability(availabilityQuery);
@@ -116,14 +122,15 @@ export default function BookService() {
           className="-mx-6"
           contentContainerClassName="gap-2 px-6"
         >
-          {days.map((day) => {
-            const active = toLocalDateKey(day) === localDate;
+          {dayKeys.map((key) => {
+            const active = key === localDate;
+            const { weekday, day } = dateKeyParts(key);
             return (
               <Pressable
-                key={day.toISOString()}
+                key={key}
                 onPress={() => {
                   haptics.selection();
-                  setSelectedDate(day);
+                  setPickedDate(key);
                   setSelectedSlot(null);
                 }}
                 className={cn(
@@ -137,20 +144,22 @@ export default function BookService() {
                     active ? 'text-canvas/70' : 'text-ink/40'
                   )}
                 >
-                  {WEEKDAYS[day.getDay()]}
+                  {weekday}
                 </Text>
                 <Text
-                  className={cn(
-                    'mt-1 font-display text-2xl',
-                    active ? 'text-canvas' : 'text-ink'
-                  )}
+                  className={cn('mt-1 font-display text-2xl', active ? 'text-canvas' : 'text-ink')}
                 >
-                  {day.getDate()}
+                  {day}
                 </Text>
               </Pressable>
             );
           })}
         </ScrollView>
+        {tzLabel ? (
+          <Text className="mt-3 font-sans text-xs text-ink/50">
+            Times are shown in {tzLabel} time.
+          </Text>
+        ) : null}
 
         {/* Slots */}
         <SectionLabel>Available times</SectionLabel>
