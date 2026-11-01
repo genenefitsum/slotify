@@ -20,7 +20,13 @@ import { useCreateReview, useVendorReviews } from '@/hooks/useReviews';
 import { useVendorServices } from '@/hooks/useServices';
 import { useVendor } from '@/hooks/useVendors';
 import { canReview } from '@/lib/bookingStatus';
-import { formatBookingDate, formatDuration, formatPrice, formatRating } from '@/lib/format';
+import {
+  formatBookingDate,
+  formatDuration,
+  formatPrice,
+  formatRating,
+  formatTime12,
+} from '@/lib/format';
 import { colors } from '@/theme/colors';
 import type { Service } from '@/types/service';
 import type { WorkingHour } from '@/types/vendor';
@@ -387,7 +393,7 @@ function HoursRow({ wh }: { wh: WorkingHour }) {
     <View className="flex-row items-center justify-between border-b border-ink/10 px-4 py-3">
       <Text className="font-sans-bold text-sm text-ink">{DAYS[wh.dayOfWeek] ?? '—'}</Text>
       <Text className="font-mono text-xs uppercase tracking-wide text-ink/60">
-        {wh.isEnabled ? `${wh.startTime} – ${wh.endTime}` : 'Closed'}
+        {wh.isEnabled ? `${formatTime12(wh.startTime)} – ${formatTime12(wh.endTime)}` : 'Closed'}
       </Text>
     </View>
   );

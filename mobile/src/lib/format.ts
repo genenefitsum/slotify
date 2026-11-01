@@ -89,3 +89,12 @@ export function formatBookingDate(iso: string): string {
 export function formatBookingTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
+
+/** Convert a 24-hour "HH:MM" clock string to 12-hour "H:MM AM/PM". */
+export function formatTime12(value: string): string {
+  const [hours, minutes] = value.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return value;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12;
+  return `${hours12}:${`${minutes}`.padStart(2, '0')} ${period}`;
+}
