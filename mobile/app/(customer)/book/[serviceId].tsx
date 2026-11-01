@@ -1,12 +1,16 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { ShieldCheck } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { bookingsApi } from '@/api/bookings.api';
+import { getErrorMessage, HttpError } from '@/api/http';
+import { queryKeys } from '@/api/queryKeys';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { getErrorMessage } from '@/api/http';
 import { useAvailability, useCreateBooking } from '@/hooks/useBookings';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useVendorServices } from '@/hooks/useServices';
@@ -48,8 +52,27 @@ export default function BookService() {
     vendor?.location.city || vendorTz?.split('/').pop()?.replace(/_/g, ' ') || null;
   const availabilityQuery =
     vendorId && serviceId ? { vendorId, serviceId, localDate } : null;
-  const { data: availability, isLoading: slotsLoading } = useAvailability(availabilityQuery);
+  const {
+    data: availability,
+    isLoading: slotsLoading,
+    refetch: refetchSlots,
+  } = useAvailability(availabilityQuery);
   const slots = availability?.items ?? [];
+
+  // Warm the adjacent days so switching dates feels instant.
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!vendorId || !serviceId) return;
+    for (const key of [addDaysToDateKey(localDate, 1), addDaysToDateKey(localDate, -1)]) {
+      if (!dayKeys.includes(key)) continue;
+      const query = { vendorId, serviceId, localDate: key };
+      void qc.prefetchQuery({
+        queryKey: queryKeys.bookings.availability(query),
+        queryFn: () => bookingsApi.listAvailableSlots(query),
+        staleTime: 30_000,
+      });
+    }
+  }, [qc, vendorId, serviceId, localDate, dayKeys]);
 
   const createBooking = useCreateBooking();
 
@@ -73,6 +96,14 @@ export default function BookService() {
         },
         onError: (error) => {
           haptics.error();
+          // The slot was taken between loading and confirming — drop the stale
+          // selection and refresh availability so fresh times show immediately.
+          if (error instanceof HttpError && error.status === 409) {
+            setSelectedSlot(null);
+            void refetchSlots();
+            Alert.alert('Just booked', 'That time was taken a moment ago. Please pick another slot.');
+            return;
+          }
           Alert.alert('Booking failed', getErrorMessage(error));
         },
       }
@@ -113,6 +144,27 @@ export default function BookService() {
             ) : null}
           </>
         ) : null}
+
+        {/* Steps */}
+        <View className="mt-6 flex-row gap-2">
+          {[
+            { label: 'Date', done: true },
+            { label: 'Time', done: Boolean(selectedSlot) },
+            { label: 'Confirm', done: Boolean(selectedSlot) },
+          ].map((step) => (
+            <View key={step.label} className="flex-1">
+              <View className={cn('h-1', step.done ? 'bg-ink' : 'bg-ink/15')} />
+              <Text
+                className={cn(
+                  'mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em]',
+                  step.done ? 'text-ink' : 'text-ink/40'
+                )}
+              >
+                {step.label}
+              </Text>
+            </View>
+          ))}
+        </View>
 
         {/* Date */}
         <SectionLabel>Choose a date</SectionLabel>
@@ -224,6 +276,14 @@ export default function BookService() {
           className="min-h-[88px] border border-ink/15 bg-white p-4 font-sans text-base text-ink"
           style={{ textAlignVertical: 'top' }}
         />
+
+        {/* Reassurance */}
+        <View className="mt-6 flex-row items-start gap-2.5">
+          <ShieldCheck size={16} color={colors.inkMuted} strokeWidth={2} />
+          <Text className="flex-1 font-sans text-xs leading-relaxed text-ink/50">
+            Free to cancel anytime from your Bookings before the appointment starts.
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Pinned summary + confirm */}
