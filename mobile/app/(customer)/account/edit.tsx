@@ -120,7 +120,7 @@ export default function EditProfile() {
           className="active:opacity-80"
         >
           <Avatar uri={displayUri} initials={initials} size={96} />
-          <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center border-2 border-canvas bg-acid">
+          <View className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full border-2 border-canvas bg-acid">
             <Camera size={15} color={colors.ink} strokeWidth={2.5} />
           </View>
         </Pressable>
