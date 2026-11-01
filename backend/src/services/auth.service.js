@@ -166,7 +166,8 @@ const loginWithGoogle = async ({ credential, role = 'customer' }) => {
       email,
       provider: 'google',
       googleId: payload.sub,
-      avatarUrl: payload.picture,
+      // Intentionally do NOT import the Google account photo. Users start with
+      // initials and only ever get an avatar they explicitly upload.
       firstName: payload.given_name || payload.name || 'User',
       lastName: payload.family_name || '',
       role: normalizedRole,
@@ -178,7 +179,8 @@ const loginWithGoogle = async ({ credential, role = 'customer' }) => {
     }
 
     user.provider = user.provider || 'google';
-    user.avatarUrl = payload.picture || user.avatarUrl;
+    // Never overwrite the user's avatar with the Google photo on re-login — a
+    // custom upload must always win, and we don't auto-import it at all.
 
     if (!user.emailVerifiedAt) {
       user.emailVerifiedAt = new Date();
