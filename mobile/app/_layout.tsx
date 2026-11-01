@@ -5,12 +5,19 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback } from 'react';
+import { LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { queryClient } from '@/lib/queryClient';
 import { useAppFonts } from '@/theme/fonts';
+
+// NativeWind's react-native-css-interop registers RN's deprecated
+// ImageBackground for className support on load, which trips RN's one-time
+// deprecation warning even though we never render ImageBackground ourselves.
+// Silence just that line until the upstream dependency stops touching it.
+LogBox.ignoreLogs(['ImageBackground is deprecated']);
 
 // Hold the native splash screen until the brand fonts are ready, so the first
 // frame the user sees is already fully styled (no font "pop-in").
