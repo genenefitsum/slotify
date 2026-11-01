@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StarRating } from '@/components/ui/StarRating';
-import { useBookings, useCancelBooking } from '@/hooks/useBookings';
+import { useBooking, useCancelBooking } from '@/hooks/useBookings';
 import { useCreateReview } from '@/hooks/useReviews';
 import { useHaptics } from '@/hooks/useHaptics';
 import { canCustomerCancel, canReview } from '@/lib/bookingStatus';
@@ -23,8 +23,7 @@ export default function BookingDetail() {
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading, isFetching } = useBookings();
-  const booking = data?.items.find((b) => b.id === id);
+  const { data: booking, isLoading, isError, refetch } = useBooking(id);
 
   const cancelBooking = useCancelBooking();
   const createReview = useCreateReview(booking?.vendorId ?? '');
@@ -34,9 +33,9 @@ export default function BookingDetail() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
-  // Show the skeleton while the list is still loading/refetching — only fall
-  // through to "not found" once the query has settled without the booking.
-  if (isLoading || (!booking && isFetching)) {
+  // Skeleton while the booking is loading (unless the list cache already seeded
+  // it, in which case we render straight through).
+  if (isLoading && !booking) {
     return (
       <View className="flex-1 bg-canvas" style={{ paddingTop: insets.top }}>
         <View className="px-6 pt-2">
@@ -51,13 +50,19 @@ export default function BookingDetail() {
     );
   }
 
-  if (!booking) {
+  if (isError || !booking) {
     return (
       <View className="flex-1 bg-canvas" style={{ paddingTop: insets.top }}>
         <View className="px-6 pt-2">
           <BackButton />
         </View>
-        <EmptyState icon={WifiOff} title="Booking not found" message="It may have been removed." />
+        <EmptyState
+          icon={WifiOff}
+          title={isError ? "Can't load booking" : 'Booking not found'}
+          message={isError ? 'Check your connection and try again.' : 'It may have been removed.'}
+          actionLabel={isError ? 'Retry' : undefined}
+          onAction={isError ? () => void refetch() : undefined}
+        />
       </View>
     );
   }

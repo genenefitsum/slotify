@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
 import { bookingsApi } from '@/api/bookings.api';
 import type {
+  Booking,
   BookingAvailabilityQuery,
   BookingListQuery,
   BookingListResponse,
@@ -15,6 +16,33 @@ export function useBookings(query?: BookingListQuery) {
   return useQuery({
     queryKey: queryKeys.bookings.list(query),
     queryFn: () => bookingsApi.list(query),
+  });
+}
+
+/** Pull a booking out of any cached list/infinite-list query for instant render. */
+function seedBookingFromCache(
+  qc: ReturnType<typeof useQueryClient>,
+  id: string
+): Booking | undefined {
+  const entries = qc.getQueriesData<{ items?: Booking[]; pages?: BookingListResponse[] }>({
+    queryKey: ['bookings', 'list'],
+  });
+  for (const [, data] of entries) {
+    const items = data?.pages ? data.pages.flatMap((page) => page.items) : data?.items;
+    const found = items?.find((b) => b.id === id);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/** A single booking, fetched by id; seeded from the list cache so it renders instantly. */
+export function useBooking(id: string) {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: queryKeys.bookings.detail(id),
+    queryFn: () => bookingsApi.getById(id),
+    enabled: Boolean(id),
+    placeholderData: () => seedBookingFromCache(qc, id),
   });
 }
 
@@ -57,7 +85,10 @@ export function useCancelBooking() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload?: CancelBookingPayload }) =>
       bookingsApi.cancel(id, payload),
-    onSuccess: () => {
+    onSuccess: (booking) => {
+      // Reflect the cancelled status in the detail cache immediately, then
+      // refresh the lists so segments/counts update.
+      qc.setQueryData(queryKeys.bookings.detail(booking.id), booking);
       void qc.invalidateQueries({ queryKey: ['bookings', 'list'] });
     },
   });
