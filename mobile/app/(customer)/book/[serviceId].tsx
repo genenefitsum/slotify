@@ -2,12 +2,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ShieldCheck } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { bookingsApi } from '@/api/bookings.api';
 import { getErrorMessage, HttpError } from '@/api/http';
 import { queryKeys } from '@/api/queryKeys';
+import { showAlert } from '@/lib/alert';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -101,10 +102,10 @@ export default function BookService() {
           if (error instanceof HttpError && error.status === 409) {
             setSelectedSlot(null);
             void refetchSlots();
-            Alert.alert('Just booked', 'That time was taken a moment ago. Please pick another slot.');
+            showAlert('Just booked', 'That time was taken a moment ago. Please pick another slot.');
             return;
           }
-          Alert.alert('Booking failed', getErrorMessage(error));
+          showAlert('Booking failed', getErrorMessage(error));
         },
       }
     );

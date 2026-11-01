@@ -1,10 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { WifiOff } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getErrorMessage } from '@/api/http';
+import { showAlert } from '@/lib/alert';
 import { StatusBadge } from '@/components/bookings/StatusBadge';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
@@ -80,7 +81,7 @@ export default function BookingDetail() {
         },
         onError: (error) => {
           haptics.error();
-          Alert.alert('Could not cancel', getErrorMessage(error));
+          showAlert('Could not cancel', getErrorMessage(error));
         },
       }
     );
@@ -94,11 +95,11 @@ export default function BookingDetail() {
           haptics.success();
           setSheet(null);
           setComment('');
-          Alert.alert('Thanks!', 'Your review has been submitted.');
+          showAlert('Thanks!', 'Your review has been submitted.');
         },
         onError: (error) => {
           haptics.error();
-          Alert.alert('Could not submit review', getErrorMessage(error));
+          showAlert('Could not submit review', getErrorMessage(error));
         },
       }
     );

@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
 import { type ComponentRef, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, Text, type TextInput, View } from 'react-native';
+import { Pressable, Text, type TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { getErrorMessage } from '@/api/http';
@@ -17,6 +17,7 @@ import { TextField } from '@/components/ui/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { useHaptics } from '@/hooks/useHaptics';
+import { showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
 import { type RegisterForm, registerSchema } from '@/lib/validation';
 
@@ -71,7 +72,7 @@ export default function Register() {
       router.replace(user.role === 'customer' ? '/explore' : '/landing');
     } catch (error) {
       haptics.error();
-      Alert.alert('Sign up failed', getErrorMessage(error));
+      showAlert('Sign up failed', getErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

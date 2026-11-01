@@ -2,10 +2,11 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { CalendarCheck, WifiOff } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getErrorMessage } from '@/api/http';
+import { showAlert } from '@/lib/alert';
 import { SwipeableBookingRow } from '@/components/bookings/SwipeableBookingRow';
 import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -36,7 +37,7 @@ export default function Bookings() {
 
   const confirmCancel = (booking: Booking) => {
     haptics.selection();
-    Alert.alert(
+    showAlert(
       'Cancel booking?',
       `This cancels ${booking.serviceName ?? 'your booking'} on ${new Date(
         booking.startsAtUtc
@@ -53,7 +54,7 @@ export default function Bookings() {
                 onSuccess: () => haptics.success(),
                 onError: (error) => {
                   haptics.error();
-                  Alert.alert('Could not cancel', getErrorMessage(error));
+                  showAlert('Could not cancel', getErrorMessage(error));
                 },
               }
             ),

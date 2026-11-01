@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Clock, MapPin, Star, WifiOff } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getErrorMessage } from '@/api/http';
@@ -19,6 +19,7 @@ import { useHaptics } from '@/hooks/useHaptics';
 import { useCreateReview, useVendorReviews } from '@/hooks/useReviews';
 import { useVendorServices } from '@/hooks/useServices';
 import { useVendor } from '@/hooks/useVendors';
+import { showAlert } from '@/lib/alert';
 import { canReview } from '@/lib/bookingStatus';
 import {
   formatBookingDate,
@@ -111,11 +112,11 @@ export default function VendorDetail() {
           haptics.success();
           setReviewOpen(false);
           setComment('');
-          Alert.alert('Thanks!', 'Your review has been submitted.');
+          showAlert('Thanks!', 'Your review has been submitted.');
         },
         onError: (error) => {
           haptics.error();
-          Alert.alert('Could not submit review', getErrorMessage(error));
+          showAlert('Could not submit review', getErrorMessage(error));
         },
       }
     );
