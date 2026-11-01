@@ -13,6 +13,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StarRating } from '@/components/ui/StarRating';
 import { VendorGallery } from '@/components/vendors/VendorGallery';
+import { VendorMap } from '@/components/vendors/VendorMap';
 import { useBookings } from '@/hooks/useBookings';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useCreateReview, useVendorReviews } from '@/hooks/useReviews';
@@ -84,12 +85,13 @@ export default function VendorDetail() {
       ? [vendor.imageUrl]
       : [];
 
+  const [lng, lat] = vendor.location.coordinates?.coordinates ?? [];
+  const hasCoords = typeof lat === 'number' && typeof lng === 'number';
+
   const openInMaps = () => {
-    const [lng, lat] = vendor.location.coordinates?.coordinates ?? [];
-    const query =
-      lat != null && lng != null
-        ? `${lat},${lng}`
-        : encodeURIComponent(`${vendor.displayName} ${vendor.location.city}`);
+    const query = hasCoords
+      ? `${lat},${lng}`
+      : encodeURIComponent(`${vendor.displayName} ${vendor.location.city}`);
     void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
@@ -187,6 +189,44 @@ export default function VendorDetail() {
           ) : (
             <Text className="font-sans text-sm text-ink/50">No services listed yet.</Text>
           )}
+
+          {/* Location */}
+          <SectionTitle label="Location" />
+          <View className="gap-3">
+            <View className="border border-ink/15 bg-white p-4">
+              <Text className="font-sans-bold text-sm text-ink">
+                {vendor.location.addressLine1 || vendor.location.city}
+              </Text>
+              {vendor.location.addressLine2 ? (
+                <Text className="mt-0.5 font-sans text-sm text-ink/60">
+                  {vendor.location.addressLine2}
+                </Text>
+              ) : null}
+              {vendor.location.description ? (
+                <Text className="mt-1.5 font-sans text-sm leading-relaxed text-ink/60">
+                  {vendor.location.description}
+                </Text>
+              ) : null}
+            </View>
+
+            {lat != null && lng != null ? (
+              <VendorMap latitude={lat} longitude={lng} />
+            ) : (
+              <View className="h-[120px] items-center justify-center border border-ink/15 bg-white px-6">
+                <Text className="text-center font-sans text-sm text-ink/50">
+                  Location coordinates haven’t been published yet.
+                </Text>
+              </View>
+            )}
+
+            <Button
+              label="Open in Maps"
+              variant="outline"
+              icon={MapPin}
+              iconPosition="leading"
+              onPress={openInMaps}
+            />
+          </View>
 
           {/* Hours */}
           <SectionTitle label="Working hours" />
