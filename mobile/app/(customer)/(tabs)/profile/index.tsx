@@ -10,7 +10,7 @@ import {
   SquarePen,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { SettingsGroup, SettingsRow } from '@/components/ui/SettingsRow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHaptics } from '@/hooks/useHaptics';
+import { showAlert } from '@/lib/alert';
 import { env } from '@/lib/env';
 import { colors } from '@/theme/colors';
 
@@ -31,7 +32,17 @@ const ROLE_LABEL: Record<string, string> = {
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Guest';
   const initials =
@@ -47,7 +58,7 @@ export default function Profile() {
   };
 
   const onLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
+    showAlert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Log out',
@@ -66,6 +77,9 @@ export default function Profile() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />
+        }
       >
         {/* Title */}
         <View className="pb-2 pt-2">

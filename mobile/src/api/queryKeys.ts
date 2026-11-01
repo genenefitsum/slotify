@@ -17,6 +17,7 @@ export const queryKeys = {
   },
   bookings: {
     list: (query?: BookingListQuery) => ['bookings', 'list', query ?? {}] as const,
+    detail: (id: string) => ['bookings', 'detail', id] as const,
     availability: (query: BookingAvailabilityQuery) =>
       ['bookings', 'availability', query] as const,
   },

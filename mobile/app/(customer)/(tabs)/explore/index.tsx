@@ -2,7 +2,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Compass, MapPin, WifiOff } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Keyboard, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,12 +11,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { Sheet } from '@/components/ui/Sheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { SearchSuggestions } from '@/components/vendors/SearchSuggestions';
 import { VendorCard } from '@/components/vendors/VendorCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVendors } from '@/hooks/useVendors';
 import { cn } from '@/lib/cn';
 import { greeting } from '@/lib/format';
 import { colors } from '@/theme/colors';
+import type { Vendor } from '@/types/vendor';
 
 const ALL = 'All';
 
@@ -26,7 +28,9 @@ export default function Explore() {
   const { user } = useAuth();
   // Fetch the full set (parity with the web "show all") so city/category/search
   // filtering is complete, not limited to one page.
-  const { data, isLoading, isError, refetch, isRefetching } = useVendors({ all: true });
+  const { data, isLoading, isError, refetch, isRefetching } = useVendors({
+    all: true,
+  });
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>(ALL);
@@ -64,11 +68,42 @@ export default function Explore() {
   }, [vendors, search, category, city]);
 
   const firstName = user?.firstName?.trim() || 'there';
-  const initials =
-    `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || 'U';
+  const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || 'U';
   const isFiltering = search.trim().length > 0 || category !== ALL || city !== ALL;
 
-  const header = (
+  // While the user is typing, show live autocomplete instead of the full list.
+  const q = search.trim().toLowerCase();
+  const showSuggestions = q.length > 0;
+
+  const vendorSuggestions = useMemo(() => {
+    if (!q) return [];
+    return vendors
+      .filter(
+        (v) =>
+          v.displayName.toLowerCase().includes(q) ||
+          (v.location.city ?? '').toLowerCase().includes(q),
+      )
+      .slice(0, 8);
+  }, [vendors, q]);
+
+  const categorySuggestions = useMemo(() => {
+    if (!q) return [];
+    return categories.filter((c) => c !== ALL && c.toLowerCase().includes(q)).slice(0, 6);
+  }, [categories, q]);
+
+  const onPickVendor = (vendor: Vendor) => {
+    Keyboard.dismiss();
+    setSearch('');
+    router.push(`/vendor/${vendor.id}`);
+  };
+
+  const onPickCategory = (picked: string) => {
+    Keyboard.dismiss();
+    setSearch('');
+    setCategory(picked);
+  };
+
+  const topBar = (
     <View className="px-6">
       {/* Greeting + avatar */}
       <View className="flex-row items-center justify-between pt-2">
@@ -100,7 +135,11 @@ export default function Explore() {
         placeholder="Search pros, services, places"
         className="mt-5"
       />
+    </View>
+  );
 
+  const filtersAndLabel = (
+    <View className="px-6">
       {/* Filters: city + category */}
       {cities.length > 0 || categories.length > 1 ? (
         <ScrollView
@@ -116,7 +155,7 @@ export default function Explore() {
               onPress={() => setCityOpen(true)}
               className={cn(
                 'h-10 flex-row items-center gap-1.5 border px-3',
-                city !== ALL ? 'border-ink bg-ink' : 'border-ink/15 bg-white'
+                city !== ALL ? 'border-ink bg-ink' : 'border-ink/15 bg-white',
               )}
             >
               <MapPin
@@ -127,7 +166,7 @@ export default function Explore() {
               <Text
                 className={cn(
                   'font-mono text-[11px] uppercase tracking-[0.12em]',
-                  city !== ALL ? 'text-canvas' : 'text-ink/60'
+                  city !== ALL ? 'text-canvas' : 'text-ink/60',
                 )}
               >
                 {city === ALL ? 'City' : city}
@@ -156,20 +195,31 @@ export default function Explore() {
 
   return (
     <View className="flex-1 bg-canvas" style={{ paddingTop: insets.top }}>
-      {header}
+      {topBar}
 
-      {isLoading ? (
-        <View className="mt-4 gap-4 px-6">
-          {[0, 1, 2].map((i) => (
-            <View key={i} className="border border-ink/10 bg-white">
-              <Skeleton height={168} />
-              <View className="gap-2 p-4">
-                <Skeleton height={22} width="70%" />
-                <Skeleton height={12} width="45%" />
+      {showSuggestions ? (
+        <SearchSuggestions
+          query={search.trim()}
+          vendors={vendorSuggestions}
+          categories={categorySuggestions}
+          onPickVendor={onPickVendor}
+          onPickCategory={onPickCategory}
+        />
+      ) : isLoading ? (
+        <>
+          {filtersAndLabel}
+          <View className="mt-4 gap-4 px-6">
+            {[0, 1, 2].map((i) => (
+              <View key={i} className="border border-ink/10 bg-white">
+                <Skeleton height={168} />
+                <View className="gap-2 p-4">
+                  <Skeleton height={22} width="70%" />
+                  <Skeleton height={12} width="45%" />
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        </>
       ) : isError ? (
         <EmptyState
           icon={WifiOff}
@@ -179,38 +229,41 @@ export default function Explore() {
           onAction={() => void refetch()}
         />
       ) : (
-        <FlashList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <VendorCard vendor={item} onPress={() => router.push(`/vendor/${item.id}`)} />
-          )}
-          ItemSeparatorComponent={() => <View className="h-4" />}
-          contentContainerStyle={{
-            paddingHorizontal: 24,
-            paddingTop: 16,
-            paddingBottom: insets.bottom + 96,
-          }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={() => void refetch()}
-              tintColor={colors.ink}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon={Compass}
-              title={isFiltering ? 'No matches' : 'No vendors yet'}
-              message={
-                isFiltering
-                  ? 'Try a different city, category, or search.'
-                  : 'Check back soon — new pros are joining all the time.'
-              }
-            />
-          }
-        />
+        <>
+          {filtersAndLabel}
+          <FlashList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <VendorCard vendor={item} onPress={() => router.push(`/vendor/${item.id}`)} />
+            )}
+            ItemSeparatorComponent={() => <View className="h-4" />}
+            contentContainerStyle={{
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: insets.bottom + 96,
+            }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={() => void refetch()}
+                tintColor={colors.ink}
+              />
+            }
+            ListEmptyComponent={
+              <EmptyState
+                icon={Compass}
+                title={isFiltering ? 'No matches' : 'No vendors yet'}
+                message={
+                  isFiltering
+                    ? 'Try a different city, category, or search.'
+                    : 'Check back soon — new pros are joining all the time.'
+                }
+              />
+            }
+          />
+        </>
       )}
 
       {/* City filter sheet */}

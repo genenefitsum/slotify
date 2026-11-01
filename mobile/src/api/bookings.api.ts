@@ -11,6 +11,7 @@ import type {
 
 export const bookingsApi = {
   list: (query?: BookingListQuery) => http.get<BookingListResponse>('/bookings', query),
+  getById: (id: string) => http.get<Booking>(`/bookings/${id}`),
   create: (payload: CreateBookingPayload) => http.post<Booking>('/bookings', payload),
   confirm: (id: string) => http.post<Booking>(`/bookings/${id}/confirm`),
   start: (id: string) => http.post<Booking>(`/bookings/${id}/start`),

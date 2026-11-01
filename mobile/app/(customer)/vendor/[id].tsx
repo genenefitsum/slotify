@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Clock, MapPin, Star, WifiOff } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getErrorMessage } from '@/api/http';
@@ -13,13 +13,21 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StarRating } from '@/components/ui/StarRating';
 import { VendorGallery } from '@/components/vendors/VendorGallery';
+import { VendorMap } from '@/components/vendors/VendorMap';
 import { useBookings } from '@/hooks/useBookings';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useCreateReview, useVendorReviews } from '@/hooks/useReviews';
 import { useVendorServices } from '@/hooks/useServices';
 import { useVendor } from '@/hooks/useVendors';
+import { showAlert } from '@/lib/alert';
 import { canReview } from '@/lib/bookingStatus';
-import { formatBookingDate, formatDuration, formatPrice, formatRating } from '@/lib/format';
+import {
+  formatBookingDate,
+  formatDuration,
+  formatPrice,
+  formatRating,
+  formatTime12,
+} from '@/lib/format';
 import { colors } from '@/theme/colors';
 import type { Service } from '@/types/service';
 import type { WorkingHour } from '@/types/vendor';
@@ -33,7 +41,9 @@ export default function VendorDetail() {
   const { data: vendor, isLoading, isError, refetch } = useVendor(id);
   const { data: servicesData } = useVendorServices(id);
   const { data: reviews } = useVendorReviews(id);
-  const { data: bookingsData } = useBookings();
+  // Need every booking (not just page one) to know which completed visits with
+  // this vendor are still eligible to review.
+  const { data: bookingsData } = useBookings({ all: true });
   const createReview = useCreateReview(id);
 
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -82,12 +92,13 @@ export default function VendorDetail() {
       ? [vendor.imageUrl]
       : [];
 
+  const [lng, lat] = vendor.location.coordinates?.coordinates ?? [];
+  const hasCoords = typeof lat === 'number' && typeof lng === 'number';
+
   const openInMaps = () => {
-    const [lng, lat] = vendor.location.coordinates?.coordinates ?? [];
-    const query =
-      lat != null && lng != null
-        ? `${lat},${lng}`
-        : encodeURIComponent(`${vendor.displayName} ${vendor.location.city}`);
+    const query = hasCoords
+      ? `${lat},${lng}`
+      : encodeURIComponent(`${vendor.displayName} ${vendor.location.city}`);
     void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
@@ -101,11 +112,11 @@ export default function VendorDetail() {
           haptics.success();
           setReviewOpen(false);
           setComment('');
-          Alert.alert('Thanks!', 'Your review has been submitted.');
+          showAlert('Thanks!', 'Your review has been submitted.');
         },
         onError: (error) => {
           haptics.error();
-          Alert.alert('Could not submit review', getErrorMessage(error));
+          showAlert('Could not submit review', getErrorMessage(error));
         },
       }
     );
@@ -185,6 +196,44 @@ export default function VendorDetail() {
           ) : (
             <Text className="font-sans text-sm text-ink/50">No services listed yet.</Text>
           )}
+
+          {/* Location */}
+          <SectionTitle label="Location" />
+          <View className="gap-3">
+            <View className="border border-ink/15 bg-white p-4">
+              <Text className="font-sans-bold text-sm text-ink">
+                {vendor.location.addressLine1 || vendor.location.city}
+              </Text>
+              {vendor.location.addressLine2 ? (
+                <Text className="mt-0.5 font-sans text-sm text-ink/60">
+                  {vendor.location.addressLine2}
+                </Text>
+              ) : null}
+              {vendor.location.description ? (
+                <Text className="mt-1.5 font-sans text-sm leading-relaxed text-ink/60">
+                  {vendor.location.description}
+                </Text>
+              ) : null}
+            </View>
+
+            {lat != null && lng != null ? (
+              <VendorMap latitude={lat} longitude={lng} onPress={openInMaps} />
+            ) : (
+              <View className="h-[120px] items-center justify-center border border-ink/15 bg-white px-6">
+                <Text className="text-center font-sans text-sm text-ink/50">
+                  Location coordinates haven’t been published yet.
+                </Text>
+              </View>
+            )}
+
+            <Button
+              label="Open in Maps"
+              variant="outline"
+              icon={MapPin}
+              iconPosition="leading"
+              onPress={openInMaps}
+            />
+          </View>
 
           {/* Hours */}
           <SectionTitle label="Working hours" />
@@ -300,29 +349,42 @@ function SectionTitle({ label }: { label: string }) {
 
 function ServiceRow({ service, onBook }: { service: Service; onBook: () => void }) {
   return (
-    <View className="flex-row items-center justify-between border border-ink/15 bg-white p-4">
-      <View className="flex-1 pr-3">
-        <Text numberOfLines={1} className="font-sans-bold text-base text-ink">
+    <View className="border border-ink/15 bg-white p-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <Text numberOfLines={1} className="flex-1 font-sans-bold text-base text-ink">
           {service.name}
         </Text>
-        <View className="mt-1 flex-row items-center gap-1.5">
-          <Clock size={13} color={colors.inkMuted} strokeWidth={2} />
-          <Text className="font-mono text-[11px] uppercase tracking-wide text-ink/50">
-            {formatDuration(service.durationMinutes)}
-          </Text>
-          <Text className="font-sans-bold text-sm text-ink">
-            · {formatPrice(service.priceAmount, service.currency)}
-          </Text>
-        </View>
+        <Text className="font-display text-base text-ink">
+          {formatPrice(service.priceAmount, service.currency)}
+        </Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Book ${service.name}`}
-        onPress={onBook}
-        className="bg-ink px-4 py-2.5 active:opacity-80"
-      >
-        <Text className="font-display text-xs uppercase tracking-wide text-canvas">Book</Text>
-      </Pressable>
+
+      <View className="mt-1 flex-row items-center gap-1.5">
+        <Clock size={13} color={colors.inkMuted} strokeWidth={2} />
+        <Text className="font-mono text-[11px] uppercase tracking-wide text-ink/50">
+          {formatDuration(service.durationMinutes)}
+        </Text>
+        <Text className="font-mono text-[11px] uppercase tracking-wide text-ink/40">
+          · {service.depositType === 'none' ? 'No deposit' : 'Deposit required'}
+        </Text>
+      </View>
+
+      {service.description ? (
+        <Text numberOfLines={2} className="mt-2.5 font-sans text-sm leading-relaxed text-ink/60">
+          {service.description}
+        </Text>
+      ) : null}
+
+      <View className="mt-3 flex-row justify-end">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Book ${service.name}`}
+          onPress={onBook}
+          className="bg-ink px-5 py-2.5 active:opacity-80"
+        >
+          <Text className="font-display text-xs uppercase tracking-wide text-canvas">Book</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -332,7 +394,7 @@ function HoursRow({ wh }: { wh: WorkingHour }) {
     <View className="flex-row items-center justify-between border-b border-ink/10 px-4 py-3">
       <Text className="font-sans-bold text-sm text-ink">{DAYS[wh.dayOfWeek] ?? '—'}</Text>
       <Text className="font-mono text-xs uppercase tracking-wide text-ink/60">
-        {wh.isEnabled ? `${wh.startTime} – ${wh.endTime}` : 'Closed'}
+        {wh.isEnabled ? `${formatTime12(wh.startTime)} – ${formatTime12(wh.endTime)}` : 'Closed'}
       </Text>
     </View>
   );

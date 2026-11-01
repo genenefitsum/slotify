@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Camera, Check } from 'lucide-react-native';
 import { type ComponentRef, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, Text, type TextInput, View } from 'react-native';
+import { Pressable, Text, type TextInput, View } from 'react-native';
 
 import { getErrorMessage } from '@/api/http';
 import { Avatar } from '@/components/ui/Avatar';
@@ -13,6 +13,7 @@ import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHaptics } from '@/hooks/useHaptics';
+import { showAlert } from '@/lib/alert';
 import { pickAvatar } from '@/lib/image';
 import { type ProfileForm, profileSchema } from '@/lib/validation';
 import { colors } from '@/theme/colors';
@@ -42,7 +43,7 @@ export default function EditProfile() {
     try {
       const { image, error } = await pickAvatar();
       if (error) {
-        Alert.alert('Photo', error);
+        showAlert('Photo', error);
         return;
       }
       if (image) {
@@ -51,7 +52,7 @@ export default function EditProfile() {
         setRemoved(false);
       }
     } catch (error) {
-      Alert.alert(
+      showAlert(
         'Photo',
         getErrorMessage(error, 'Could not open the photo library. If you just added photo support, rebuild the app.')
       );
@@ -91,7 +92,7 @@ export default function EditProfile() {
       router.back();
     } catch (error) {
       haptics.error();
-      Alert.alert('Could not save', getErrorMessage(error));
+      showAlert('Could not save', getErrorMessage(error));
     }
   };
 

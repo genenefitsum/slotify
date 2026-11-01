@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AlertHost } from '@/components/ui/AlertHost';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { queryClient } from '@/lib/queryClient';
 import { useAppFonts } from '@/theme/fonts';
@@ -44,6 +45,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: '#f4f4ee' },
               }}
             />
+            <AlertHost />
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

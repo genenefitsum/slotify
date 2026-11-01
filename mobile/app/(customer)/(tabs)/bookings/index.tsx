@@ -5,13 +5,16 @@ import { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BookingCard } from '@/components/bookings/BookingCard';
+import { getErrorMessage } from '@/api/http';
+import { showAlert } from '@/lib/alert';
+import { SwipeableBookingRow } from '@/components/bookings/SwipeableBookingRow';
 import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useBookings } from '@/hooks/useBookings';
+import { useBookings, useCancelBooking } from '@/hooks/useBookings';
+import { useHaptics } from '@/hooks/useHaptics';
 import { colors } from '@/theme/colors';
-import type { BookingStatus } from '@/types/booking';
+import type { Booking, BookingStatus } from '@/types/booking';
 
 type Filter = 'All' | 'Upcoming' | 'Completed' | 'Cancelled';
 const FILTERS: Filter[] = ['All', 'Upcoming', 'Completed', 'Cancelled'];
@@ -25,8 +28,40 @@ const GROUP: Record<Exclude<Filter, 'All'>, BookingStatus[]> = {
 export default function Bookings() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { data, isLoading, isError, refetch, isRefetching } = useBookings();
+  const haptics = useHaptics();
+  // Fetch the full set so the status segments reflect every booking, not just
+  // the first page (parity with the explore screen's "show all").
+  const { data, isLoading, isError, refetch, isRefetching } = useBookings({ all: true });
+  const cancelBooking = useCancelBooking();
   const [filter, setFilter] = useState<Filter>('All');
+
+  const confirmCancel = (booking: Booking) => {
+    haptics.selection();
+    showAlert(
+      'Cancel booking?',
+      `This cancels ${booking.serviceName ?? 'your booking'} on ${new Date(
+        booking.startsAtUtc
+      ).toLocaleDateString()}.`,
+      [
+        { text: 'Keep booking', style: 'cancel' },
+        {
+          text: 'Cancel booking',
+          style: 'destructive',
+          onPress: () =>
+            cancelBooking.mutate(
+              { id: booking.id, payload: { reasonText: 'Cancelled by customer from bookings' } },
+              {
+                onSuccess: () => haptics.success(),
+                onError: (error) => {
+                  haptics.error();
+                  showAlert('Could not cancel', getErrorMessage(error));
+                },
+              }
+            ),
+        },
+      ]
+    );
+  };
 
   const bookings = useMemo(() => {
     const items = [...(data?.items ?? [])].sort(
@@ -80,7 +115,11 @@ export default function Bookings() {
           data={bookings}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <BookingCard booking={item} onPress={() => router.push(`/booking/${item.id}`)} />
+            <SwipeableBookingRow
+              booking={item}
+              onPress={() => router.push(`/booking/${item.id}`)}
+              onCancel={() => confirmCancel(item)}
+            />
           )}
           ItemSeparatorComponent={() => <View className="h-3" />}
           contentContainerStyle={{
