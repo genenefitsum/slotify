@@ -216,7 +216,7 @@ export default function VendorDetail() {
             </View>
 
             {lat != null && lng != null ? (
-              <VendorMap latitude={lat} longitude={lng} />
+              <VendorMap latitude={lat} longitude={lng} onPress={openInMaps} />
             ) : (
               <View className="h-[120px] items-center justify-center border border-ink/15 bg-white px-6">
                 <Text className="text-center font-sans text-sm text-ink/50">

@@ -1,35 +1,44 @@
-import { View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { Image } from 'expo-image';
+import { Pressable } from 'react-native';
 
 /**
- * Interactive Google Maps embed for a vendor's coordinates — the same embed URL
- * the web app uses, rendered in a WebView (ships in Expo Go, no native build or
- * API key needed). The map pans/zooms inside its box; the screen keeps an
- * "Open in Maps" button for directions in the native app.
+ * Static map preview of a vendor's location (keyless OpenStreetMap tiles) that
+ * works in Expo Go without any native module. Tapping opens the full
+ * interactive map in the native Maps app for panning/zoom/directions.
+ *
+ * A fully *embedded* interactive map needs a native module (react-native-maps
+ * or react-native-webview), which requires a development build — see the
+ * Location section's "Open in Maps" action for the interactive experience.
  */
 export function VendorMap({
   latitude,
   longitude,
-  height = 220,
+  onPress,
+  height = 180,
 }: {
   latitude: number;
   longitude: number;
+  onPress?: () => void;
   height?: number;
 }) {
-  const uri = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+  const uri =
+    `https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}` +
+    `&zoom=15&size=640x320&maptype=mapnik&markers=${latitude},${longitude},red-pushpin`;
 
   return (
-    <View className="overflow-hidden border border-ink/15 bg-white" style={{ height }}>
-      <WebView
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Open location in Maps"
+      onPress={onPress}
+      className="overflow-hidden border border-ink/15 bg-ink/5 active:opacity-90"
+      style={{ height }}
+    >
+      <Image
         source={{ uri }}
-        originWhitelist={['https://*']}
-        style={{ flex: 1, backgroundColor: 'transparent' }}
-        javaScriptEnabled
-        domStorageEnabled
-        nestedScrollEnabled
-        startInLoadingState
-        androidLayerType="hardware"
+        style={{ width: '100%', height: '100%' }}
+        contentFit="cover"
+        transition={200}
       />
-    </View>
+    </Pressable>
   );
 }
