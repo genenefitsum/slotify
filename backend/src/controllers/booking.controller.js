@@ -20,6 +20,15 @@ const listBookings = async (req, res, next) => {
   }
 };
 
+const getBooking = async (req, res, next) => {
+  try {
+    const data = await bookingService.getById(req.user, req.params.id);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const listAvailableSlots = async (req, res, next) => {
   try {
     const { vendorId, serviceId, localDate } = req.query || {};
@@ -127,6 +136,7 @@ const markNoShow = async (req, res, next) => {
 module.exports = {
   listAvailableSlots,
   listBookings,
+  getBooking,
   createBooking,
   confirmBooking,
   startBooking,

@@ -210,6 +210,19 @@ const list = async (user, { status, page = 1, limit = 20 }) => {
   };
 };
 
+const getById = async (user, bookingId) => {
+  ensureObjectId(bookingId, 'booking id');
+
+  const booking = await Booking.findById(bookingId).lean();
+  if (!booking) {
+    throw new ApiError('Booking not found.', 404);
+  }
+
+  await ensureBookingAccess(booking, user);
+
+  return (await enrichBookings([booking]))[0];
+};
+
 const listAvailableSlots = async (_user, { vendorId, serviceId, localDate }) => {
   return listAvailableSlotsByVendorService({
     vendorId,
@@ -398,6 +411,7 @@ const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) 
 
 module.exports = {
   list,
+  getById,
   listAvailableSlots,
   create,
   transition,

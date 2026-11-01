@@ -16,6 +16,7 @@ router.use(requireAuth);
 
 router.get('/availability/slots', validateRequest(validateAvailableSlotsQuery), bookingController.listAvailableSlots);
 router.get("/", bookingController.listBookings);
+router.get('/:id', validateRequest(validateBookingIdParam), bookingController.getBooking);
 router.post('/', requireCsrf, validateRequest(validateCreateBookingPayload), bookingController.createBooking);
 router.post('/:id/confirm', requireCsrf, validateRequest(validateBookingIdParam), bookingController.confirmBooking);
 router.post('/:id/start', requireCsrf, validateRequest(validateBookingIdParam), bookingController.startBooking);
