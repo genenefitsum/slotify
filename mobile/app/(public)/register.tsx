@@ -9,6 +9,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { getErrorMessage } from '@/api/http';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { GoogleButton } from '@/components/ui/GoogleButton';
 import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
@@ -28,6 +29,8 @@ export default function Register() {
   const params = useLocalSearchParams<{ role?: string }>();
   const initialRole: Role = params.role === 'vendor_owner' ? 'vendor_owner' : 'customer';
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [termsError, setTermsError] = useState(false);
 
   const lastNameRef = useRef<ComponentRef<typeof TextInput>>(null);
   const emailRef = useRef<ComponentRef<typeof TextInput>>(null);
@@ -51,7 +54,16 @@ export default function Register() {
     },
   });
 
+  // Account creation is gated on agreeing to the legal policies (parity with web).
+  const requireAgreement = () => {
+    if (agreed) return true;
+    setTermsError(true);
+    haptics.error();
+    return false;
+  };
+
   const onSubmit = async (values: RegisterForm) => {
+    if (!requireAgreement()) return;
     setSubmitting(true);
     try {
       const user = await register(values);
@@ -66,6 +78,7 @@ export default function Register() {
   };
 
   const onGoogle = async () => {
+    if (!requireAgreement()) return;
     const user = await signInWithGoogle(getValues('role'));
     if (user) {
       haptics.success();
@@ -232,7 +245,40 @@ export default function Register() {
         />
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(260).springify().damping(18)} className="mt-9">
+      <Animated.View entering={FadeInDown.delay(240)} className="mt-7">
+        <View className="flex-row items-start gap-3">
+          <Checkbox
+            checked={agreed}
+            onChange={(v) => {
+              setAgreed(v);
+              if (v) setTermsError(false);
+            }}
+            accessibilityLabel="Agree to the terms, privacy, and cookie policies"
+          />
+          <Text className="flex-1 font-sans text-sm leading-relaxed text-ink/60">
+            I agree to the{' '}
+            <Text className="font-sans-bold text-ink underline" onPress={() => router.push('/legal/terms')}>
+              Terms
+            </Text>
+            ,{' '}
+            <Text className="font-sans-bold text-ink underline" onPress={() => router.push('/legal/privacy')}>
+              Privacy Policy
+            </Text>
+            , and{' '}
+            <Text className="font-sans-bold text-ink underline" onPress={() => router.push('/legal/cookies')}>
+              Cookie Policy
+            </Text>
+            .
+          </Text>
+        </View>
+        {termsError ? (
+          <Text className="mt-2 font-sans text-sm text-destructive">
+            Please agree to the policies to continue.
+          </Text>
+        ) : null}
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(300).springify().damping(18)} className="mt-6">
         <Button
           label="Create account"
           icon={ArrowRight}
