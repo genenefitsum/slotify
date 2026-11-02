@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
@@ -5,9 +7,27 @@ const { OAuth2Client } = require('google-auth-library');
 const ApiError = require('../utils/apiError');
 const env = require('../config/env');
 const { User } = require('../models/User');
+const { PasswordResetToken } = require('../models/PasswordResetToken');
+const mailService = require('./mail.service');
 
 const googleClient = new OAuth2Client();
 const PUBLIC_SIGNUP_ROLES = ['customer', 'vendor_owner'];
+
+const RESET_CODE_TTL_MS = env.passwordResetCodeTtlMinutes * 60 * 1000;
+const RESET_MAX_ATTEMPTS = 5;
+const RESET_RESEND_THROTTLE_MS = 60 * 1000;
+const RESET_INVALID_MESSAGE = 'Invalid or expired reset code.';
+
+const hashResetCode = (code) => crypto.createHash('sha256').update(String(code)).digest('hex');
+
+// Cryptographically-random, zero-padded 6-digit code (000000–999999).
+const generateResetCode = () => String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+
+const codesMatch = (rawCode, codeHash) => {
+  const candidate = Buffer.from(hashResetCode(rawCode));
+  const stored = Buffer.from(String(codeHash));
+  return candidate.length === stored.length && crypto.timingSafeEqual(candidate, stored);
+};
 
 const sanitizeUser = (user) => ({
   id: String(user._id),
@@ -199,9 +219,98 @@ const loginWithGoogle = async ({ credential, role = 'customer' }) => {
   return buildAuthResponse(user);
 };
 
+/**
+ * Begin a password reset: email the user a one-time code. Always resolves
+ * without revealing whether the email belongs to an account (no enumeration).
+ */
+const requestPasswordReset = async ({ email }) => {
+  const normalizedEmail = String(email || '').toLowerCase().trim();
+  if (!normalizedEmail) {
+    return;
+  }
+
+  const user = await User.findOne({ email: normalizedEmail });
+
+  // Only active local accounts with a password can reset. Stay silent for
+  // everything else (missing, deleted, suspended, or Google-only accounts).
+  if (!user || user.deletedAt || user.status !== 'active' || !user.passwordHash) {
+    return;
+  }
+
+  const latest = await PasswordResetToken.findOne({
+    userId: user._id,
+    consumedAt: null,
+  }).sort({ createdAt: -1 });
+
+  // A code was just sent — don't spam a fresh one, but still resolve silently.
+  if (latest && Date.now() - latest.createdAt.getTime() < RESET_RESEND_THROTTLE_MS) {
+    return;
+  }
+
+  // Invalidate any prior codes so only the newest one is ever valid.
+  await PasswordResetToken.deleteMany({ userId: user._id });
+
+  const code = generateResetCode();
+  await PasswordResetToken.create({
+    userId: user._id,
+    codeHash: hashResetCode(code),
+    expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS),
+  });
+
+  await mailService.sendPasswordResetCode({ to: user.email, code });
+};
+
+/**
+ * Complete a password reset using the emailed code. Throws a generic error for
+ * any failure (unknown email, wrong/expired code, too many attempts).
+ */
+const resetPassword = async ({ email, code, newPassword }) => {
+  const normalizedEmail = String(email || '').toLowerCase().trim();
+  const user = normalizedEmail ? await User.findOne({ email: normalizedEmail }) : null;
+
+  if (!user || user.deletedAt || !user.passwordHash) {
+    throw new ApiError(RESET_INVALID_MESSAGE, 400);
+  }
+
+  const token = await PasswordResetToken.findOne({
+    userId: user._id,
+    consumedAt: null,
+  }).sort({ createdAt: -1 });
+
+  if (!token || token.expiresAt.getTime() <= Date.now()) {
+    if (token) {
+      await PasswordResetToken.deleteMany({ userId: user._id });
+    }
+    throw new ApiError(RESET_INVALID_MESSAGE, 400);
+  }
+
+  if (token.attempts >= RESET_MAX_ATTEMPTS) {
+    await PasswordResetToken.deleteMany({ userId: user._id });
+    throw new ApiError('Too many attempts. Request a new reset code.', 400);
+  }
+
+  if (!codesMatch(code, token.codeHash)) {
+    token.attempts += 1;
+    if (token.attempts >= RESET_MAX_ATTEMPTS) {
+      await PasswordResetToken.deleteMany({ userId: user._id });
+    } else {
+      await token.save();
+    }
+    throw new ApiError(RESET_INVALID_MESSAGE, 400);
+  }
+
+  user.passwordHash = await bcrypt.hash(newPassword, 12);
+  await user.save();
+
+  // Consume the code and clear any siblings so it can't be reused.
+  await PasswordResetToken.deleteMany({ userId: user._id });
+};
+
 module.exports = {
   register,
   login,
   loginWithGoogle,
   createSessionTokens,
+  requestPasswordReset,
+  resetPassword,
 };
