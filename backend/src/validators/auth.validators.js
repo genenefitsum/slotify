@@ -40,8 +40,28 @@ const validateGoogleLoginPayload = ({ body = {} } = {}) => {
   }
 };
 
+const validateForgotPasswordPayload = ({ body = {} } = {}) => {
+  if (!isPlainObject(body)) {
+    throw new ApiError('Request body must be an object.', 400);
+  }
+
+  requireString(body.email, 'email');
+};
+
+const validateResetPasswordPayload = ({ body = {} } = {}) => {
+  if (!isPlainObject(body)) {
+    throw new ApiError('Request body must be an object.', 400);
+  }
+
+  requireString(body.email, 'email');
+  requireString(body.code, 'code', { minLength: 6, maxLength: 6 });
+  requireString(body.newPassword, 'newPassword', { minLength: 8 });
+};
+
 module.exports = {
   validateLoginPayload,
   validateRegisterPayload,
   validateGoogleLoginPayload,
+  validateForgotPasswordPayload,
+  validateResetPasswordPayload,
 };

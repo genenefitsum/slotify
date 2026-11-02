@@ -101,9 +101,33 @@ const logout = async (_req, res) => {
 	res.status(200).json({ success: true });
 };
 
+const GENERIC_RESET_MESSAGE =
+	'If an account exists for that email, a reset code has been sent.';
+
+const forgotPassword = async (req, res, next) => {
+	try {
+		await authService.requestPasswordReset(req.body);
+		// Always generic — never reveal whether the email is registered.
+		res.status(200).json({ message: GENERIC_RESET_MESSAGE });
+	} catch (error) {
+		next(error);
+	}
+};
+
+const resetPassword = async (req, res, next) => {
+	try {
+		await authService.resetPassword(req.body);
+		res.status(200).json({ success: true });
+	} catch (error) {
+		next(error);
+	}
+};
+
 module.exports = {
   login,
   register,
   googleLogin,
 	logout,
+	forgotPassword,
+	resetPassword,
 };
