@@ -37,3 +37,21 @@ export type GoogleLoginPayload = {
 	credential: string;
 	role?: 'customer' | 'vendor_owner';
 };
+
+export type ForgotPasswordPayload = {
+	email: string;
+};
+
+export type ForgotPasswordResponse = {
+	message: string;
+};
+
+export type ResetPasswordPayload = {
+	email: string;
+	code: string;
+	newPassword: string;
+};
+
+export type ResetPasswordResponse = {
+	success: boolean;
+};
