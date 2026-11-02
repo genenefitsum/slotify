@@ -3,9 +3,13 @@ import type {
   AuthResponse,
   AuthUser,
   CurrentUserResponse,
+  ForgotPasswordPayload,
+  ForgotPasswordResponse,
   GoogleLoginPayload,
   LoginPayload,
   RegisterPayload,
+  ResetPasswordPayload,
+  ResetPasswordResponse,
   UpdateProfilePayload,
 } from '@/types/auth';
 
@@ -16,4 +20,8 @@ export const authApi = {
   logout: () => http.post<{ success: boolean }>('/auth/logout'),
   me: () => http.get<CurrentUserResponse>('/users/me'),
   updateMe: (payload: UpdateProfilePayload) => http.patch<AuthUser>('/users/me', payload),
+  forgotPassword: (payload: ForgotPasswordPayload) =>
+    http.post<ForgotPasswordResponse>('/auth/forgot-password', payload),
+  resetPassword: (payload: ResetPasswordPayload) =>
+    http.post<ResetPasswordResponse>('/auth/reset-password', payload),
 };

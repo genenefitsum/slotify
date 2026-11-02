@@ -19,6 +19,7 @@ import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { useHaptics } from '@/hooks/useHaptics';
 import { showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
+import { roleHome } from '@/lib/roleHome';
 import { type RegisterForm, registerSchema } from '@/lib/validation';
 
 type Role = 'customer' | 'vendor_owner';
@@ -69,7 +70,7 @@ export default function Register() {
     try {
       const user = await register(values);
       haptics.success();
-      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+      router.replace(roleHome(user.role));
     } catch (error) {
       haptics.error();
       showAlert('Sign up failed', getErrorMessage(error));
@@ -83,7 +84,7 @@ export default function Register() {
     const user = await signInWithGoogle(getValues('role'));
     if (user) {
       haptics.success();
-      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+      router.replace(roleHome(user.role));
     }
   };
 

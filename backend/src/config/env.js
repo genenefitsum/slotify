@@ -49,6 +49,21 @@ const env = {
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
   cloudinaryVendorFolder: process.env.CLOUDINARY_VENDOR_FOLDER || 'slotify/vendors',
   cloudinaryAvatarFolder: process.env.CLOUDINARY_AVATAR_FOLDER || 'slotify/avatars',
+  // SMTP email (password-reset codes, etc.). When host is unset the mail service
+  // falls back to logging the message so local dev works without credentials.
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: Number(process.env.SMTP_PORT || 465),
+  // Default to implicit TLS (port 465). Set SMTP_SECURE=false for STARTTLS (587).
+  smtpSecure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : true,
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
+  mailFrom: process.env.MAIL_FROM || process.env.SMTP_USER || 'Slotify <no-reply@slotify.app>',
+  appName: process.env.APP_NAME || 'Slotify',
+  passwordResetCodeTtlMinutes: parsePositiveNumber(
+    process.env.PASSWORD_RESET_CODE_TTL_MINUTES,
+    10,
+    'PASSWORD_RESET_CODE_TTL_MINUTES'
+  ),
   corsOrigins,
   rateLimitWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000, 'RATE_LIMIT_WINDOW_MS'),
   rateLimitMaxRequests: parsePositiveNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 300, 'RATE_LIMIT_MAX_REQUESTS'),
