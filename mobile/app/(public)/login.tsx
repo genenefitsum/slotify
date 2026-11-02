@@ -124,7 +124,13 @@ export default function Login() {
         />
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(270).springify().damping(18)} className="mt-8">
+      <Animated.View entering={FadeInDown.delay(240)} className="mt-4 items-end">
+        <Pressable hitSlop={8} onPress={() => router.push('/forgot-password')}>
+          <Text className="font-sans-bold text-sm text-ink underline">Forgot password?</Text>
+        </Pressable>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(270).springify().damping(18)} className="mt-6">
         <Button
           label="Log in"
           icon={ArrowRight}
