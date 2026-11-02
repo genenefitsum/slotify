@@ -5,6 +5,7 @@ import AboutPage from "@/pages/AboutPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import CookiePolicyPage from "@/pages/CookiePolicyPage";
 import CustomerBookingsPage from "@/pages/CustomerBookingsPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -110,6 +111,7 @@ const AppRoutes = () => {
 				<Route element={<PublicOnlyRoute />}>
 					<Route path="/login" element={<LoginPage />} />
 					<Route path="/register" element={<RegisterPage />} />
+					<Route path="/forgot-password" element={<ForgotPasswordPage />} />
 				</Route>
 
 				<Route element={<RequireAuth />}>

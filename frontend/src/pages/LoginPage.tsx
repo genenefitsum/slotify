@@ -26,6 +26,11 @@ const LoginPage = () => {
 		return state?.from?.pathname || '';
 	}, [location.state]);
 
+	const resetSuccess = useMemo(() => {
+		const state = location.state as { resetSuccess?: string } | null;
+		return state?.resetSuccess || '';
+	}, [location.state]);
+
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError('');
@@ -91,6 +96,12 @@ const LoginPage = () => {
 					<h2 className="text-2xl font-heading font-semibold">Log In</h2>
 					<p className="mt-2 text-sm text-muted-foreground">Welcome back. Pick up exactly where you left off.</p>
 
+					{resetSuccess ? (
+						<p className="mt-4 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary" role="status" aria-live="polite">
+							{resetSuccess}
+						</p>
+					) : null}
+
 					<form className="mt-6 space-y-4" onSubmit={handleSubmit}>
 						<div>
 							<label htmlFor="email" className="mb-1.5 block text-sm font-medium">Email</label>
@@ -106,7 +117,12 @@ const LoginPage = () => {
 						</div>
 
 						<div>
-							<label htmlFor="password" className="mb-1.5 block text-sm font-medium">Password</label>
+							<div className="mb-1.5 flex items-center justify-between">
+								<label htmlFor="password" className="block text-sm font-medium">Password</label>
+								<Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+									Forgot password?
+								</Link>
+							</div>
 							<Input
 								id="password"
 								type="password"
