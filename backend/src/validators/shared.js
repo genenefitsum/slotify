@@ -19,6 +19,30 @@ const requireString = (value, label, { minLength = 1, maxLength } = {}) => {
   return normalizedValue;
 };
 
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_POLICY_MESSAGE =
+  'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number.';
+
+// Passwords are checked on the raw value (no trimming) so leading/trailing
+// spaces are treated as legitimate characters, matching what gets hashed.
+const requirePassword = (value, label = 'password') => {
+  if (typeof value !== 'string') {
+    throw new ApiError(`${label} must be a string.`, 400);
+  }
+
+  const isStrong =
+    value.length >= PASSWORD_MIN_LENGTH &&
+    /[a-z]/.test(value) &&
+    /[A-Z]/.test(value) &&
+    /[0-9]/.test(value);
+
+  if (!isStrong) {
+    throw new ApiError(PASSWORD_POLICY_MESSAGE, 400);
+  }
+
+  return value;
+};
+
 const requireOptionalString = (value, label, { maxLength } = {}) => {
   if (value === undefined || value === null || value === '') {
     return undefined;
@@ -81,7 +105,9 @@ const requireNumber = (value, label, { min, max, integer = false } = {}) => {
 module.exports = {
   isPlainObject,
   requireString,
+  requirePassword,
   requireOptionalString,
   requireOptionalArray,
   requireNumber,
+  PASSWORD_POLICY_MESSAGE,
 };
