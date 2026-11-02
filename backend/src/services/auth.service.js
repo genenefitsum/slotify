@@ -6,6 +6,7 @@ const { OAuth2Client } = require('google-auth-library');
 
 const ApiError = require('../utils/apiError');
 const env = require('../config/env');
+const logger = require('../utils/logger');
 const { User } = require('../models/User');
 const { PasswordResetToken } = require('../models/PasswordResetToken');
 const mailService = require('./mail.service');
@@ -257,7 +258,12 @@ const requestPasswordReset = async ({ email }) => {
     expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS),
   });
 
-  await mailService.sendPasswordResetCode({ to: user.email, code });
+  // Send in the background so the response never waits on (or fails because of)
+  // SMTP latency. The endpoint already resolves generically, so delivery is
+  // best-effort with its own retry; the user can tap "Resend" if it slips.
+  mailService.sendPasswordResetCode({ to: user.email, code }).catch((error) => {
+    logger.error('Failed to send password reset code', { userId: String(user._id), error: error.message });
+  });
 };
 
 /**
