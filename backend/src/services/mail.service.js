@@ -20,10 +20,19 @@ const getTransporter = () => {
       user: env.smtpUser,
       pass: env.smtpPass,
     },
+    // Keep a warm connection pool so a cold SMTP handshake doesn't make the
+    // first send after an idle period slow or flaky.
+    pool: true,
+    maxConnections: 3,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
   });
 
   return cachedTransporter;
 };
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Send an email. When SMTP is not configured (e.g. local dev without
@@ -40,13 +49,21 @@ const sendMail = async ({ to, subject, text, html }) => {
     return;
   }
 
-  await getTransporter().sendMail({
-    from: env.mailFrom,
-    to,
-    subject,
-    text,
-    html,
-  });
+  // Retry once on a transient failure (dropped/cold connection, brief Gmail
+  // hiccup) before giving up, so a single flaky handshake doesn't lose the email.
+  const maxAttempts = 2;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await getTransporter().sendMail({ from: env.mailFrom, to, subject, text, html });
+      return;
+    } catch (error) {
+      if (attempt >= maxAttempts) {
+        throw error;
+      }
+      logger.warn('Email send failed — retrying', { to, subject, attempt, error: error.message });
+      await sleep(500);
+    }
+  }
 };
 
 const buildPasswordResetEmail = (code) => {
