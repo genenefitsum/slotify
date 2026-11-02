@@ -14,12 +14,16 @@ export const queryKeys = {
   },
   services: {
     list: (vendorId?: string) => ['services', 'list', vendorId ?? null] as const,
+    // The signed-in vendor's own services, paginated (vendor dashboard).
+    mine: (page?: number) => ['services', 'mine', page ?? 1] as const,
   },
   bookings: {
     list: (query?: BookingListQuery) => ['bookings', 'list', query ?? {}] as const,
     detail: (id: string) => ['bookings', 'detail', id] as const,
     availability: (query: BookingAvailabilityQuery) =>
       ['bookings', 'availability', query] as const,
+    // The signed-in vendor's incoming bookings (vendor dashboard).
+    vendorList: (query?: BookingListQuery) => ['bookings', 'vendor-list', query ?? {}] as const,
   },
   reviews: {
     byVendor: (vendorId: string) => ['reviews', 'vendor', vendorId] as const,
