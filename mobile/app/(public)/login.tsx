@@ -17,6 +17,7 @@ import { TextField } from '@/components/ui/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 import { showAlert } from '@/lib/alert';
+import { roleHome } from '@/lib/roleHome';
 import { useHaptics } from '@/hooks/useHaptics';
 import { type LoginForm, loginSchema } from '@/lib/validation';
 
@@ -41,7 +42,7 @@ export default function Login() {
     try {
       const user = await login(values);
       haptics.success();
-      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+      router.replace(roleHome(user.role));
     } catch (error) {
       haptics.error();
       showAlert('Sign in failed', getErrorMessage(error));
@@ -54,7 +55,7 @@ export default function Login() {
     const user = await signInWithGoogle();
     if (user) {
       haptics.success();
-      router.replace(user.role === 'customer' ? '/explore' : '/landing');
+      router.replace(roleHome(user.role));
     }
   };
 
