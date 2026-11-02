@@ -7,6 +7,7 @@ import type {
   BookingAvailabilityQuery,
   BookingListQuery,
   BookingListResponse,
+  BookingTransitionAction,
   CancelBookingPayload,
   CreateBookingPayload,
 } from '@/types/booking';
@@ -16,6 +17,47 @@ export function useBookings(query?: BookingListQuery) {
   return useQuery({
     queryKey: queryKeys.bookings.list(query),
     queryFn: () => bookingsApi.list(query),
+  });
+}
+
+/**
+ * The signed-in vendor's incoming bookings (the backend scopes `/bookings` to
+ * the vendor when a vendor is authenticated). Kept on its own cache key so it
+ * never collides with the customer's list.
+ */
+export function useVendorBookings(query?: BookingListQuery) {
+  return useQuery({
+    queryKey: queryKeys.bookings.vendorList(query),
+    queryFn: () => bookingsApi.list(query),
+    staleTime: 15_000,
+  });
+}
+
+/** Drive a booking through its lifecycle from the vendor side. */
+export function useBookingAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action }: { id: string; action: BookingTransitionAction }) => {
+      switch (action) {
+        case 'confirm':
+          return bookingsApi.confirm(id);
+        case 'start':
+          return bookingsApi.start(id);
+        case 'complete':
+          return bookingsApi.complete(id);
+        case 'no-show':
+          return bookingsApi.markNoShow(id);
+        case 'cancel':
+          return bookingsApi.cancel(id, {
+            reasonCode: 'vendor_update',
+            reasonText: 'Cancelled from vendor dashboard',
+          });
+      }
+    },
+    onSuccess: (booking) => {
+      qc.setQueryData(queryKeys.bookings.detail(booking.id), booking);
+      void qc.invalidateQueries({ queryKey: ['bookings'] });
+    },
   });
 }
 
