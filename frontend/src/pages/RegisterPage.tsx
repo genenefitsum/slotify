@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRoleRedirectPath } from '@/lib/authRedirect';
+import { PASSWORD_PATTERN, PASSWORD_POLICY_MESSAGE, getPasswordError } from '@/lib/password';
 
 const RegisterPage = () => {
 	const { register, loginWithGoogle } = useAuth();
@@ -37,6 +38,12 @@ const RegisterPage = () => {
 
 		if (!agreedToTerms) {
 			setError('You must agree to the terms and conditions before creating an account.');
+			return;
+		}
+
+		const passwordError = getPasswordError(password);
+		if (passwordError) {
+			setError(passwordError);
 			return;
 		}
 
@@ -165,12 +172,14 @@ const RegisterPage = () => {
 								type="password"
 								required
 								minLength={8}
+								pattern={PASSWORD_PATTERN}
+								title={PASSWORD_POLICY_MESSAGE}
 								placeholder="Minimum 8 characters"
 								className="h-11 rounded-xl border-border/70 bg-background/80"
 								value={password}
 								onChange={(event) => setPassword(event.target.value)}
 							/>
-							<p className="mt-1 text-xs text-muted-foreground">Use 8 or more characters for better account security.</p>
+							<p className="mt-1 text-xs text-muted-foreground">{PASSWORD_POLICY_MESSAGE}</p>
 						</div>
 
 						<div>

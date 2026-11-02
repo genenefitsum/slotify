@@ -6,6 +6,7 @@ import { HttpError } from '@/api/http';
 import BackButton from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PASSWORD_PATTERN, PASSWORD_POLICY_MESSAGE, getPasswordError } from '@/lib/password';
 
 type Step = 'request' | 'reset';
 
@@ -45,6 +46,13 @@ const ForgotPasswordPage = () => {
 	const handleReset = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError('');
+
+		const passwordError = getPasswordError(newPassword);
+		if (passwordError) {
+			setError(passwordError);
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
@@ -137,12 +145,14 @@ const ForgotPasswordPage = () => {
 									type="password"
 									required
 									minLength={8}
+									pattern={PASSWORD_PATTERN}
+									title={PASSWORD_POLICY_MESSAGE}
 									placeholder="Enter a new password"
 									className="h-11 rounded-xl border-border/70 bg-background/80"
 									value={newPassword}
 									onChange={(event) => setNewPassword(event.target.value)}
 								/>
-								<p className="mt-1 text-xs text-muted-foreground">Use at least 8 characters.</p>
+								<p className="mt-1 text-xs text-muted-foreground">{PASSWORD_POLICY_MESSAGE}</p>
 							</div>
 
 							{error ? (

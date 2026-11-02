@@ -1,5 +1,10 @@
 const ApiError = require('../utils/apiError');
-const { isPlainObject, requireOptionalString, requireString } = require('./shared');
+const {
+  isPlainObject,
+  requireOptionalString,
+  requirePassword,
+  requireString,
+} = require('./shared');
 
 const ALLOWED_AUTH_ROLES = new Set(['customer', 'vendor_owner']);
 
@@ -18,7 +23,7 @@ const validateRegisterPayload = ({ body = {} } = {}) => {
   }
 
   requireString(body.email, 'email');
-  requireString(body.password, 'password', { minLength: 8 });
+  requirePassword(body.password, 'password');
   requireString(body.firstName, 'firstName');
   requireOptionalString(body.lastName, 'lastName', { maxLength: 120 });
   requireOptionalString(body.phone, 'phone', { maxLength: 40 });
@@ -55,7 +60,7 @@ const validateResetPasswordPayload = ({ body = {} } = {}) => {
 
   requireString(body.email, 'email');
   requireString(body.code, 'code', { minLength: 6, maxLength: 6 });
-  requireString(body.newPassword, 'newPassword', { minLength: 8 });
+  requirePassword(body.newPassword, 'newPassword');
 };
 
 module.exports = {
