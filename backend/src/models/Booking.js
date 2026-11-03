@@ -123,6 +123,16 @@ const bookingSchema = new mongoose.Schema(
       default: 1,
       min: 1,
     },
+    // Reservation lock for the exact (vendor, staff, start) slot. Set only while
+    // the booking is in an active status; unset once it reaches a terminal
+    // status so the slot frees up. The sparse unique index below turns a
+    // concurrent double-book of the same slot into a duplicate-key error, which
+    // the service translates into a 409 — the atomic backstop behind the
+    // application-level overlap check.
+    slotLockKey: {
+      type: String,
+      default: undefined,
+    },
   },
   {
     timestamps: true,
@@ -138,6 +148,12 @@ bookingSchema.index({ vendorId: 1, startsAtUtc: 1, status: 1 });
 bookingSchema.index({ vendorId: 1, status: 1, startsAtUtc: 1, endsAtUtc: 1 });
 bookingSchema.index({ customerUserId: 1, createdAt: -1 });
 bookingSchema.index({ staffId: 1, startsAtUtc: 1, endsAtUtc: 1 });
+// At most one active booking may hold a given slot. Sparse so terminal bookings
+// (slotLockKey unset) are excluded and never block a re-book of a freed slot.
+bookingSchema.index(
+  { slotLockKey: 1 },
+  { unique: true, sparse: true, name: 'uniq_active_slot_lock' }
+);
 
 const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
 
