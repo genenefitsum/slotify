@@ -67,6 +67,10 @@ export default function VendorDashboard() {
     [bookingItems],
   );
 
+  // Soonest live booking still needing attention — powers the "next booking" line.
+  // `needsAction` is already the live statuses sorted soonest-first.
+  const nextBooking = needsAction[0] ?? null;
+
   const publishedCount = services.data?.pagination.total ?? serviceItems.length;
   const averagePrice =
     serviceItems.length > 0
@@ -153,6 +157,26 @@ export default function VendorDashboard() {
                 />
               </View>
             </View>
+
+            {/* Next booking */}
+            {nextBooking ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View next booking"
+                onPress={() => router.push('/orders')}
+                className="mt-3 flex-row items-center gap-2.5 border border-ink/15 bg-white px-4 py-3 active:bg-ink/5"
+              >
+                <CalendarClock size={15} color={colors.ink} strokeWidth={2} />
+                <Text className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink/50">
+                  Next
+                </Text>
+                <Text numberOfLines={1} className="flex-1 font-sans text-sm text-ink/80">
+                  {formatBookingDate(nextBooking.startsAtUtc)} ·{' '}
+                  {formatBookingTime(nextBooking.startsAtUtc)}
+                </Text>
+                <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={2} />
+              </Pressable>
+            ) : null}
 
             {/* Reviews */}
             {vendor.data ? (
