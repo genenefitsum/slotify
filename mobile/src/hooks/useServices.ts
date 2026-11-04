@@ -4,7 +4,9 @@ import { queryKeys } from '@/api/queryKeys';
 import { servicesApi } from '@/api/services.api';
 import type { CreateServicePayload, UpdateServicePayload } from '@/types/service';
 
-const SERVICES_PAGE_SIZE = 20;
+// The vendor manages their whole catalogue in one scrollable list, so we pull
+// the full set in a single page. 100 is the backend's max page size.
+const SERVICES_PAGE_SIZE = 100;
 
 /** Services for a vendor (public). */
 export function useVendorServices(vendorId?: string) {
