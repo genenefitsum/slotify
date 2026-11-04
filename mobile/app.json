@@ -7,6 +7,9 @@
     "icon": "./assets/icon.png",
     "scheme": "slotify",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.slotify.app"
