@@ -48,6 +48,15 @@ const createBookingNumber = () => {
   return `BK-${ts}-${rand}`;
 };
 
+/**
+ * Deterministic reservation key for a slot. Two bookings targeting the exact
+ * same vendor + staff + start instant produce the same key, so the sparse
+ * unique index on `slotLockKey` rejects the second one atomically — closing the
+ * race between the overlap check and the insert.
+ */
+const buildSlotLockKey = (vendorId, staffId, startsAtUtc) =>
+  `${String(vendorId)}:${staffId ? String(staffId) : 'any'}:${startsAtUtc.toISOString()}`;
+
 
 const toBookingDto = (doc, details = {}) => ({
   id: String(doc._id),
@@ -300,6 +309,7 @@ const create = async (user, payload) => {
   const commissionAmount = roundMoney(service.priceAmount * 0.1);
   const depositAmount = computeDeposit(service);
   const netPayableToVendor = roundMoney(service.priceAmount - commissionAmount);
+  const slotLockKey = buildSlotLockKey(service.vendorId, payload.staffId, startsAtUtc);
 
   let booking;
   let tries = 0;
@@ -324,11 +334,25 @@ const create = async (user, payload) => {
         },
         status: 'pending_payment',
         customerNotes: payload.customerNotes,
+        slotLockKey,
       });
     } catch (error) {
-      if (error?.code !== 11000) {
-        throw error;
+      if (error?.code === 11000) {
+        // Which unique index rejected the insert?
+        const duplicatedKey = error?.keyPattern
+          ? Object.keys(error.keyPattern)[0]
+          : error?.keyValue
+            ? Object.keys(error.keyValue)[0]
+            : '';
+        // A slot-lock collision means another request already holds this exact
+        // slot. Retrying can't help, so surface it as a conflict immediately.
+        if (duplicatedKey === 'slotLockKey') {
+          throw new ApiError('Selected time slot is not available.', 409);
+        }
+        // Otherwise it's a bookingNumber collision — loop and try a fresh one.
+        continue;
       }
+      throw error;
     }
   }
 
@@ -382,6 +406,14 @@ const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) 
 
   booking.status = rule.to;
   booking.version += 1;
+
+  // Release the slot reservation once the booking leaves an active status
+  // (completed / cancelled / no-show) so the time can be booked again. Setting
+  // the path to undefined makes Mongoose `$unset` it, dropping it from the
+  // sparse unique index.
+  if (!ACTIVE_BOOKING_CONFLICT_STATUSES.includes(rule.to)) {
+    booking.slotLockKey = undefined;
+  }
 
   if (action === 'cancel') {
     booking.cancellation = {

@@ -66,8 +66,11 @@ function seedBookingFromCache(
   qc: ReturnType<typeof useQueryClient>,
   id: string
 ): Booking | undefined {
+  // Scan every cached bookings collection — the customer list, the vendor list,
+  // and any infinite-list pages. Non-list entries (detail/availability) simply
+  // have no matching booking id and fall through.
   const entries = qc.getQueriesData<{ items?: Booking[]; pages?: BookingListResponse[] }>({
-    queryKey: ['bookings', 'list'],
+    queryKey: ['bookings'],
   });
   for (const [, data] of entries) {
     const items = data?.pages ? data.pages.flatMap((page) => page.items) : data?.items;
