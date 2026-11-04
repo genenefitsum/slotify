@@ -331,7 +331,7 @@ export default function ServiceEditor() {
               disabled={picking}
               onPress={addPhotos}
             />
-            {canRemovePreviews && previews.length > 0 ? (
+            {previews.length > 0 ? (
               <Button label="Clear" variant="ghost" size="md" fullWidth={false} onPress={clearPhotos} />
             ) : null}
           </View>
