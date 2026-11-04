@@ -5,6 +5,7 @@ import {
   ChevronRight,
   CircleDollarSign,
   type LucideIcon,
+  Star,
   Store,
   WifiOff,
 } from 'lucide-react-native';
@@ -21,7 +22,13 @@ import { useVendorBookings } from '@/hooks/useBookings';
 import { useMyServices } from '@/hooks/useServices';
 import { useMyVendor } from '@/hooks/useMyVendor';
 import { cn } from '@/lib/cn';
-import { formatBookingDate, formatBookingTime, formatPrice, greeting } from '@/lib/format';
+import {
+  formatBookingDate,
+  formatBookingTime,
+  formatPrice,
+  formatRating,
+  greeting,
+} from '@/lib/format';
 import { getAllowedVendorActions, VENDOR_STATUS_META } from '@/lib/vendor';
 import { colors } from '@/theme/colors';
 import type { Booking } from '@/types/booking';
@@ -147,6 +154,15 @@ export default function VendorDashboard() {
               </View>
             </View>
 
+            {/* Reviews */}
+            {vendor.data ? (
+              <ReviewsCard
+                averageRating={vendor.data.averageRating}
+                reviewCount={vendor.data.reviewCount}
+                onPress={() => router.push('/reviews')}
+              />
+            ) : null}
+
             {/* Needs action */}
             <View className="mt-9 flex-row items-end justify-between">
               <Text className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/50">
@@ -230,6 +246,41 @@ function StatTile({
         {label}
       </Text>
     </View>
+  );
+}
+
+/** Rating summary that doubles as the entry point to the full reviews list. */
+function ReviewsCard({
+  averageRating,
+  reviewCount,
+  onPress,
+}: {
+  averageRating: number;
+  reviewCount: number;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="View reviews"
+      onPress={onPress}
+      className="mt-3 flex-row items-center gap-3 border border-ink/15 bg-white p-4 active:bg-ink/5"
+    >
+      <View className="h-11 w-11 items-center justify-center bg-acid">
+        <Star size={20} color={colors.ink} fill={colors.ink} strokeWidth={2} />
+      </View>
+      <View className="flex-1">
+        <Text className="font-display text-2xl uppercase leading-none tracking-tight text-ink">
+          {reviewCount > 0 ? formatRating(averageRating) : 'No reviews'}
+        </Text>
+        <Text className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink/50">
+          {reviewCount > 0
+            ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
+            : 'Reviews will appear here'}
+        </Text>
+      </View>
+      <ChevronRight size={18} color={colors.inkSubtle} strokeWidth={2} />
+    </Pressable>
   );
 }
 
