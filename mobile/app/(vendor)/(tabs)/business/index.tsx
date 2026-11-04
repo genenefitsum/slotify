@@ -25,6 +25,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { SettingsGroup, SettingsRow } from '@/components/ui/SettingsRow';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { TextField } from '@/components/ui/TextField';
+import { VendorMap } from '@/components/vendors/VendorMap';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useMyVendor, useResolveMapLink, useUpsertVendor } from '@/hooks/useMyVendor';
@@ -132,6 +133,10 @@ export default function VendorBusiness() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [categoryInput, setCategoryInput] = useState('');
   const [mapLink, setMapLink] = useState('');
+  // Raw text for the manual lat/lng fields, kept separate from the parsed
+  // numbers in `form.coordinates` so partial input (e.g. "8." or "-") is typable.
+  const [latInput, setLatInput] = useState('');
+  const [lngInput, setLngInput] = useState('');
   const [picking, setPicking] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [picker, setPicker] = useState<PickerState>(null);
@@ -142,6 +147,9 @@ export default function VendorBusiness() {
     if (vendor.data && !seededRef.current) {
       seededRef.current = true;
       setForm(buildForm(vendor.data));
+      const coords = vendor.data.location.coordinates.coordinates ?? [];
+      setLngInput(coords[0] ? String(coords[0]) : '');
+      setLatInput(coords[1] ? String(coords[1]) : '');
       setExistingImages(
         vendor.data.images?.length
           ? vendor.data.images
@@ -208,6 +216,8 @@ export default function VendorBusiness() {
     const pair = raw.match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
     if (pair) {
       update({ coordinates: [Number(pair[2]), Number(pair[1])] });
+      setLatInput(pair[1]);
+      setLngInput(pair[2]);
       setMapLink('');
       haptics.success();
       return;
@@ -216,6 +226,8 @@ export default function VendorBusiness() {
       onSuccess: ({ coordinates }) => {
         if (coordinates.length >= 2) {
           update({ coordinates: [coordinates[0], coordinates[1]] });
+          setLngInput(String(coordinates[0]));
+          setLatInput(String(coordinates[1]));
           setMapLink('');
           haptics.success();
         } else {
@@ -224,6 +236,36 @@ export default function VendorBusiness() {
       },
       onError: (error) => showAlert('Location', getErrorMessage(error, 'Unable to resolve that link.')),
     });
+  };
+
+  // Manual lat/lng entry: keep the raw text, commit the parsed number (or 0 when
+  // the field is cleared/invalid) to the form's [lng, lat] coordinate pair.
+  const onLatInput = (text: string) => {
+    setLatInput(text);
+    const n = Number(text);
+    setForm((prev) => ({
+      ...prev,
+      coordinates: [prev.coordinates[0], Number.isFinite(n) ? n : 0],
+    }));
+  };
+  const onLngInput = (text: string) => {
+    setLngInput(text);
+    const n = Number(text);
+    setForm((prev) => ({
+      ...prev,
+      coordinates: [Number.isFinite(n) ? n : 0, prev.coordinates[1]],
+    }));
+  };
+
+  const openInMaps = () => {
+    const [lng, lat] = form.coordinates;
+    const query =
+      lat || lng
+        ? `${lat},${lng}`
+        : encodeURIComponent(
+            [form.displayName, form.city].filter(Boolean).join(' ') || 'Addis Ababa',
+          );
+    void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
   const openPicker = (next: NonNullable<PickerState>) => setPicker(next);
@@ -468,9 +510,57 @@ export default function VendorBusiness() {
                 />
               </View>
             </View>
-            <Text className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink/50">
-              {hasCoords ? `Set · ${lat.toFixed(5)}, ${lng.toFixed(5)}` : 'No location set'}
-            </Text>
+
+            {/* Manual entry */}
+            <View className="mt-4 flex-row gap-3">
+              <TextField
+                containerClassName="flex-1"
+                label="Latitude"
+                value={latInput}
+                onChangeText={onLatInput}
+                placeholder="8.9950"
+                keyboardType="numbers-and-punctuation"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TextField
+                containerClassName="flex-1"
+                label="Longitude"
+                value={lngInput}
+                onChangeText={onLngInput}
+                placeholder="38.7924"
+                keyboardType="numbers-and-punctuation"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Live preview */}
+            {hasCoords ? (
+              <View className="mt-4">
+                <VendorMap latitude={lat} longitude={lng} onPress={openInMaps} height={160} />
+                <View className="mt-3 flex-row items-center justify-between">
+                  <Text className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink/50">
+                    {`Set · ${lat.toFixed(5)}, ${lng.toFixed(5)}`}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Open in Maps"
+                    onPress={openInMaps}
+                    hitSlop={6}
+                    className="active:opacity-70"
+                  >
+                    <Text className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink underline">
+                      Open in Maps
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Text className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink/50">
+                No location set
+              </Text>
+            )}
           </View>
         </View>
 
@@ -507,7 +597,7 @@ export default function VendorBusiness() {
             disabled={picking}
             onPress={addPhotos}
           />
-          {canRemovePreviews && previews.length > 0 ? (
+          {previews.length > 0 ? (
             <Button
               label="Clear"
               variant="ghost"
