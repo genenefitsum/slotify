@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import { queryKeys } from '@/api/queryKeys';
 import { bookingsApi } from '@/api/bookings.api';
@@ -12,11 +17,29 @@ import type {
   CreateBookingPayload,
 } from '@/types/booking';
 
+/** Server page size for the infinite booking lists. */
+export const BOOKINGS_PAGE_SIZE = 20;
+
 /** The customer's bookings, optionally filtered by status. */
 export function useBookings(query?: BookingListQuery) {
   return useQuery({
     queryKey: queryKeys.bookings.list(query),
     queryFn: () => bookingsApi.list(query),
+  });
+}
+
+/** Next page param from a paginated booking response, or undefined when done. */
+const nextBookingPage = (last: BookingListResponse) =>
+  last.pagination.page < last.pagination.totalPages ? last.pagination.page + 1 : undefined;
+
+/** The customer's bookings, paginated for infinite scroll. */
+export function useInfiniteBookings(query?: Omit<BookingListQuery, 'page' | 'limit' | 'all'>) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.bookings.infiniteList(query),
+    queryFn: ({ pageParam }) =>
+      bookingsApi.list({ ...query, page: pageParam, limit: BOOKINGS_PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: nextBookingPage,
   });
 }
 
@@ -29,6 +52,18 @@ export function useVendorBookings(query?: BookingListQuery) {
   return useQuery({
     queryKey: queryKeys.bookings.vendorList(query),
     queryFn: () => bookingsApi.list(query),
+    staleTime: 15_000,
+  });
+}
+
+/** The signed-in vendor's incoming bookings, paginated for infinite scroll. */
+export function useInfiniteVendorBookings(query?: Omit<BookingListQuery, 'page' | 'limit' | 'all'>) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.bookings.infiniteVendorList(query),
+    queryFn: ({ pageParam }) =>
+      bookingsApi.list({ ...query, page: pageParam, limit: BOOKINGS_PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: nextBookingPage,
     staleTime: 15_000,
   });
 }

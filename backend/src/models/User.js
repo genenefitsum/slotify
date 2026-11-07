@@ -81,6 +81,12 @@ const userSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    // Expo push tokens for this user's devices. One per installed app instance;
+    // deduped on write and pruned when Expo reports a token as unregistered.
+    pushTokens: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

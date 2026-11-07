@@ -19,11 +19,17 @@ export const queryKeys = {
   },
   bookings: {
     list: (query?: BookingListQuery) => ['bookings', 'list', query ?? {}] as const,
+    // Paginated customer list (infinite scroll). Shares the ['bookings', 'list']
+    // prefix so existing invalidations still reach it.
+    infiniteList: (query?: BookingListQuery) =>
+      ['bookings', 'list', 'infinite', query ?? {}] as const,
     detail: (id: string) => ['bookings', 'detail', id] as const,
     availability: (query: BookingAvailabilityQuery) =>
       ['bookings', 'availability', query] as const,
     // The signed-in vendor's incoming bookings (vendor dashboard).
     vendorList: (query?: BookingListQuery) => ['bookings', 'vendor-list', query ?? {}] as const,
+    infiniteVendorList: (query?: BookingListQuery) =>
+      ['bookings', 'vendor-list', 'infinite', query ?? {}] as const,
   },
   reviews: {
     byVendor: (vendorId: string) => ['reviews', 'vendor', vendorId] as const,

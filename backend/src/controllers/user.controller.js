@@ -7,6 +7,7 @@ const {
   CSRF_COOKIE_NAME,
 } = require('../common/middlewares/csrf');
 const { uploadAvatarImage, isCloudinaryConfigured } = require('../services/cloudinary.service');
+const { registerToken, unregisterToken } = require('../services/notification.service');
 
 const serializeUser = (user) => ({
   id: String(user._id),
@@ -114,4 +115,38 @@ const updateCurrentUser = async (req, res, next) => {
   }
 };
 
-module.exports = { getCurrentUser, updateCurrentUser };
+// Register an Expo push token for the signed-in user's current device.
+const addPushToken = async (req, res, next) => {
+  try {
+    if (!req.user?.id) {
+      throw new ApiError('Authentication required.', 401);
+    }
+    const { token } = req.body ?? {};
+    if (!token || typeof token !== 'string') {
+      throw new ApiError('Push token is required.', 400);
+    }
+    await registerToken(req.user.id, token);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Remove an Expo push token (on logout / when notifications are disabled).
+const removePushToken = async (req, res, next) => {
+  try {
+    if (!req.user?.id) {
+      throw new ApiError('Authentication required.', 401);
+    }
+    const { token } = req.body ?? {};
+    if (!token || typeof token !== 'string') {
+      throw new ApiError('Push token is required.', 400);
+    }
+    await unregisterToken(req.user.id, token);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getCurrentUser, updateCurrentUser, addPushToken, removePushToken };

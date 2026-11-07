@@ -5,6 +5,7 @@ import {
   Check,
   FileText,
   ImagePlus,
+  Info,
   LifeBuoy,
   LogOut,
   MapPin,
@@ -31,7 +32,6 @@ import { useHaptics } from '@/hooks/useHaptics';
 import { useMyVendor, useResolveMapLink, useUpsertVendor } from '@/hooks/useMyVendor';
 import { showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
-import { env } from '@/lib/env';
 import { formatTime12 } from '@/lib/format';
 import { pickImages } from '@/lib/image';
 import {
@@ -763,15 +763,15 @@ export default function VendorBusiness() {
           <SettingsRow
             icon={LifeBuoy}
             label="Help & support"
-            onPress={() => void Linking.openURL(`mailto:${env.supportEmail}`)}
+            onPress={() => router.push('/support')}
           />
           <SettingsRow icon={FileText} label="Terms of service" onPress={() => router.push('/legal/terms')} />
           <SettingsRow
             icon={ShieldCheck}
             label="Privacy policy"
             onPress={() => router.push('/legal/privacy')}
-            last
           />
+          <SettingsRow icon={Info} label="About Slotify" onPress={() => router.push('/about')} last />
         </SettingsGroup>
         <View className="mt-6">
           <Button label="Log out" variant="outline" icon={LogOut} iconPosition="leading" onPress={onLogout} />

@@ -1,15 +1,15 @@
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { CalendarCheck, WifiOff } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { VendorBookingCard } from '@/components/bookings/VendorBookingCard';
 import { Chip } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useVendorBookings } from '@/hooks/useBookings';
+import { BOOKINGS_PAGE_SIZE, useInfiniteVendorBookings } from '@/hooks/useBookings';
 import { colors } from '@/theme/colors';
 import type { BookingStatus } from '@/types/booking';
 
@@ -25,17 +25,40 @@ const GROUP: Record<Exclude<Filter, 'All'>, BookingStatus[]> = {
 export default function VendorOrders() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  // Full set so the status segments reflect every incoming booking.
-  const { data, isLoading, isError, refetch, isRefetching } = useVendorBookings({ all: true });
+  // Paginated for infinite scroll. Grouped status filters are applied
+  // client-side over the loaded pages.
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteVendorBookings();
   const [filter, setFilter] = useState<Filter>('All');
 
   const bookings = useMemo(() => {
-    const items = [...(data?.items ?? [])].sort(
+    const all = data?.pages.flatMap((page) => page.items) ?? [];
+    const items = [...all].sort(
       (a, b) => new Date(b.startsAtUtc).getTime() - new Date(a.startsAtUtc).getTime(),
     );
     if (filter === 'All') return items;
     return items.filter((b) => GROUP[filter].includes(b.status));
   }, [data, filter]);
+
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  };
+
+  // Keep pulling pages when a grouped filter leaves too few matches to fill the
+  // screen (so onEndReached never fires on its own).
+  useEffect(() => {
+    if (filter !== 'All' && hasNextPage && !isFetchingNextPage && bookings.length < BOOKINGS_PAGE_SIZE) {
+      void fetchNextPage();
+    }
+  }, [filter, hasNextPage, isFetchingNextPage, bookings.length, fetchNextPage]);
 
   const header = (
     <View className="px-6">
@@ -90,12 +113,21 @@ export default function VendorOrders() {
             paddingBottom: insets.bottom + 96,
           }}
           showsVerticalScrollIndicator={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={() => void refetch()}
               tintColor={colors.ink}
             />
+          }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View className="py-6">
+                <ActivityIndicator color={colors.ink} />
+              </View>
+            ) : null
           }
           ListEmptyComponent={
             <EmptyState

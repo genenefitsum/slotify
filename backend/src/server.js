@@ -19,6 +19,7 @@ const reviewRoutes = require('./routes/review.routes');
 const userRoutes = require('./routes/user.routes');
 const availabilityRoutes = require('./modules/availability/availability.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const supportRoutes = require('./routes/support.routes');
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

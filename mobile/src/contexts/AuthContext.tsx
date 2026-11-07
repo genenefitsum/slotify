@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { authApi } from '@/api/auth.api';
+import { getCurrentPushToken, registerForPushNotificationsAsync } from '@/lib/push';
 import { clearAuthSession, loadAccessToken, setAccessToken } from '@/lib/storage';
 import type {
   AuthResponse,
@@ -18,6 +19,19 @@ import type {
   RegisterPayload,
   UpdateProfilePayload,
 } from '@/types/auth';
+
+// Resolve this device's Expo push token and register it with the backend.
+// Fire-and-forget: push is best-effort and must never block or break auth.
+const syncPushToken = () => {
+  void (async () => {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      if (token) await authApi.registerPushToken(token);
+    } catch {
+      // Ignore — push is optional.
+    }
+  })();
+};
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -43,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setAccessToken(response.accessToken);
     }
     setUser(response.user);
+    syncPushToken();
     return response.user;
   }, []);
 
@@ -54,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = await loadAccessToken();
         if (!token) return;
         const me = await authApi.me();
-        if (active) setUser(me);
+        if (active) {
+          setUser(me);
+          syncPushToken();
+        }
       } catch {
         await clearAuthSession();
       } finally {
@@ -100,6 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // Unregister this device's push token first — it needs the still-valid
+    // session to authorize, so run it before clearing the token.
+    const pushToken = getCurrentPushToken();
+    if (pushToken) void authApi.unregisterPushToken(pushToken).catch(() => undefined);
     void authApi.logout().catch(() => undefined);
     void clearAuthSession();
     setUser(null);

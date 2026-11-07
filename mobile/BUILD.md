@@ -49,6 +49,33 @@ eas update --channel preview --message "Describe the change"
 eas update --channel production --message "Describe the change"
 ```
 
+## Feature setup (external credentials)
+
+Three features are coded and ship inert until you provide credentials. The app
+runs cleanly in Expo Go without any of them.
+
+### Google sign-in (native)
+1. In the same Google Cloud project as the web app, mint **iOS** and **Android**
+   OAuth client IDs. Reuse the web app's **Web** client ID as `webClientId` — the
+   backend verifies the ID token's audience against it, so no backend change.
+2. Set `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` and `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+   (see `.env.example`). `app.config.ts` adds the native config plugin only when
+   the iOS client ID is present.
+3. Native Google sign-in requires a **dev/EAS build** — it cannot run in Expo Go
+   (the button explains this until then).
+
+### Push notifications
+1. `eas init` to create the project and write `extra.eas.projectId` to `app.json`
+   (required for `getExpoPushTokenAsync`).
+2. Run a **dev/EAS build** — push registration is a no-op in Expo Go.
+3. Backend: redeploy so the `POST/DELETE /users/me/push-token` endpoints and the
+   booking notification hooks are live.
+
+### Help-center support bot
+1. Set `ANTHROPIC_API_KEY` on the Render backend and redeploy (mounts
+   `POST /api/support/chat`). Without it, the chat shows a graceful "email us"
+   fallback. Optional: `SUPPORT_EMAIL` overrides the fallback address.
+
 ## Before any build
 
 ```bash

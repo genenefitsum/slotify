@@ -7,12 +7,23 @@ const { Service } = require('../models/Service');
 const { Vendor } = require('../models/Vendor');
 const { Staff } = require('../models/Staff');
 const { User } = require('../models/User');
+const { sendPush } = require('./notification.service');
 const {
   ADDIS_TIMEZONE,
   ACTIVE_BOOKING_CONFLICT_STATUSES,
   ensureVendorAvailable,
   listAvailableSlotsByVendorService,
 } = require('../modules/availability/availability.service');
+
+// Friendly push copy for each status a booking can transition into. Used to
+// notify the customer when a vendor advances or ends their booking.
+const CUSTOMER_TRANSITION_PUSH = {
+  confirmed: { title: 'Booking confirmed', body: (dto) => `${dto.vendorName || 'Your vendor'} confirmed your ${dto.serviceName || 'booking'}.` },
+  in_service: { title: 'Service started', body: (dto) => `${dto.serviceName || 'Your service'} is now in progress.` },
+  completed: { title: 'Service completed', body: (dto) => `Hope it went well! Tap to leave ${dto.vendorName || 'your vendor'} a review.` },
+  cancelled: { title: 'Booking cancelled', body: (dto) => `Your ${dto.serviceName || 'booking'} was cancelled.` },
+  no_show: { title: 'Marked as no-show', body: (dto) => `Your ${dto.serviceName || 'booking'} was marked as a no-show.` },
+};
 
 const TRANSITION_RULES = {
   confirm: { from: ['pending_payment'], to: 'confirmed', eventType: 'booking_confirmed' },
@@ -372,7 +383,16 @@ const create = async (user, payload) => {
     },
   });
 
-  return (await enrichBookings([booking]))[0];
+  const dto = (await enrichBookings([booking]))[0];
+
+  // Notify the vendor owner of the new request (fire-and-forget).
+  void sendPush(vendor.ownerUserId, {
+    title: 'New booking request',
+    body: `${dto.customerName || 'A customer'} booked ${dto.serviceName || 'a service'}.`,
+    data: { type: 'booking', bookingId: String(booking._id), audience: 'vendor' },
+  });
+
+  return dto;
 };
 
 const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) => {
@@ -439,7 +459,30 @@ const transition = async ({ bookingId, action, actor, reasonCode, reasonText }) 
     },
   });
 
-  return (await enrichBookings([booking]))[0];
+  const dto = (await enrichBookings([booking]))[0];
+
+  // Notify the counterparty of the status change (fire-and-forget). When the
+  // vendor advanced/ended the booking, tell the customer; when the customer
+  // cancelled, tell the vendor owner.
+  if (isVendorSide) {
+    const copy = CUSTOMER_TRANSITION_PUSH[rule.to];
+    if (copy) {
+      void sendPush(booking.customerUserId, {
+        title: copy.title,
+        body: copy.body(dto),
+        data: { type: 'booking', bookingId: String(booking._id), audience: 'customer' },
+      });
+    }
+  } else if (action === 'cancel') {
+    const vendor = await Vendor.findById(booking.vendorId).select({ ownerUserId: 1 }).lean();
+    void sendPush(vendor?.ownerUserId, {
+      title: 'Booking cancelled',
+      body: `${dto.customerName || 'A customer'} cancelled their ${dto.serviceName || 'booking'}.`,
+      data: { type: 'booking', bookingId: String(booking._id), audience: 'vendor' },
+    });
+  }
+
+  return dto;
 };
 
 module.exports = {

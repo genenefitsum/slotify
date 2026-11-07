@@ -13,8 +13,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertHost } from '@/components/ui/AlertHost';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { usePushNotificationObserver } from '@/hooks/usePushNotificationObserver';
 import { queryClient } from '@/lib/queryClient';
 import { useAppFonts } from '@/theme/fonts';
+
+// Runs the push-tap deep-link observer. Rendered inside the navigation tree so
+// it only mounts once the router is ready.
+function PushObserver() {
+  usePushNotificationObserver();
+  return null;
+}
 
 // Hold the native splash screen until the brand fonts are ready, so the first
 // frame the user sees is already fully styled (no font "pop-in").
@@ -64,6 +72,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: '#f4f4ee' },
               }}
             />
+            <PushObserver />
             <AlertHost />
           </AuthProvider>
         </QueryClientProvider>
