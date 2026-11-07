@@ -24,4 +24,8 @@ export const authApi = {
     http.post<ForgotPasswordResponse>('/auth/forgot-password', payload),
   resetPassword: (payload: ResetPasswordPayload) =>
     http.post<ResetPasswordResponse>('/auth/reset-password', payload),
+  registerPushToken: (token: string) =>
+    http.post<{ success: boolean }>('/users/me/push-token', { token }),
+  unregisterPushToken: (token: string) =>
+    http.delete<{ success: boolean }>('/users/me/push-token', { body: { token } }),
 };
