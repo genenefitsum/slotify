@@ -11,7 +11,7 @@ import {
   SquarePen,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -20,7 +20,6 @@ import { SettingsGroup, SettingsRow } from '@/components/ui/SettingsRow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { showAlert } from '@/lib/alert';
-import { env } from '@/lib/env';
 import { colors } from '@/theme/colors';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -55,7 +54,7 @@ export default function Profile() {
     : null;
 
   const contactSupport = () => {
-    void Linking.openURL(`mailto:${env.supportEmail}`);
+    router.push('/support');
   };
 
   const onLogout = () => {

@@ -32,7 +32,6 @@ import { useHaptics } from '@/hooks/useHaptics';
 import { useMyVendor, useResolveMapLink, useUpsertVendor } from '@/hooks/useMyVendor';
 import { showAlert } from '@/lib/alert';
 import { cn } from '@/lib/cn';
-import { env } from '@/lib/env';
 import { formatTime12 } from '@/lib/format';
 import { pickImages } from '@/lib/image';
 import {
@@ -764,7 +763,7 @@ export default function VendorBusiness() {
           <SettingsRow
             icon={LifeBuoy}
             label="Help & support"
-            onPress={() => void Linking.openURL(`mailto:${env.supportEmail}`)}
+            onPress={() => router.push('/support')}
           />
           <SettingsRow icon={FileText} label="Terms of service" onPress={() => router.push('/legal/terms')} />
           <SettingsRow
