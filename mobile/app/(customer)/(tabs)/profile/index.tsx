@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   Cookie,
   FileText,
+  Info,
   LifeBuoy,
   LogOut,
   ShieldCheck,
@@ -158,6 +159,7 @@ export default function Profile() {
 
         {/* About */}
         <SettingsGroup title="About">
+          <SettingsRow icon={Info} label="About Slotify" onPress={() => router.push('/about')} />
           <SettingsRow label="Version" value={version} last />
         </SettingsGroup>
 
