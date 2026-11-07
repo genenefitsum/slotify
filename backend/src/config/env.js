@@ -59,6 +59,10 @@ const env = {
   smtpPass: process.env.SMTP_PASS || '',
   mailFrom: process.env.MAIL_FROM || process.env.SMTP_USER || 'Slotify <no-reply@slotify.app>',
   appName: process.env.APP_NAME || 'Slotify',
+  // Claude-powered support bot. When unset, the support endpoint returns 503 and
+  // the client falls back to the "email us" option.
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  supportEmail: process.env.SUPPORT_EMAIL || 'slotifyethiopia@outlook.com',
   passwordResetCodeTtlMinutes: parsePositiveNumber(
     process.env.PASSWORD_RESET_CODE_TTL_MINUTES,
     10,
